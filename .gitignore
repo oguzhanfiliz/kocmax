@@ -34,3 +34,4 @@ Thumbs.db
 # Test results and coverage
 .phpunit.result.cache
 *.cov
+composer.lock
