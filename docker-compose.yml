@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: b2b-b2c-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      MYSQL_USER: ${DB_USERNAME:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - '${DB_PORT:-3306}:3306'
+    volumes:
+      - b2b-b2c-db-data:/var/lib/mysql
+    networks:
+      - b2b-b2c-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: b2b-b2c-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+    networks:
+      - b2b-b2c-network
+
+networks:
+  b2b-b2c-network:
+    driver: bridge
+
+volumes:
+  b2b-b2c-db-data:
+    driver: local 
