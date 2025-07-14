@@ -1,11 +1,217 @@
-@import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* ===========================
+   PROJECT MODALS & SCROLLBARS
+   =========================== */
+
+/* Custom scrollbar for webkit browsers */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(214, 211, 209) rgb(245, 245, 244);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: rgb(245, 245, 244);
+    border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(214, 211, 209);
+    border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(168, 162, 158);
+}
+
+/* Project modal specific styles */
+#projectModal {
+    backdrop-filter: blur(4px);
+}
+
+#projectModal .bg-white {
+    border: 1px solid rgb(229, 231, 235);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Ensure modal content is properly contained */
+#modalContent {
+    min-height: 0;
+}
+
+/* Mobile responsiveness for modals */
+@media (max-width: 768px) {
+    #projectModal .max-w-4xl {
+        max-width: calc(100vw - 2rem);
+        margin: 1rem;
+    }
+    
+    #projectModal .max-h-\[90vh\] {
+        max-height: calc(100vh - 2rem);
+    }
+    
+    #modalContent {
+        padding: 1rem;
+    }
+    
+    #projectModal .p-6 {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #projectModal .max-w-4xl {
+        max-width: calc(100vw - 1rem);
+        margin: 0.5rem;
+    }
+    
+    #projectModal .max-h-\[90vh\] {
+        max-height: calc(100vh - 1rem);
+    }
+}
+
+/* ===========================
+   SWIPER GALLERY STYLES
+   =========================== */
+
+/* Swiper navigation buttons */
+.project-main-swiper .swiper-button-next,
+.project-main-swiper .swiper-button-prev {
+    color: #d97706 !important;
+    background: white !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    margin-top: -20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+}
+
+.project-main-swiper .swiper-button-next:hover,
+.project-main-swiper .swiper-button-prev:hover {
+    background: #d97706 !important;
+    color: white !important;
+    transform: scale(1.1);
+}
+
+.project-main-swiper .swiper-button-next::after,
+.project-main-swiper .swiper-button-prev::after {
+    font-size: 14px !important;
+    font-weight: bold !important;
+}
+
+/* Swiper pagination */
+.project-main-swiper .swiper-pagination {
+    bottom: 8px !important;
+}
+
+.project-main-swiper .swiper-pagination-fraction {
+    background: rgba(0, 0, 0, 0.7) !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    width: auto !important;
+    right: 16px !important;
+    left: auto !important;
+}
+
+/* Thumbnail Swiper styles */
+.project-thumb-swiper .swiper-slide {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.project-thumb-swiper .swiper-slide:hover {
+    opacity: 0.8;
+}
+
+.project-thumb-swiper .swiper-slide-thumb-active {
+    opacity: 1;
+}
+
+.project-thumb-swiper img {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.project-thumb-swiper .swiper-slide:hover img {
+    transform: scale(1.05);
+}
+
+/* Gallery container spacing */
+.project-gallery-container {
+    max-width: 100%;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .project-main-swiper .swiper-button-next,
+    .project-main-swiper .swiper-button-prev {
+        width: 35px !important;
+        height: 35px !important;
+        margin-top: -17.5px !important;
+    }
+    
+    .project-main-swiper .swiper-button-next::after,
+    .project-main-swiper .swiper-button-prev::after {
+        font-size: 12px !important;
+    }
+    
+    .project-main-swiper .swiper-pagination-fraction {
+        font-size: 11px !important;
+        padding: 3px 8px !important;
+        right: 8px !important;
+    }
+}
+
+/* ===========================
+   PHOTOSWIPE LIGHTBOX STYLES
+   =========================== */
+
+/* Zoom cursor */
+.cursor-zoom-in {
+    cursor: zoom-in !important;
+}
+
+/* PhotoSwipe custom theme */
+.pswp {
+    --pswp-bg: rgba(0, 0, 0, 0.9);
+    --pswp-placeholder-bg: rgba(217, 119, 6, 0.2);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.pswp__button {
+    color: #d97706 !important;
+}
+
+.pswp__button:hover {
+    background: rgba(217, 119, 6, 0.2) !important;
+}
+
+/* Project card hover effects */
+.project-item .group:hover img {
+    transform: scale(1.05);
+}
+
+.project-item .group .hover-overlay {
+    transition: all 0.3s ease;
+}
+
+/* Lightbox zoom hint */
+.lightbox-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
 }
