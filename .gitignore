@@ -1,0 +1,36 @@
+# Composer dependencies
+/vendor/
+
+# Node.js dependencies
+/node_modules/
+
+# Laravel build artifacts (Vite)
+/public/build/
+/public/hot
+
+# Laravel bootstrap cache
+/bootstrap/cache/*.php
+
+# Laravel SSR
+/bootstrap/ssr/
+
+# Environment files
+.env
+.env.backup
+.env.testing
+
+
+# IDE helper files & directories
+.idea/
+.vscode/
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Test results and coverage
+.phpunit.result.cache
+*.cov
