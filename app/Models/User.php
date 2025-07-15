@@ -127,4 +127,58 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(Setting::class, 'updated_by');
     }
+
+    /**
+     * Get the user's reviews.
+     * Kullanıcının yorumlarını alır.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * Get the user's carts.
+     * Kullanıcının sepetlerini alır.
+     */
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
+     * Get the user's active cart.
+     * Kullanıcının aktif sepetini alır.
+     */
+    public function activeCart()
+    {
+        return $this->hasOne(Cart::class)->latest();
+    }
+
+    /**
+     * Get the user's orders.
+     * Kullanıcının siparişlerini alır.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get the dealer's discounts.
+     * Bayi indirimlerini alır.
+     */
+    public function dealerDiscounts(): HasMany
+    {
+        return $this->hasMany(DealerDiscount::class, 'dealer_id');
+    }
+
+    /**
+     * Get the user's dealer application.
+     * Kullanıcının bayi başvurusunu alır.
+     */
+    public function dealerApplication()
+    {
+        return $this->hasOne(DealerApplication::class);
+    }
 }
