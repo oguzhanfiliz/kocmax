@@ -31,6 +31,13 @@ class User extends Authenticatable implements FilamentUser
         'avatar',
         'is_active',
         'last_login_at',
+        'dealer_code',
+        'company_name',
+        'tax_number',
+        'dealer_discount_percentage',
+        'is_approved_dealer',
+        'dealer_application_date',
+        'approved_at',
     ];
 
     /**
@@ -53,6 +60,10 @@ class User extends Authenticatable implements FilamentUser
         'password' => 'hashed',
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
+        'is_approved_dealer' => 'boolean',
+        'dealer_discount_percentage' => 'float',
+        'dealer_application_date' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     /**
@@ -61,6 +72,14 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return true; // Üretim ortamında uygun izin kontrollerini ekleyin
+    }
+
+    /**
+     * Kullanıcının onaylanmış bayi olup olmadığını kontrol eder
+     */
+    public function isDealer(): bool
+    {
+        return $this->is_approved_dealer;
     }
 
     /**
