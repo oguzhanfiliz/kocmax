@@ -23,16 +23,6 @@ class PermissionSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'edit users', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'delete users', 'guard_name' => 'web']);
 
-        // Create permissions for pages
-        Permission::firstOrCreate(['name' => 'view pages', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'create pages', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'edit pages', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'delete pages', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'publish pages', 'guard_name' => 'web']);
-
-        // Create permissions for settings
-        Permission::firstOrCreate(['name' => 'view settings', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'edit settings', 'guard_name' => 'web']);
 
         // RoleResource için gerekli olabilecek izinler (RolePolicy.php dosyasında kullanıldığı gibi)
         // Bu izinlerin Filament resource'larınızda gerçekten kullanıldığından emin olun.
@@ -44,18 +34,11 @@ class PermissionSeeder extends Seeder
         // Create roles and assign permissions
         // Admin rolünü oluştur veya bul ve tüm izinleri senkronize et
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $adminRole->syncPermissions(Permission::all()); // Tüm izinleri admin rolüne ata
 
         // Editor rolünü oluştur veya bul
         $editorRole = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
         $editorPermissions = [
             'view users',
-            'view pages',
-            'create pages',
-            'edit pages',
-            'delete pages',
-            'publish pages',
-            'view settings',
         ];
         // Sadece var olan izinleri ata
         $existingEditorPermissions = Permission::whereIn('name', $editorPermissions)->where('guard_name', 'web')->get();
@@ -63,12 +46,7 @@ class PermissionSeeder extends Seeder
 
         // Author rolünü oluştur veya bul
         $authorRole = Role::firstOrCreate(['name' => 'author', 'guard_name' => 'web']);
-        $authorPermissions = [
-            'view pages',
-            'create pages',
-            'edit pages',
-            'view settings',
-        ];
+        $authorPermissions = [];
         // Sadece var olan izinleri ata
         $existingAuthorPermissions = Permission::whereIn('name', $authorPermissions)->where('guard_name', 'web')->get();
         $authorRole->syncPermissions($existingAuthorPermissions);
