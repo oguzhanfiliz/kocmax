@@ -19,6 +19,18 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    protected static ?string $navigationGroup = 'Sistem';
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Kullanıcılar');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Kullanıcı');
+    }
+
     protected static ?string $navigationLabel = 'Kullanıcılar';
 
     protected static ?string $pluralLabel = 'Kullanıcılar';
@@ -97,6 +109,12 @@ class UserResource extends Resource
                             ->minLength(8)
                             ->dehydrated(false)
                             ->same('password'),
+                        Forms\Components\Select::make('roles')
+                            ->label('Roller')
+                            ->multiple()
+                            ->relationship('roles', 'name')
+                            ->preload()
+                            ->searchable(),
                     ])
                     ->columns(2),
             ]);

@@ -25,6 +25,16 @@ class RoleResource extends Resource
     
     protected static ?string $slug = 'shield/roles';
 
+    public static function getPluralModelLabel(): string
+    {
+        return __('Roller');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Rol');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
