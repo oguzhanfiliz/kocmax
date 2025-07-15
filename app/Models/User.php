@@ -18,30 +18,32 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * The attributes that are mass assignable.
+     * Kitlesel olarak atananabilir öznitelikler.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'position',
-        'bio',
-        'avatar',
-        'is_active',
-        'last_login_at',
-        'dealer_code',
-        'company_name',
-        'tax_number',
-        'dealer_discount_percentage',
-        'is_approved_dealer',
-        'dealer_application_date',
-        'approved_at',
+        'name', // User's full name | Kullanıcının tam adı
+        'email', // User's email address | Kullanıcının e-posta adresi
+        'password', // User's password | Kullanıcının şifresi
+        'phone', // User's phone number | Kullanıcının telefon numarası
+        'position', // User's position in the company | Kullanıcının şirketteki pozisyonu
+        'bio', // A short biography of the user | Kullanıcının kısa biyografisi
+        'avatar', // URL to the user's avatar image | Kullanıcının avatar resminin URL'si
+        'is_active', // Whether the user account is active | Kullanıcı hesabının aktif olup olmadığı
+        'last_login_at', // The last time the user logged in | Kullanıcının son giriş yaptığı zaman
+        'dealer_code', // The dealer code associated with the user | Kullanıcıyla ilişkili bayi kodu
+        'company_name', // The name of the dealer's company | Bayinin şirket adı
+        'tax_number', // The tax number of the dealer's company | Bayinin vergi numarası
+        'dealer_discount_percentage', // The discount percentage for the dealer | Bayi için indirim yüzdesi
+        'is_approved_dealer', // Whether the user is an approved dealer | Kullanıcının onaylanmış bir bayi olup olmadığı
+        'dealer_application_date', // The date the user applied to be a dealer | Kullanıcının bayilik başvuru tarihi
+        'approved_at', // The date the user's dealer application was approved | Kullanıcının bayi başvurusunun onaylandığı tarih
     ];
 
     /**
      * The attributes that should be hidden for serialization.
+     * Serileştirme için gizlenmesi gereken öznitelikler.
      *
      * @var array<int, string>
      */
@@ -52,6 +54,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * The attributes that should be cast.
+     * Özniteliklerin dönüştürülmesi gereken türler.
      *
      * @var array<string, string>
      */
@@ -67,15 +70,22 @@ class User extends Authenticatable implements FilamentUser
     ];
 
     /**
-     * FilamentUser implementasyonu için gerekli metod
+     * Determine if the user can access the Filament panel.
+     * Kullanıcının Filament paneline erişip erişemeyeceğini belirler.
+     *
+     * @param Panel $panel The panel being accessed.
+     * @return bool True if the user can access the panel, false otherwise.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true; // Üretim ortamında uygun izin kontrollerini ekleyin
+        return true; // Add appropriate authorization logic here for production environments. | Üretim ortamları için buraya uygun yetkilendirme mantığını ekleyin.
     }
 
     /**
-     * Kullanıcının onaylanmış bayi olup olmadığını kontrol eder
+     * Check if the user is an approved dealer.
+     * Kullanıcının onaylanmış bir bayi olup olmadığını kontrol eder.
+     *
+     * @return bool True if the user is an approved dealer, false otherwise.
      */
     public function isDealer(): bool
     {
@@ -84,6 +94,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Get the pages created by the user.
+     * Kullanıcı tarafından oluşturulan sayfaları alır.
      */
     public function createdPages(): HasMany
     {
@@ -92,6 +103,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Get the pages updated by the user.
+     * Kullanıcı tarafından güncellenen sayfaları alır.
      */
     public function updatedPages(): HasMany
     {
@@ -100,6 +112,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Get the settings created by the user.
+     * Kullanıcı tarafından oluşturulan ayarları alır.
      */
     public function createdSettings(): HasMany
     {
@@ -108,6 +121,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Get the settings updated by the user.
+     * Kullanıcı tarafından güncellenen ayarları alır.
      */
     public function updatedSettings(): HasMany
     {

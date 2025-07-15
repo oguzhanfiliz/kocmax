@@ -17,7 +17,19 @@ class DealerApplicationResource extends Resource
 {
     protected static ?string $model = DealerApplication::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+
+    protected static ?string $navigationGroup = 'Bayi Yönetimi';
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Bayi Başvuruları');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Bayi Başvurusu');
+    }
 
     public static function form(Form $form): Form
     {
