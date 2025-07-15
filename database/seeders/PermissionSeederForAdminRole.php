@@ -19,10 +19,6 @@ class PermissionSeederForAdminRole extends Seeder
         $models = [
             'user',
             'shield::role',
-            'page',
-            'setting',
-            'slider',
-            'statistic',
         ];
 
         $actions = [
