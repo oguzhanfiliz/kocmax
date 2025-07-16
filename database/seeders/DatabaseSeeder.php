@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UserSeeder::class,
             CurrencySeeder::class,
+            AttributeTypeSeeder::class,
+            SkuConfigurationSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
         ]);
     }
 }

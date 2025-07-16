@@ -59,22 +59,22 @@ class Product extends Model
         parent::boot();
 
         static::creating(function ($product) {
-            if (empty($product->slug)) {
-                $product->slug = Str::slug($product->name);
+            if (empty($product->slug) && !empty($product->name)) {
+                $product->slug = Str::slug($product->name) . '-' . uniqid();
             }
             
             // Auto-generate SKU if not provided
-            if (empty($product->sku)) {
+            if (empty($product->sku) && !empty($product->name)) {
                 $skuGenerator = app(SkuGeneratorService::class);
-                $category = $product->categories()->first();
-                $categorySlug = $category ? $category->slug : 'prod';
+                // İlişki kurulmadan önce category'lere erişilemeyebilir, bu yüzden slug'ı isimden alalım.
+                $categorySlug = 'prod';
                 $product->sku = $skuGenerator->generateSku($categorySlug, $product->name);
             }
         });
 
         static::updating(function ($product) {
             if ($product->isDirty('name') && empty($product->slug)) {
-                $product->slug = Str::slug($product->name);
+                $product->slug = Str::slug($product->name) . '-' . uniqid();
             }
         });
     }
@@ -82,6 +82,11 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'product_categories');
+    }
+
+    public function getCategoryIdsAttribute()
+    {
+        return $this->categories->pluck('id')->toArray();
     }
 
     public function images(): HasMany
