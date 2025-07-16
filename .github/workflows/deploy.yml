@@ -1,0 +1,68 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to server
+      run: |
+        ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd /home/mutfakyapimnet/public_html/b2bb2c.mutfakyapim.net
+          
+          # Maintenance mode aktif et
+          php artisan down
+          
+          # Git pull
+          git pull origin main
+          
+          # Composer dependencies güncelle
+          /usr/local/bin/composer install --no-dev --optimize-autoloader
+          
+          # Laravel cache temizle ve yeniden oluştur
+          php artisan config:clear
+          php artisan config:cache
+          php artisan route:clear
+          php artisan route:cache
+          php artisan view:clear
+          php artisan view:cache
+          
+          # Database migrations çalıştır (eğer varsa)
+          php artisan migrate --force
+          
+          # Storage link oluştur (eğer yoksa)
+          php artisan storage:link
+          
+          # Dosya izinlerini düzenle
+          find . -type f -exec chmod 644 {} \;
+          find . -type d -exec chmod 755 {} \;
+          
+          # Storage ve cache dizinleri için özel izinler
+          chmod -R 775 storage
+          chmod -R 775 bootstrap/cache
+          
+          # NPM dependencies (eğer frontend assets varsa)
+          npm ci --production
+          npm run build
+          
+          # Maintenance mode kapat
+          php artisan up
+          
+          echo "Deploy completed successfully!"
+        EOF
