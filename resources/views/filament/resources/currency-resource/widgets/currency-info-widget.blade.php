@@ -40,7 +40,7 @@
             <x-filament::accordion.item>
                 <x-slot name="trigger">
                     <div class="flex items-center gap-x-2">
-                        <x-heroicon-o-table class="h-5 w-5" />
+                        <x-heroicon-s-table class="h-5 w-5" />
                         <span class="font-medium">Para Birimleri Tablosunu Göster</span>
                     </div>
                 </x-slot>
