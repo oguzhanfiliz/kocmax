@@ -100,4 +100,83 @@ class Category extends Model
         
         return $ids->unique()->values();
     }
-}
+
+    /**
+     * Get hierarchical category name with indentation
+     */
+    public function getHierarchicalNameAttribute(): string
+    {
+        $prefix = str_repeat('→ ', $this->depth);
+        return $prefix . $this->name;
+    }
+
+    /**
+     * Get category depth level
+     */
+    public function getDepthAttribute(): int
+    {
+        $depth = 0;
+        $parent = $this->parent;
+        
+        while ($parent) {
+            $depth++;
+            $parent = $parent->parent;
+        }
+        
+        return $depth;
+    }
+
+    /**
+     * Get breadcrumb path
+     */
+    public function getBreadcrumbAttribute(): string
+    {
+        $breadcrumb = collect([$this->name]);
+        $parent = $this->parent;
+        
+        while ($parent) {
+            $breadcrumb->prepend($parent->name);
+            $parent = $parent->parent;
+        }
+        
+        return $breadcrumb->implode(' > ');
+    }
+
+    /**
+     * Get categories for select with hierarchy
+     */
+    public static function getTreeForSelect(): array
+    {
+        $categories = self::with('children')->whereNull('parent_id')->ordered()->get();
+        $result = [];
+        
+        foreach ($categories as $category) {
+            self::buildTreeArray($category, $result, 0);
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Build tree array recursively
+     */
+    private static function buildTreeArray($category, &$result, $depth)
+    {
+        $prefix = $depth > 0 ? str_repeat('  ', $depth) . '→ ' : '';
+        $result[$category->id] = $prefix . $category->name;
+        
+        foreach ($category->children()->ordered()->get() as $child) {
+            self::buildTreeArray($child, $result, $depth + 1);
+        }
+    }
+
+    /**
+     * Get product attributes for this category
+     */
+    public function productAttributes(): BelongsToMany
+    {
+        return $this->belongsToMany(ProductAttribute::class, 'category_attributes')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }

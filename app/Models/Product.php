@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SkuGeneratorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -60,6 +61,14 @@ class Product extends Model
         static::creating(function ($product) {
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
+            }
+            
+            // Auto-generate SKU if not provided
+            if (empty($product->sku)) {
+                $skuGenerator = app(SkuGeneratorService::class);
+                $category = $product->categories()->first();
+                $categorySlug = $category ? $category->slug : 'prod';
+                $product->sku = $skuGenerator->generateSku($categorySlug, $product->name);
             }
         });
 
@@ -212,5 +221,49 @@ class Product extends Model
     public function getReviewCountAttribute()
     {
         return $this->approvedReviews()->count();
+    }
+
+    /**
+     * Get product attribute values
+     */
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
+    /**
+     * Get attributes through categories
+     */
+    public function availableAttributes()
+    {
+        $categoryIds = $this->categories()->pluck('categories.id');
+        
+        return ProductAttribute::whereHas('categories', function ($query) use ($categoryIds) {
+            $query->whereIn('categories.id', $categoryIds);
+        })
+        ->active()
+        ->orderBy('sort_order')
+        ->get();
+    }
+
+    /**
+     * Get attribute value for a specific attribute
+     */
+    public function getAttributeValue($attributeId)
+    {
+        return $this->attributeValues()
+            ->where('product_attribute_id', $attributeId)
+            ->first()?->value;
+    }
+
+    /**
+     * Set attribute value
+     */
+    public function setAttributeValue($attributeId, $value)
+    {
+        return $this->attributeValues()->updateOrCreate(
+            ['product_attribute_id' => $attributeId],
+            ['value' => $value]
+        );
     }
 }
