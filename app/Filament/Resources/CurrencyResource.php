@@ -86,12 +86,6 @@ class CurrencyResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->headerActions([
-                Tables\Actions\Action::make('update_exchange_rates')
-                    ->label('Döviz Kurlarını Güncelle')
-                    ->action('updateExchangeRates')
-                    ->requiresConfirmation(),
             ]);
     }
 
