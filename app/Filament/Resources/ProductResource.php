@@ -17,7 +17,6 @@ use Filament\Forms\Components\TextInput;
 use App\Models\ProductAttribute;
 use App\Services\VariantGeneratorService;
 use Filament\Actions\Action;
-use App\Models\Product;
 
 class ProductResource extends Resource
 {
