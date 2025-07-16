@@ -180,3 +180,5 @@ class Category extends Model
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }
+
+}
