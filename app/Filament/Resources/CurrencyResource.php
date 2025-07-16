@@ -16,23 +16,42 @@ class CurrencyResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
+    protected static ?string $navigationGroup = 'Genel Ayarlar';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Para Birimleri');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Para Birimi');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
+                    ->label('Para Birimi Adı')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('code')
+                    ->label('Kodu')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('symbol')
+                    ->label('Sembol')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('exchange_rate')
+                    ->label('Döviz Kuru')
                     ->required()
                     ->numeric(),
                 Forms\Components\Toggle::make('is_default')
+                    ->label('Varsayılan')
                     ->required(),
             ]);
     }
@@ -41,16 +60,18 @@ class CurrencyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('code')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('symbol'),
-                Tables\Columns\TextColumn::make('exchange_rate'),
-                Tables\Columns\IconColumn::make('is_default')->boolean(),
+                Tables\Columns\TextColumn::make('name')->label('Para Birimi Adı')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('code')->label('Kodu')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('symbol')->label('Sembol'),
+                Tables\Columns\TextColumn::make('exchange_rate')->label('Döviz Kuru'),
+                Tables\Columns\IconColumn::make('is_default')->label('Varsayılan')->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Oluşturulma Tarihi')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Güncellenme Tarihi')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -65,12 +86,6 @@ class CurrencyResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->headerActions([
-                Tables\Actions\Action::make('update_exchange_rates')
-                    ->label('Update Exchange Rates')
-                    ->action('updateExchangeRates')
-                    ->requiresConfirmation(),
             ]);
     }
 

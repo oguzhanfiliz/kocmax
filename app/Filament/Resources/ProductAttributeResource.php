@@ -47,6 +47,8 @@ class ProductAttributeResource extends Resource
                     ->label('Özellik Tipi')
                     ->relationship('attributeType', 'name')
                     ->required(),
+                Forms\Components\Toggle::make('is_required')
+                    ->label('Gerekli'),
                 Forms\Components\Toggle::make('is_variant')
                     ->label('Varyant Özelliği mi?')
                     ->helperText('Bu özellik ürün varyantları oluşturmak için kullanılacak mı?'),
@@ -57,6 +59,11 @@ class ProductAttributeResource extends Resource
                     ->label('Sıralama')
                     ->numeric()
                     ->default(0),
+                Forms\Components\KeyValue::make('options')
+                    ->label('Seçenekler')
+                    ->keyLabel('Değer')
+                    ->valueLabel('Etiket')
+                    ->reorderable(),
             ]);
     }
 
@@ -65,17 +72,23 @@ class ProductAttributeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Özellik Adı')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('attributeType.name')->label('Tipi')->sortable(),
+                Tables\Columns\TextColumn::make('attributeType.name')->label('Özellik Tipi')->sortable(),
+                Tables\Columns\IconColumn::make('is_required')->label('Gerekli')->boolean(),
                 Tables\Columns\IconColumn::make('is_variant')->label('Varyant?')->boolean(),
                 Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
                 Tables\Columns\TextColumn::make('sort_order')->label('Sıralama')->sortable(),
+            ])
+            ->filters([
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
