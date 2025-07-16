@@ -41,12 +41,12 @@ class CategoryResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('view_categories');
+        return auth()->user()->can('view_any_category');
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->can('create_categories');
+        return auth()->user()->can('create_category');
     }
 
     public static function form(Form $form): Form

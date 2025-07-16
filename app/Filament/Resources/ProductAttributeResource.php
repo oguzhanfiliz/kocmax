@@ -47,6 +47,12 @@ class ProductAttributeResource extends Resource
                     ->label('Özellik Tipi')
                     ->relationship('attributeType', 'name')
                     ->required(),
+                Forms\Components\Select::make('categories')
+                    ->label('Geçerli Olduğu Kategoriler')
+                    ->relationship('categories', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
                 Forms\Components\Toggle::make('is_required')
                     ->label('Gerekli'),
                 Forms\Components\Toggle::make('is_variant')

@@ -57,12 +57,12 @@ class ProductResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('view_products');
+        return auth()->user()->can('view_any_product');
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->can('create_products');
+        return auth()->user()->can('create_product');
     }
 
     public static function form(Form $form): Form
@@ -199,6 +199,8 @@ class ProductResource extends Resource
     {
         return [
             RelationManagers\VariantsRelationManager::class,
+            RelationManagers\ImagesRelationManager::class,
+            RelationManagers\ReviewsRelationManager::class,
         ];
     }
 

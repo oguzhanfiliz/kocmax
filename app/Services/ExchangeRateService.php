@@ -3,36 +3,87 @@
 namespace App\Services;
 
 use App\Models\Currency;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class ExchangeRateService
 {
-    public function updateExchangeRates()
+    private TcmbExchangeRateService $tcmbService;
+
+    public function __construct(TcmbExchangeRateService $tcmbService)
+    {
+        $this->tcmbService = $tcmbService;
+    }
+
+    public function updateRates(): array
+    {
+        $provider = config('services.exchange_rate.provider', 'manual');
+        
+        try {
+            switch ($provider) {
+                case 'tcmb':
+                    return $this->tcmbService->updateRates();
+                    
+                case 'manual':
+                default:
+                    return $this->useManualRates();
+            }
+        } catch (Exception $e) {
+            Log::error('Döviz kuru güncellemesi başarısız', [
+                'provider' => $provider,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Döviz kurları güncellenemedi: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function useManualRates(): array
     {
         $defaultCurrency = Currency::getDefault();
+        
         if (!$defaultCurrency) {
-            throw new \Exception('No default currency set.');
+            throw new Exception('Varsayılan para birimi ayarlanmamış.');
         }
 
-        $apiKey = config('services.exchangerate-api.key');
-        if (!$apiKey) {
-            throw new \Exception('ExchangeRate-API key not set.');
-        }
+        // Varsayılan para biriminin kuru her zaman 1 olmalı
+        $defaultCurrency->update(['exchange_rate' => 1.0]);
 
-        $response = Http::get("https://v6.exchangerate-api.com/v6/{$apiKey}/latest/{$defaultCurrency->code}");
+        $totalCurrencies = Currency::count();
 
-        if ($response->failed()) {
-            throw new \Exception('Failed to fetch exchange rates from API.');
-        }
+        Log::info('Manuel döviz kurları kullanılıyor', [
+            'default_currency' => $defaultCurrency->code,
+            'total_currencies' => $totalCurrencies
+        ]);
 
-        $rates = $response->json()['conversion_rates'];
+        return [
+            'success' => true,
+            'message' => 'Manuel döviz kurları kullanılıyor',
+            'currencies_updated' => $totalCurrencies
+        ];
+    }
 
-        $currencies = Currency::where('code', '!=', $defaultCurrency->code)->get();
+    public function getSupportedProviders(): array
+    {
+        return [
+            'manual' => 'Manuel Kur Girişi',
+            'tcmb' => 'TCMB (Otomatik)'
+        ];
+    }
 
-        foreach ($currencies as $currency) {
-            if (isset($rates[$currency->code])) {
-                $currency->update(['exchange_rate' => $rates[$currency->code]]);
-            }
-        }
+    public function getCurrentProvider(): string
+    {
+        return config('services.exchange_rate.provider', 'manual');
+    }
+
+    public function getProviderDisplayName(): string
+    {
+        $providers = $this->getSupportedProviders();
+        $current = $this->getCurrentProvider();
+        
+        return $providers[$current] ?? 'Bilinmiyor';
     }
 }

@@ -31,8 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'exchangerate-api' => [
-        'key' => env('EXCHANGERATE_API_KEY'),
+    'exchange_rate' => [
+        'provider' => env('EXCHANGE_RATE_PROVIDER', 'manual'),
+        'tcmb' => [
+            'enabled' => env('TCMB_ENABLED', false),
+            'timeout' => env('TCMB_TIMEOUT', 30),
+            'cache_duration' => env('TCMB_CACHE_DURATION', 3600),
+        ],
     ],
 
 ];
