@@ -19,7 +19,13 @@ jobs:
         
     - name: Add server to known hosts
       run: |
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        echo "SSH Host: ${{ secrets.SSH_HOST }}"
+        echo "SSH Port: ${{ secrets.SSH_PORT }}"
+        ssh-keyscan -H -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Test SSH connection
+      run: |
+        ssh -p ${{ secrets.SSH_PORT }} -o ConnectTimeout=10 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'echo "SSH connection successful"'
         
     - name: Deploy to server
       run: |
