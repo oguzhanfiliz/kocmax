@@ -61,7 +61,33 @@ class SkuGeneratorService
      */
     protected function skuExists(string $sku): bool
     {
-        return DB::table('products')->where('sku', $sku)->exists();
+        return DB::table('products')->where('sku', $sku)->exists() || DB::table('product_variants')->where('sku', $sku)->exists();
+    }
+
+    /**
+     * Generate a unique SKU for a product variant.
+     *
+     * @param string $baseSku
+     * @param array $combination
+     * @return string
+     */
+    public function generateVariantSku(string $baseSku, array $combination): string
+    {
+        $suffix = collect($combination)->map(function ($value) {
+            return Str::upper(Str::substr(preg_replace('/[^a-zA-Z0-9]/', '', $value), 0, 3));
+        })->implode('-');
+
+        $variantSku = "{$baseSku}-{$suffix}";
+
+        // Ensure uniqueness for variants
+        $originalSku = $variantSku;
+        $counter = 1;
+        while ($this->skuExists($variantSku)) {
+            $variantSku = "{$originalSku}-{$counter}";
+            $counter++;
+        }
+
+        return $variantSku;
     }
 }
 

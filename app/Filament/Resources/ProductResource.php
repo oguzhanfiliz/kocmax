@@ -4,26 +4,37 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Models\Category;
 use App\Models\Product;
+use App\Services\VariantGeneratorService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\TextInput;
-use App\Models\ProductAttribute;
-use App\Services\VariantGeneratorService;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Get;
 
+/**
+ * Ürünleri yönetmek için Filament kaynağı.
+ *
+ * Özellikler:
+ * - Kategoriye göre dinamik varyant oluşturma formu.
+ * - FAZ-1.2 servisleri ile entegrasyon (VariantGeneratorService).
+ * - Spatie/permission ile yetkilendirme.
+ * - Eager loading ile performans optimizasyonu.
+ */
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     
-    protected static ?string $navigationGroup = 'E-Ticaret';
+    protected static ?string $navigationGroup = 'Ürün Yönetimi';
     
     protected static ?int $navigationSort = 2;
     
@@ -44,11 +55,21 @@ class ProductResource extends Resource
         return __('Ürün');
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->can('view_products');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()->can('create_products');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Genel Bilgiler')
+                Section::make('Temel Bilgiler')
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label('Ürün Adı')
@@ -63,128 +84,84 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('sku')
-                            ->label('Stok Kodu (SKU)')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('barcode')
-                            ->label('Barkod')
-                            ->maxLength(255),
-                        Forms\Components\Select::make('categories')
+                        Forms\Components\Select::make('category_ids')
                             ->label('Kategoriler')
                             ->relationship('categories', 'name')
                             ->multiple()
+                            ->options(Category::getTreeForSelect())
                             ->searchable()
                             ->preload()
                             ->required(),
                         Forms\Components\RichEditor::make('description')
                             ->label('Açıklama')
-                            ->toolbarButtons([
-                                'bold',
-                                'italic',
-                                'underline',
-                                'strike',
-                                'link',
-                                'orderedList',
-                                'unorderedList',
-                                'h2',
-                                'h3',
-                                'blockquote',
-                                'table',
-                            ])
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
                 
-                Forms\Components\Section::make('Fiyatlandırma ve Stok')
+                Section::make('Fiyatlandırma ve Stok')
                     ->schema([
                         Forms\Components\TextInput::make('price')
                             ->label('Fiyat')
                             ->required()
                             ->numeric()
-                            ->prefix('₺')
-                            ->minValue(0),
-                        Forms\Components\TextInput::make('discounted_price')
-                            ->label('İndirimli Fiyat')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->minValue(0),
-                        Forms\Components\TextInput::make('cost')
-                            ->label('Maliyet')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->minValue(0),
+                            ->prefix('₺'),
                         Forms\Components\TextInput::make('stock')
                             ->label('Stok Miktarı')
                             ->numeric()
-                            ->minValue(0)
                             ->default(0)
                             ->required(),
-                        Forms\Components\TextInput::make('min_stock_level')
-                            ->label('Minimum Stok Seviyesi')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(5),
                     ])
                     ->columns(2),
                 
-                Forms\Components\Section::make('Ürün Özellikleri')
+                Section::make('Varyant Yönetimi')
                     ->schema([
-                        Forms\Components\TextInput::make('weight')
-                            ->label('Ağırlık (kg)')
-                            ->numeric()
-                            ->minValue(0),
-                        Forms\Components\Fieldset::make('Boyutlar')
-                            ->schema([
-                                Forms\Components\TextInput::make('dimensions.length')
-                                    ->label('Uzunluk (cm)')
-                                    ->numeric()
-                                    ->minValue(0),
-                                Forms\Components\TextInput::make('dimensions.width')
-                                    ->label('Genişlik (cm)')
-                                    ->numeric()
-                                    ->minValue(0),
-                                Forms\Components\TextInput::make('dimensions.height')
-                                    ->label('Yükseklik (cm)')
-                                    ->numeric()
-                                    ->minValue(0),
-                            ])
-                            ->columns(3),
-                    ]),
-                
-                Forms\Components\Section::make('Durum ve Özellikler')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Aktif')
-                            ->default(true),
-                        Forms\Components\Toggle::make('is_featured')
-                            ->label('Öne Çıkan'),
-                        Forms\Components\Toggle::make('is_new')
-                            ->label('Yeni Ürün'),
-                        Forms\Components\Toggle::make('is_bestseller')
-                            ->label('Çok Satan'),
-                        Forms\Components\TextInput::make('sort_order')
-                            ->label('Sıralama')
-                            ->numeric()
-                            ->default(0),
-                    ])
-                    ->columns(3),
-                
-                Forms\Components\Section::make('SEO Ayarları')
-                    ->schema([
-                        Forms\Components\TextInput::make('meta_title')
-                            ->label('Meta Başlık')
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('meta_description')
-                            ->label('Meta Açıklama')
-                            ->rows(2),
-                        Forms\Components\Textarea::make('meta_keywords')
-                            ->label('Meta Anahtar Kelimeler')
-                            ->rows(2),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
+                        Action::make('generateVariants')
+                            ->label('Varyant Oluştur')
+                            ->icon('heroicon-o-squares-plus')
+                            ->form(function (Get $get) {
+                                $categoryIds = $get('category_ids');
+                                if (empty($categoryIds)) {
+                                    return [
+                                        Forms\Components\Placeholder::make('no_attributes')
+                                            ->label('Önce Kategori Seçin')
+                                            ->content('Varyant oluşturmak için lütfen önce ürünün kategorilerini seçin.')
+                                    ];
+                                }
+                                $attributes = \App\Models\ProductAttribute::whereHas('categories', function ($query) use ($categoryIds) {
+                                    $query->whereIn('categories.id', $categoryIds);
+                                })->where('is_variant', true)->get();
+
+                                if($attributes->isEmpty()) {
+                                    return [
+                                        Forms\Components\Placeholder::make('no_variant_attributes')
+                                            ->label('Varyant Özelliği Yok')
+                                            ->content('Seçilen kategorilere atanmış bir varyant özelliği bulunamadı.')
+                                    ];
+                                }
+
+                                return $attributes->map(function ($attribute) {
+                                    return Forms\Components\TagsInput::make('attributes.' . $attribute->id)
+                                        ->label($attribute->name);
+                                })->all();
+                            })
+                            ->action(function (Product $record, array $data) {
+                                try {
+                                    $service = app(VariantGeneratorService::class);
+                                    $variants = $service->generateVariants($record, $data['attributes']);
+                                    Notification::make()
+                                        ->title($variants->count() . ' adet varyant başarıyla oluşturuldu.')
+                                        ->success()
+                                        ->send();
+                                } catch (\Exception $e) {
+                                    Notification::make()
+                                        ->title('Varyant oluşturma başarısız oldu!')
+                                        ->body($e->getMessage())
+                                        ->danger()
+                                        ->send();
+                                }
+                            })
+                            ->visible(fn ($record) => $record && $record->exists), // Sadece mevcut ürünlerde göster
+                    ])->collapsible(),
             ]);
     }
 
@@ -192,50 +169,12 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sku')
-                    ->label('SKU')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Ürün Adı')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('categories.name')
-                    ->label('Kategoriler')
-                    ->badge()
-                    ->separator(', ')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Fiyat')
-                    ->money('TRY')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('discounted_price')
-                    ->label('İndirimli Fiyat')
-                    ->money('TRY')
-                    ->sortable()
-                    ->placeholder('-'),
-                Tables\Columns\TextColumn::make('stock')
-                    ->label('Stok')
-                    ->sortable()
-                    ->color(fn ($state, $record) => 
-                        $state <= $record->min_stock_level ? 'danger' : 'success'
-                    ),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Durum')
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('is_featured')
-                    ->label('Öne Çıkan')
-                    ->boolean()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('views')
-                    ->label('Görüntülenme')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Oluşturulma')
-                    ->dateTime('d.m.Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('sku')->label('SKU')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('name')->label('Ürün Adı')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('categories.name')->label('Kategoriler')->badge(),
+                Tables\Columns\TextColumn::make('price')->label('Fiyat')->money('TRY')->sortable(),
+                Tables\Columns\TextColumn::make('stock')->label('Stok')->sortable(),
+                Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('categories')
@@ -243,56 +182,23 @@ class ProductResource extends Resource
                     ->relationship('categories', 'name')
                     ->multiple()
                     ->preload(),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Durum'),
-                Tables\Filters\TernaryFilter::make('is_featured')
-                    ->label('Öne Çıkan'),
-                Tables\Filters\Filter::make('low_stock')
-                    ->label('Düşük Stok')
-                    ->query(fn ($query) => $query->lowStock()),
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TernaryFilter::make('is_active')->label('Durum'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('generateVariants')
-                    ->label('Varyant Oluştur')
-                    ->form(function (Product $record) {
-                        $variantAttributes = ProductAttribute::where('is_variant', true)->get();
-                        $schema = [];
-
-                        foreach ($variantAttributes as $attribute) {
-                            $options = collect($attribute->options)->pluck('label', 'value')->toArray();
-                            $schema[] = Select::make('attributes.' . $attribute->id)
-                                ->label($attribute->name)
-                                ->options($options)
-                                ->multiple();
-                        }
-
-                        return $schema;
-                    })
-                    ->action(function (Product $record, array $data) {
-                        app(VariantGeneratorService::class)->generateVariants($record, $data['attributes']);
-                    }),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc');
+                Tables\Actions\DeleteBulkAction::make(),
+            ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            RelationManagers\ImagesRelationManager::class,
             RelationManagers\VariantsRelationManager::class,
-            RelationManagers\ReviewsRelationManager::class,
         ];
     }
 
@@ -305,16 +211,8 @@ class ProductResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
-            ]);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count();
+        return parent::getEloquentQuery()->with(['categories', 'variants']);
     }
 }

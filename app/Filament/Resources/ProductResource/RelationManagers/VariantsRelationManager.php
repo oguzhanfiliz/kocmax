@@ -12,7 +12,7 @@ class VariantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'variants';
 
-    protected static ?string $title = 'Varyantlar';
+    protected static ?string $recordTitleAttribute = 'name';
 
     public function form(Form $form): Form
     {
@@ -30,19 +30,12 @@ class VariantsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('price')
                     ->label('Fiyat')
                     ->numeric()
-                    ->prefix('₺')
-                    ->minValue(0),
+                    ->required()
+                    ->prefix('₺'),
                 Forms\Components\TextInput::make('stock')
                     ->label('Stok')
                     ->numeric()
-                    ->minValue(0)
-                    ->default(0)
                     ->required(),
-                Forms\Components\KeyValue::make('attributes')
-                    ->label('Özellikler')
-                    ->keyLabel('Özellik')
-                    ->valueLabel('Değer')
-                    ->addButtonLabel('Özellik Ekle'),
                 Forms\Components\Toggle::make('is_active')
                     ->label('Aktif')
                     ->default(true),
@@ -52,36 +45,15 @@ class VariantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Varyant Adı')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('sku')
-                    ->label('SKU')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Fiyat')
-                    ->money('TRY')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('stock')
-                    ->label('Stok')
-                    ->sortable()
-                    ->color(fn ($state) => $state <= 0 ? 'danger' : 'success'),
-                Tables\Columns\TextColumn::make('attributes')
-                    ->label('Özellikler')
-                    ->formatStateUsing(fn ($state) => 
-                        collect($state)->map(fn ($value, $key) => 
-                            ucfirst($key) . ': ' . $value
-                        )->implode(', ')
-                    ),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Durum')
-                    ->boolean(),
+                Tables\Columns\TextColumn::make('name')->label('Varyant Adı'),
+                Tables\Columns\TextColumn::make('sku')->label('SKU'),
+                Tables\Columns\TextColumn::make('price')->label('Fiyat')->money('TRY'),
+                Tables\Columns\TextColumn::make('stock')->label('Stok'),
+                Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Durum'),
+                //
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make(),
@@ -91,9 +63,7 @@ class VariantsRelationManager extends RelationManager
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 }
