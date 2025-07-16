@@ -37,22 +37,28 @@ class DealerApplicationResource extends Resource
             ->schema([
                 Forms\Components\Select::make('user_id')
                     ->relationship('user', 'name')
+                    ->label('Kullanıcı')
                     ->required(),
                 Forms\Components\TextInput::make('company_name')
+                    ->label('Firma Adı')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('tax_number')
+                    ->label('Vergi Numarası')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\FileUpload::make('trade_registry_document_path')
+                    ->label('Ticaret Sicil Gazetesi')
                     ->required(),
                 Forms\Components\FileUpload::make('tax_plate_document_path')
+                    ->label('Vergi Levhası')
                     ->required(),
                 Forms\Components\Select::make('status')
+                    ->label('Durum')
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
+                        'pending' => 'Beklemede',
+                        'approved' => 'Onaylandı',
+                        'rejected' => 'Reddedildi',
                     ])
                     ->required(),
             ]);
@@ -62,18 +68,18 @@ class DealerApplicationResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->searchable(),
-                Tables\Columns\TextColumn::make('company_name')->searchable(),
-                Tables\Columns\TextColumn::make('tax_number')->searchable(),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime(),
+                Tables\Columns\TextColumn::make('user.name')->label('Kullanıcı')->searchable(),
+                Tables\Columns\TextColumn::make('company_name')->label('Firma Adı')->searchable(),
+                Tables\Columns\TextColumn::make('tax_number')->label('Vergi Numarası')->searchable(),
+                Tables\Columns\TextColumn::make('status')->label('Durum'),
+                Tables\Columns\TextColumn::make('created_at')->label('Başvuru Tarihi')->dateTime(),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\Action::make('approve')
-                    ->label('Approve')
+                    ->label('Onayla')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->action(function (DealerApplication $record) {
@@ -81,7 +87,7 @@ class DealerApplicationResource extends Resource
                         $record->user->update(['is_approved_dealer' => true]);
                     }),
                 Tables\Actions\Action::make('reject')
-                    ->label('Reject')
+                    ->label('Reddet')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->action(function (DealerApplication $record) {
