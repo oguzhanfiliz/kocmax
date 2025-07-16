@@ -6,26 +6,28 @@ use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Product>
+ */
 class ProductFactory extends Factory
 {
-    protected $model = Product::class;
-
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
-        $name = $this->faker->randomElement([
-            'Reflektörlü İkaz Yeleği', 'Çelik Burunlu İş Ayakkabısı', 'Darbe Emici Baret',
-            'Kaynakçı Eldiveni', 'Tam Yüz Gaz Maskesi', 'Paraşüt Tipi Emniyet Kemeri',
-            'İş Güvenliği Gözlüğü', 'Kaymaz Tabanlı Çizme', 'Kışlık İş Parkası'
-        ]) . ' ' . $this->faker->unique()->word;
-
+        $name = "Test Ürün " . $this->faker->randomNumber(3);
+        
         return [
             'name' => $name,
-            // Slug model event'inde oluşturulacak
-            'description' => $this->faker->paragraph(3),
-            'price' => $this->faker->randomFloat(2, 150, 2500),
-            'stock' => $this->faker->numberBetween(10, 200),
+            'slug' => Str::slug($name),
+            'description' => 'Test açıklama',
+            'price' => 100.00,
+            'stock' => 50,
             'is_active' => true,
-            'is_featured' => $this->faker->boolean(25),
+            'is_featured' => false,
         ];
     }
 

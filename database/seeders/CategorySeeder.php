@@ -4,27 +4,45 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
     public function run(): void
     {
         // Ana Kategoriler
-        $clothing = Category::factory()->create(['name' => 'İş Kıyafetleri']);
-        $shoes = Category::factory()->create(['name' => 'İş Ayakkabıları']);
-        $gloves = Category::factory()->create(['name' => 'İş Eldivenleri']);
-        $head = Category::factory()->create(['name' => 'Kafa Koruyucular']);
+        $categories = [
+            'İş Kıyafetleri',
+            'İş Ayakkabıları',
+            'İş Eldivenleri',
+            'Kafa Koruyucular',
+        ];
+
+        foreach ($categories as $categoryName) {
+            Category::firstOrCreate(
+                ['slug' => Str::slug($categoryName)],
+                ['name' => $categoryName]
+            );
+        }
 
         // Alt Kategoriler
-        Category::factory()->create(['name' => 'Reflektörlü Yelekler', 'parent_id' => $clothing->id]);
-        Category::factory()->create(['name' => 'İş Pantolonları', 'parent_id' => $clothing->id]);
+        $subCategories = [
+            'İş Kıyafetleri' => ['Reflektörlü Yelekler', 'İş Pantolonları'],
+            'İş Ayakkabıları' => ['S1P Ayakkabılar', 'S3 Çizmeler'],
+            'İş Eldivenleri' => ['Mekanik Koruma Eldivenleri', 'Kimyasal Koruma Eldivenleri'],
+            'Kafa Koruyucular' => ['Baretler'],
+        ];
 
-        Category::factory()->create(['name' => 'S1P Ayakkabılar', 'parent_id' => $shoes->id]);
-        Category::factory()->create(['name' => 'S3 Çizmeler', 'parent_id' => $shoes->id]);
-
-        Category::factory()->create(['name' => 'Mekanik Koruma Eldivenleri', 'parent_id' => $gloves->id]);
-        Category::factory()->create(['name' => 'Kimyasal Koruma Eldivenleri', 'parent_id' => $gloves->id]);
-
-        Category::factory()->create(['name' => 'Baretler', 'parent_id' => $head->id]);
+        foreach ($subCategories as $parentName => $children) {
+            $parentCategory = Category::where('name', $parentName)->first();
+            if ($parentCategory) {
+                foreach ($children as $childName) {
+                    Category::firstOrCreate(
+                        ['slug' => Str::slug($childName), 'parent_id' => $parentCategory->id],
+                        ['name' => $childName]
+                    );
+                }
+            }
+        }
     }
 }

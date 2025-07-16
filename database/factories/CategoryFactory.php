@@ -8,21 +8,34 @@ use Illuminate\Support\Str;
 
 class CategoryFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = Category::class;
 
-    public function definition(): array
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
     {
-        $name = $this->faker->randomElement([
-            'İş Kıyafetleri', 'İş Ayakkabıları', 'İş Eldivenleri', 'Kafa Koruyucular',
-            'Göz Koruyucular', 'Solunum Koruyucular', 'Yüksekte Çalışma Ekipmanları',
-            'İlk Yardım ve Sağlık', 'Trafik ve Yol Güvenliği', 'Gaz Dedektörleri'
-        ]) . ' ' . $this->faker->unique()->word;
+        // Önce bir isim oluşturulur.
+        $name = $this->faker->unique()->words(3, true);
 
         return [
+            // Modelin diğer alanları için sahte veri tanımlamaları.
             'name' => $name,
-            'slug' => Str::slug($name),
+            'slug' => function (array $attributes) {
+                // 'slug' her zaman 'name' attribute'undan oluşturulur.
+                // Bu, factory create içinde name override edilse bile doğru slug'ı garantiler.
+                return Str::slug($attributes['name']);
+            },
             'description' => $this->faker->paragraph,
-            'is_active' => true,
+            'parent_id' => null, // Varsayılan olarak ana kategori
+            'is_active' => $this->faker->boolean(90), // %90 ihtimalle aktif
         ];
     }
 }
