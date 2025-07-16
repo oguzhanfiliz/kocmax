@@ -36,29 +36,28 @@
             Aşağıda TCMB'nin <code>today.xml</code> servisinden alınan para birimleri listelenmiştir. Bu bilgileri referans olarak kullanabilirsiniz.
         </p>
         
-        <x-filament::accordion>
-            <x-filament::accordion.item>
-                <x-slot name="trigger">
-                    <div class="flex items-center gap-x-2">
-                        <x-heroicon-s-table class="h-5 w-5" />
-                        <span class="font-medium">Para Birimleri Tablosunu Göster</span>
-                    </div>
-                </x-slot>
-                
-                <div class="overflow-x-auto mt-2">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Para Birimi Adı</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İngilizce Adı</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sembol</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr>
-                                <td class="px-3 py-2 whitespace-nowrap">TRY</td>
+        <x-filament::section :collapsible="true" :collapsed="true">
+            <x-slot name="heading">
+                <div class="flex items-center gap-x-2">
+                    <x-heroicon-o-table-cells class="h-5 w-5" />
+                    <span class="font-medium">Para Birimleri Tablosunu Göster</span>
+                </div>
+            </x-slot>
+            
+            <div class="overflow-x-auto mt-2">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kod</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Para Birimi Adı</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İngilizce Adı</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sembol</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap">TRY</td>
                                 <td class="px-3 py-2 whitespace-nowrap">TÜRK LİRASI</td>
                                 <td class="px-3 py-2 whitespace-nowrap">TURKISH LIRA</td>
                                 <td class="px-3 py-2 whitespace-nowrap">1</td>
@@ -221,8 +220,7 @@
                         </tbody>
                     </table>
                 </div>
-            </x-filament::accordion.item>
-        </x-filament::accordion>
+            </x-filament::section>
         
         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
             <strong>Not:</strong> Bu tablo TCMB'nin <code>today.xml</code> servisinden alınan güncel para birimlerini içermektedir. Sistem, kurları TCMB kaynaklarından otomatik olarak güncelleyebilir.

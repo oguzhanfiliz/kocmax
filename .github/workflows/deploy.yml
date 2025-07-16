@@ -34,8 +34,7 @@ jobs:
           # Git pull
           git pull origin main
           
-          # Composer dependencies güncelle
-          composer install --no-interaction
+     
           
           # .env dosyasını kopyala
           cp .env.production .env
@@ -45,9 +44,12 @@ jobs:
           sed -i 's/^DB_DATABASE=.*/DB_DATABASE=mutfakyapimnet_b2bb2c/' .env
           sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mutfakyapimnet_b2bb2c/' .env
           sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=MUep6BUvBajj/' .env
+          sed -i 's/^EXCHANGE_RATE_PROVIDER=.*/EXCHANGE_RATE_PROVIDER=tcmb/' .env
           # Debug true kalacak, değiştirme
+          # Composer dependencies güncelle
+          composer install --no-interaction
           # Key generate
-          php artisan key:generate --force
+          php artisan key:generate --force --no-interaction
 
           # Laravel cache temizle ve yeniden oluştur
           php artisan config:clear

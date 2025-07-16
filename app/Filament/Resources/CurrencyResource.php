@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Config;
 
 class CurrencyResource extends Resource
 {
@@ -92,72 +93,11 @@ class CurrencyResource extends Resource
             ->headerActions([
                 Tables\Actions\Action::make('currency_logic')
                     ->label('Döviz Kuru Mantığı')
-                    ->icon('heroicon-o-cog-6-tooth')
+                    ->icon('heroicon-o-information-circle')
                     ->color('warning')
-                    ->action(function () {
-                        $service = app(ExchangeRateService::class);
-                        $currentProvider = $service->getCurrentProvider();
-                        $providerName = $service->getProviderDisplayName();
-                        
-                        Notification::make()
-                            ->title('Döviz Kuru Mantığı')
-                            ->body("Aktif Sağlayıcı: {$providerName}")
-                            ->info()
-                            ->send();
-                    }),
-                    
-                Tables\Actions\Action::make('toggle_tcmb')
-                    ->label(function () {
-                        $currentProvider = config('services.exchange_rate.provider', 'manual');
-                        return $currentProvider === 'tcmb' ? 'TCMB Kapalı' : 'TCMB Açık';
-                    })
-                    ->icon(function () {
-                        $currentProvider = config('services.exchange_rate.provider', 'manual');
-                        return $currentProvider === 'tcmb' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle';
-                    })
-                    ->color(function () {
-                        $currentProvider = config('services.exchange_rate.provider', 'manual');
-                        return $currentProvider === 'tcmb' ? 'danger' : 'success';
-                    })
-                    ->action(function () {
-                        $currentProvider = config('services.exchange_rate.provider', 'manual');
-                        $newProvider = $currentProvider === 'tcmb' ? 'manual' : 'tcmb';
-                        
-                        // Config dosyasını güncelle
-                        $configPath = config_path('services.php');
-                        $configContent = file_get_contents($configPath);
-                        
-                        // Provider'ı değiştir
-                        $pattern = "/'provider' => '[^']*'/";
-                        $replacement = "'provider' => '{$newProvider}'";
-                        $configContent = preg_replace($pattern, $replacement, $configContent);
-                        
-                        file_put_contents($configPath, $configContent);
-                        
-                        // Cache'i temizle
-                        \Illuminate\Support\Facades\Artisan::call('config:clear');
-                        
-                        $service = app(ExchangeRateService::class);
-                        $providerName = $service->getProviderDisplayName();
-                        
-                        Notification::make()
-                            ->title('Döviz Kuru Sağlayıcısı Değiştirildi')
-                            ->body("Aktif Sağlayıcı: {$providerName}")
-                            ->success()
-                            ->send();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Döviz Kuru Sağlayıcısını Değiştir')
-                    ->modalDescription(function () {
-                        $service = app(ExchangeRateService::class);
-                        $currentProvider = $service->getCurrentProvider();
-                        $providers = $service->getSupportedProviders();
-                        $newProvider = $currentProvider === 'tcmb' ? 'manual' : 'tcmb';
-                        $newProviderName = $providers[$newProvider] ?? 'Bilinmiyor';
-                        
-                        return "Döviz kuru sağlayıcısını '{$newProviderName}' olarak değiştirmek istiyor musunuz?";
-                    })
-                    ->modalSubmitActionLabel('Değiştir'),
+                    ->modalContent(view('filament.resources.currency-resource.widgets.currency-info-widget'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Kapat'),
                     
                 Tables\Actions\Action::make('update_rates')
                     ->label('Döviz Kurlarını Güncelle')
@@ -175,6 +115,9 @@ class CurrencyResource extends Resource
                                 ->body($result['message'] . " (Kaynak: {$providerName})")
                                 ->success()
                                 ->send();
+                                
+                            // Sayfayı yenile
+                            return redirect(request()->header('Referer'));
                         } else {
                             Notification::make()
                                 ->title('Hata')
@@ -207,6 +150,6 @@ class CurrencyResource extends Resource
             'index' => Pages\ListCurrencies::route('/'),
             'create' => Pages\CreateCurrency::route('/create'),
             'edit' => Pages\EditCurrency::route('/{record}/edit'),
-        ];
+        ]; 
     }
 }
