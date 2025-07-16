@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeederForAdminRole::class,
             PermissionSeeder::class,
             UserSeeder::class,
+            CurrencySeeder::class,
         ]);
     }
 }
