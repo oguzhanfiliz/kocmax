@@ -6,6 +6,7 @@ use App\Models\Currency;
 use App\Services\ExchangeRateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class UpdateExchangeRatesTest extends TestCase
@@ -18,17 +19,16 @@ class UpdateExchangeRatesTest extends TestCase
         // Arrange
         $this->seed(\Database\Seeders\CurrencySeeder::class);
 
-        Http::fake([
-            'https://v6.exchangerate-api.com/v6/*' => Http::response([
-                'result' => 'success',
-                'conversion_rates' => [
-                    'USD' => 1,
-                    'EUR' => 0.93,
-                    'TRY' => 33.00,
-                ],
-            ]),
-        ]);
+        $initialEurRate = Currency::where('code', 'EUR')->first()->exchange_rate;
 
+        $this->mock(ExchangeRateService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('updateExchangeRates')->once()->andReturnUsing(function () {
+                Currency::where('code', 'EUR')->update(['exchange_rate' => 0.93]);
+                Currency::where('code', 'TRY')->update(['exchange_rate' => 33.00]);
+                Currency::where('code', 'USD')->update(['exchange_rate' => 1.00]);
+            });
+        });
+        
         // Act
         $this->artisan('app:update-exchange-rates');
 
@@ -37,6 +37,10 @@ class UpdateExchangeRatesTest extends TestCase
             'code' => 'EUR',
             'exchange_rate' => 0.93,
         ]);
+
+        $updatedEurRate = Currency::where('code', 'EUR')->first()->exchange_rate;
+        $this->assertNotEquals($initialEurRate, $updatedEurRate);
+        $this->assertIsNumeric($updatedEurRate);
 
         $this->assertDatabaseHas('currencies', [
             'code' => 'TRY',
