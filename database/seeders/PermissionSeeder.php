@@ -23,6 +23,24 @@ class PermissionSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'edit users', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'delete users', 'guard_name' => 'web']);
 
+        // Create permissions for ProductAttribute
+        Permission::firstOrCreate(['name' => 'view_product_attribute', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'create_product_attribute', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'edit_product_attribute', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'delete_product_attribute', 'guard_name' => 'web']);
+
+        // Create permissions for AttributeType
+        Permission::firstOrCreate(['name' => 'view_attribute_type', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'create_attribute_type', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'edit_attribute_type', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'delete_attribute_type', 'guard_name' => 'web']);
+
+        // Create permissions for SkuConfiguration
+        Permission::firstOrCreate(['name' => 'view_sku_configuration', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'create_sku_configuration', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'edit_sku_configuration', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'delete_sku_configuration', 'guard_name' => 'web']);
+
 
         // RoleResource için gerekli olabilecek izinler (RolePolicy.php dosyasında kullanıldığı gibi)
         // Bu izinlerin Filament resource'larınızda gerçekten kullanıldığından emin olun.

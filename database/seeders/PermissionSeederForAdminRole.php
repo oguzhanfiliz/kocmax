@@ -19,6 +19,9 @@ class PermissionSeederForAdminRole extends Seeder
         $models = [
             'user',
             'shield::role',
+            'product_attribute',
+            'attribute_type',
+            'sku_configuration',
         ];
 
         $actions = [

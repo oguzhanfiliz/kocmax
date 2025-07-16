@@ -11,6 +11,13 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
+use App\Models\ProductAttribute;
+use App\Services\VariantGeneratorService;
+use Filament\Actions\Action;
+use App\Models\Product;
 
 class ProductResource extends Resource
 {
@@ -249,6 +256,25 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Action::make('generateVariants')
+                    ->label('Varyant Oluştur')
+                    ->form(function (Product $record) {
+                        $variantAttributes = ProductAttribute::where('is_variant', true)->get();
+                        $schema = [];
+
+                        foreach ($variantAttributes as $attribute) {
+                            $options = collect($attribute->options)->pluck('label', 'value')->toArray();
+                            $schema[] = Select::make('attributes.' . $attribute->id)
+                                ->label($attribute->name)
+                                ->options($options)
+                                ->multiple();
+                        }
+
+                        return $schema;
+                    })
+                    ->action(function (Product $record, array $data) {
+                        app(VariantGeneratorService::class)->generateVariants($record, $data['attributes']);
+                    }),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),
