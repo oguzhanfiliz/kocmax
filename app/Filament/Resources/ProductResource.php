@@ -16,7 +16,6 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use App\Models\ProductAttribute;
 use App\Services\VariantGeneratorService;
-use Filament\Actions\Action;
 
 class ProductResource extends Resource
 {
@@ -255,7 +254,7 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Action::make('generateVariants')
+                Tables\Actions\Action::make('generateVariants')
                     ->label('Varyant Oluştur')
                     ->form(function (Product $record) {
                         $variantAttributes = ProductAttribute::where('is_variant', true)->get();
