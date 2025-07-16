@@ -31,33 +31,37 @@ jobs:
       run: |
         ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd /home/mutfakyapimnet/public_html/b2bb2c.mutfakyapim.net
-          
-          # PHP yolunu belirle (cPanel için)
-          export PHP_PATH=$(which php)
-          echo "PHP Path: $PHP_PATH"
-          
-          # Maintenance mode aktif et
-          $PHP_PATH artisan down
-          
           # Git pull
           git pull origin main
           
           # Composer dependencies güncelle
-          /usr/local/bin/composer install --no-dev --optimize-autoloader
+          composer install --no-interaction
           
+          # .env dosyasını kopyala
+          cp .env.production .env
+          
+          # .env dosyasını düzenle
+          sed -i 's/^APP_URL=.*/APP_URL=https:\/\/b2bb2c.mutfakyapim.net/' .env
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=mutfakyapimnet_b2bb2c/' .env
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mutfakyapimnet_b2bb2c/' .env
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=MUep6BUvBajj/' .env
+          # Debug true kalacak, değiştirme
+          # Key generate
+          php artisan key:generate --force
+
           # Laravel cache temizle ve yeniden oluştur
-          $PHP_PATH artisan config:clear
-          $PHP_PATH artisan config:cache
-          $PHP_PATH artisan route:clear
-          $PHP_PATH artisan route:cache
-          $PHP_PATH artisan view:clear
-          $PHP_PATH artisan view:cache
+          php artisan config:clear
+          php artisan config:cache
+          php artisan route:clear
+          php artisan route:cache
+          php artisan view:clear
+          php artisan view:cache
           
           # Database migrations çalıştır (eğer varsa)
-          $PHP_PATH artisan migrate --force
+          php artisan migrate --force
           
           # Storage link oluştur (eğer yoksa)
-          $PHP_PATH artisan storage:link
+          php artisan storage:link
           
           # Dosya izinlerini düzenle
           find . -type f -exec chmod 644 {} \;
