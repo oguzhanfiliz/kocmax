@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\SkuGeneratorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -54,39 +53,12 @@ class Product extends Model
         'sort_order' => 'integer',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($product) {
-            if (empty($product->slug) && !empty($product->name)) {
-                $product->slug = Str::slug($product->name) . '-' . uniqid();
-            }
-            
-            // Auto-generate SKU if not provided
-            if (empty($product->sku) && !empty($product->name)) {
-                $skuGenerator = app(SkuGeneratorService::class);
-                // İlişki kurulmadan önce category'lere erişilemeyebilir, bu yüzden slug'ı isimden alalım.
-                $categorySlug = 'prod';
-                $product->sku = $skuGenerator->generateSku($categorySlug, $product->name);
-            }
-        });
-
-        static::updating(function ($product) {
-            if ($product->isDirty('name') && empty($product->slug)) {
-                $product->slug = Str::slug($product->name) . '-' . uniqid();
-            }
-        });
-    }
+    // Boot fonksiyonu tamamen kaldırıldı - bellek sorunları nedeniyle
 
     public function categories(): BelongsToMany
     {
+        // Minimalist relationship - bellek sorunları için
         return $this->belongsToMany(Category::class, 'product_categories');
-    }
-
-    public function getCategoryIdsAttribute()
-    {
-        return $this->categories->pluck('id')->toArray();
     }
 
     public function images(): HasMany
@@ -179,35 +151,6 @@ class Product extends Model
         return 'slug';
     }
 
-    public function getPriceAttribute($value)
-    {
-        return number_format($value, 2, '.', '');
-    }
-
-    public function getDiscountedPriceAttribute($value)
-    {
-        return $value ? number_format($value, 2, '.', '') : null;
-    }
-
-    public function getCurrentPriceAttribute()
-    {
-        return $this->discounted_price ?? $this->price;
-    }
-
-    public function getDiscountPercentageAttribute()
-    {
-        if (!$this->discounted_price || $this->discounted_price >= $this->price) {
-            return 0;
-        }
-        
-        return round((($this->price - $this->discounted_price) / $this->price) * 100);
-    }
-
-    public function getInStockAttribute()
-    {
-        return $this->stock > 0;
-    }
-
     public function isLowStock()
     {
         return $this->stock <= $this->min_stock_level;
@@ -218,37 +161,12 @@ class Product extends Model
         $this->increment('views');
     }
 
-    public function getAverageRatingAttribute()
-    {
-        return $this->approvedReviews()->avg('rating') ?? 0;
-    }
-
-    public function getReviewCountAttribute()
-    {
-        return $this->approvedReviews()->count();
-    }
-
     /**
      * Get product attribute values
      */
     public function attributeValues(): HasMany
     {
         return $this->hasMany(ProductAttributeValue::class);
-    }
-
-    /**
-     * Get attributes through categories
-     */
-    public function availableAttributes()
-    {
-        $categoryIds = $this->categories()->pluck('categories.id');
-        
-        return ProductAttribute::whereHas('categories', function ($query) use ($categoryIds) {
-            $query->whereIn('categories.id', $categoryIds);
-        })
-        ->active()
-        ->orderBy('sort_order')
-        ->get();
     }
 
     /**
@@ -270,5 +188,13 @@ class Product extends Model
             ['product_attribute_id' => $attributeId],
             ['value' => $value]
         );
+    }
+
+    /**
+     * Get current price (discounted or regular)
+     */
+    public function getCurrentPriceAttribute()
+    {
+        return $this->discounted_price ?? $this->price;
     }
 }

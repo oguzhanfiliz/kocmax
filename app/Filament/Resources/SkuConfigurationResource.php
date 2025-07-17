@@ -18,6 +18,21 @@ class SkuConfigurationResource extends Resource
 
     protected static ?string $navigationGroup = 'Ürün Yönetimi';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('Stok Kodu Yapılandırması');
+    }
+
+    public static function getPluralLabel(): string
+    {
+        return __('Stok Kodu Yapılandırmaları');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Stok Kodu Yapılandırması');
+    }
+
     public static function form(Form $form): Form
     {
         return $form

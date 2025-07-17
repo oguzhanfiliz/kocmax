@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             AttributeTypeSeeder::class,
             SkuConfigurationSeeder::class,
             CategorySeeder::class,
-            ProductSeeder::class,
+            // ProductSeeder::class, // Geçici olarak devre dışı
         ]);
     }
 }

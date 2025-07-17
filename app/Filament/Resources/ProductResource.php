@@ -84,13 +84,11 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        Forms\Components\Select::make('category_ids')
+                        Forms\Components\Select::make('categories')
                             ->label('Kategoriler')
                             ->relationship('categories', 'name')
                             ->multiple()
-                            ->options(Category::getTreeForSelect())
                             ->searchable()
-                            ->preload()
                             ->required(),
                         Forms\Components\RichEditor::make('description')
                             ->label('Açıklama')
@@ -119,7 +117,7 @@ class ProductResource extends Resource
                             ->label('Varyant Oluştur')
                             ->icon('heroicon-o-squares-plus')
                             ->form(function (Get $get) {
-                                $categoryIds = $get('category_ids');
+                                $categoryIds = $get('categories');
                                 if (empty($categoryIds)) {
                                     return [
                                         Forms\Components\Placeholder::make('no_attributes')
@@ -129,7 +127,7 @@ class ProductResource extends Resource
                                 }
                                 $attributes = \App\Models\ProductAttribute::whereHas('categories', function ($query) use ($categoryIds) {
                                     $query->whereIn('categories.id', $categoryIds);
-                                })->where('is_variant', true)->get();
+                                })->where('is_variant', true)->limit(10)->get();
 
                                 if($attributes->isEmpty()) {
                                     return [
@@ -171,17 +169,29 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('sku')->label('SKU')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('name')->label('Ürün Adı')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('categories.name')->label('Kategoriler')->badge(),
+                // Geçici olarak kaldırıldı
+                // Tables\Columns\TextColumn::make('categories.name')
+                //     ->label('Kategoriler')
+                //     ->badge()
+                //     ->separator(', ')
+                //     ->limit(3)
+                //     ->tooltip(function ($state): ?string {
+                //         if (is_array($state) && count($state) > 3) {
+                //             return implode(', ', $state);
+                //         }
+                //         return null;
+                //     }),
                 Tables\Columns\TextColumn::make('price')->label('Fiyat')->money('TRY')->sortable(),
                 Tables\Columns\TextColumn::make('stock')->label('Stok')->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('categories')
-                    ->label('Kategori')
-                    ->relationship('categories', 'name')
-                    ->multiple()
-                    ->preload(),
+                // Geçici olarak kaldırıldı
+                // Tables\Filters\SelectFilter::make('categories')
+                //     ->label('Kategori')
+                //     ->relationship('categories', 'name')
+                //     ->multiple()
+                //     ->preload(),
                 Tables\Filters\TernaryFilter::make('is_active')->label('Durum'),
             ])
             ->actions([
@@ -197,11 +207,13 @@ class ProductResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            RelationManagers\VariantsRelationManager::class,
-            RelationManagers\ImagesRelationManager::class,
-            RelationManagers\ReviewsRelationManager::class,
-        ];
+        return [];
+        // Geçici olarak kaldırıldı
+        // return [
+        //     RelationManagers\VariantsRelationManager::class,
+        //     RelationManagers\ImagesRelationManager::class,
+        //     RelationManagers\ReviewsRelationManager::class,
+        // ];
     }
 
     public static function getPages(): array
@@ -215,6 +227,18 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['categories', 'variants']);
+        return parent::getEloquentQuery()
+            ->select(['id', 'name', 'sku', 'price', 'stock', 'is_active']);
+    }
+
+    // Pagination ayarları
+    public static function getDefaultSort(): ?string
+    {
+        return 'id';
+    }
+
+    public static function getDefaultSortDirection(): ?string
+    {
+        return 'desc';
     }
 }

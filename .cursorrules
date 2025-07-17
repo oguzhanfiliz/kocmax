@@ -1,0 +1,232 @@
+# B2B-B2C E-Commerce Platform - Cursor Rules
+
+## Project Overview
+- **Name**: İş Sağlığı Güvenliği Kıyafetleri E-Ticaret Platformu
+- **Type**: B2B (Dealers) + B2C (Customers) Hybrid Platform
+- **Stack**: Laravel 11 + Filament 3 + React + TypeScript + shadcn/ui
+- **Database**: MySQL 8.0 (Docker)
+- **PHP Version**: 8.2+
+
+## Code Standards & Conventions
+
+### PHP/Laravel Standards
+- Follow PSR-12 coding standards
+- Use strict typing: `declare(strict_types=1);`
+- Use typed properties and return types
+- Follow Laravel naming conventions:
+  - Models: PascalCase singular (Product, Category)
+  - Controllers: PascalCase with Controller suffix
+  - Migrations: snake_case descriptive names
+  - Routes: kebab-case
+  - Variables: camelCase
+  - Constants: UPPER_SNAKE_CASE
+
+### Database Conventions
+- Table names: snake_case plural (products, categories, product_variants)
+- Foreign keys: {table}_id (product_id, category_id)
+- Pivot tables: alphabetical order (category_product)
+- Use unsigned integers for IDs
+- Add proper indexes for foreign keys and frequently queried columns
+- Use soft deletes for important entities
+
+### Filament Admin Panel
+- Use Resource classes for CRUD operations
+- Implement proper policies for authorization
+- Use form components consistently
+- Follow Filament naming conventions
+- Implement proper validation rules
+- Use relation managers for related data
+
+### Security Best Practices
+- Never expose sensitive data in API responses
+- Use Laravel's built-in security features
+- Implement proper authorization policies
+- Validate all user inputs
+- Use CSRF protection
+- Sanitize data with HTMLPurifier for rich text
+
+### Code Organization
+- Keep controllers thin, use services for business logic
+- Use repositories for complex database queries
+- Implement proper error handling
+- Use events and observers for decoupled actions
+- Create helpers for reusable functionality
+
+## Project-Specific Rules
+
+### Currency & Pricing
+- Always use `decimal(10,2)` for monetary values
+- Support multi-currency (TRY, USD, EUR)
+- Implement exchange rate updates via TCMB API
+- Use CurrencyResource for exchange rate management
+
+### Product Management
+- Products must have variants with attributes
+- Use SkuGeneratorService for SKU generation
+- Implement proper image handling with ProductImage model
+- Support complex attribute combinations (size, color, standard)
+
+### User Management
+- Support both B2B (dealers) and B2C (customers)
+- Implement dealer application workflow
+- Use Spatie Laravel Permission for role management
+- Different pricing tiers for dealers
+
+### File Structure
+```
+app/
+├── Console/Commands/     # Artisan commands
+├── Filament/            # Admin panel resources
+├── Http/                # Controllers, middleware
+├── Models/              # Eloquent models
+├── Services/            # Business logic
+├── Policies/            # Authorization policies
+├── Helpers/             # Utility classes
+└── Observers/           # Model observers
+```
+
+## Testing Guidelines
+- Write feature tests for important business logic
+- Use factories for test data
+- Test exchange rate updates
+- Test dealer application workflow
+- Mock external API calls
+
+## Performance Considerations
+- Use eager loading to prevent N+1 queries
+- Implement proper caching for exchange rates
+- Use database indexes appropriately
+- Optimize Filament table queries
+
+## Development Workflow
+- Use Laravel Pint for code formatting
+- Run `php artisan test` before commits
+- Use meaningful commit messages
+- Follow GitFlow branching strategy
+
+## Environment Setup
+- PHP 8.2+ required
+- MySQL 8.0 via Docker
+- Use .env.example as template
+- Run migrations and seeders for development data
+
+## Dependencies Management
+- Laravel 11 framework
+- Filament 3 for admin panel
+- Spatie Laravel Permission for roles
+- HTMLPurifier for content sanitization
+- Laravel Debugbar for development
+
+## Common Patterns
+- Use enum classes for status constants
+- Implement proper model relationships
+- Use mutators/accessors for data transformation
+- Follow repository pattern for complex queries
+- Use service classes for business logic
+
+## Error Handling
+- Use Laravel's exception handling
+- Log important business events
+- Provide meaningful error messages
+- Handle API failures gracefully
+
+## API Guidelines
+- Use resource classes for API responses
+- Implement proper pagination
+- Use consistent response format
+- Include proper HTTP status codes
+- Document API endpoints
+
+## Deployment Notes
+- Use Laravel Queue for background jobs
+- Configure proper logging
+- Set up exchange rate cron jobs
+- Optimize for production environment
+
+## Code Review Checklist
+- [ ] Follows PSR-12 standards
+- [ ] Proper type hints and return types
+- [ ] Security considerations addressed
+- [ ] Performance optimizations applied
+- [ ] Tests included for new features
+- [ ] Documentation updated
+- [ ] Error handling implemented
+
+## AUTOMATIC CONTEXT LOADING
+
+### ALWAYS READ THESE FILES FIRST
+Before responding to ANY request, you MUST read and understand:
+1. `memory.md` - Current project state and overview
+2. `memorybank/development-rules.md` - Mandatory coding standards
+3. `memorybank/common-patterns.md` - Required implementation patterns
+
+### CONTEXT RULES FOR EVERY REQUEST
+- NEVER start coding without reading the above files
+- ALWAYS follow patterns from `memorybank/common-patterns.md`
+- ALWAYS apply standards from `memorybank/development-rules.md`
+- Reference `memorybank/troubleshooting.md` for known issues
+- Check `memorybank/database-schema.md` for data structure questions
+
+### MANDATORY PROJECT KNOWLEDGE
+You are working on a B2B-B2C e-commerce platform with:
+- Laravel 11 + PHP 8.2 + Filament 3
+- MySQL 8.0 (Docker), multi-currency support
+- Complex product variants, dealer management
+- Strict PSR-12 standards, service layer architecture
+- Role-based authorization with Spatie Laravel Permission
+
+### Essential Files for New Development
+For specific development areas, also read:
+- **Product Features**: Models/Product.php, ProductResource.php, related services
+- **User/Dealer Features**: Models/User.php, DealerApplication.php, Policies
+- **Pricing Features**: Currency model, pricing services, discount models
+- **Admin Panel**: Relevant Filament resources and policies
+
+## RESPONSE FORMAT REQUIREMENTS
+
+### EVERY RESPONSE MUST:
+1. Start by confirming you've read the required memory files
+2. Reference applicable patterns from `memorybank/common-patterns.md`
+3. Follow coding standards from `memorybank/development-rules.md`
+4. Include error handling and validation
+5. Add proper type hints and documentation
+
+### AUTOMATIC CHECKS BEFORE CODING:
+- [ ] Read `memory.md` for current project state
+- [ ] Reviewed `memorybank/development-rules.md` for standards
+- [ ] Checked `memorybank/common-patterns.md` for similar implementations
+- [ ] Considered security and performance implications
+- [ ] Planned proper testing approach
+
+### MANDATORY DEVELOPMENT PRIORITIES:
+1. ALWAYS use strict typing: `declare(strict_types=1);`
+2. ALWAYS follow service layer pattern for business logic
+3. ALWAYS implement proper authorization with policies
+4. ALWAYS add comprehensive error handling
+5. ALWAYS include relevant tests for new features
+6. ALWAYS use eager loading in Filament resources
+7. ALWAYS validate user inputs with FormRequest classes
+
+### AUTOMATIC PATTERN ENFORCEMENT:
+- Use PascalCase for models, camelCase for methods
+- Database tables: snake_case plural
+- Money values: always decimal(10,2)
+- Foreign keys: {table}_id format
+- Use Repository pattern for complex queries
+- Use Observer pattern for model events
+- Cache exchange rates and frequently accessed data
+
+### SECURITY REQUIREMENTS (AUTO-ENFORCE):
+- Validate ALL user inputs
+- Use policies for authorization
+- Sanitize rich text content with HTMLPurifier
+- Never expose sensitive data in API responses
+- Use CSRF protection for all forms
+- Implement rate limiting for APIs
+
+### ERROR HANDLING (MANDATORY):
+- Wrap external API calls in try-catch
+- Log important business events
+- Use custom exceptions for business logic errors
+- Provide user-friendly error messages
+- Never expose system details to end users

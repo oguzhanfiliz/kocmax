@@ -18,6 +18,21 @@ class AttributeTypeResource extends Resource
 
     protected static ?string $navigationGroup = 'Ürün Yönetimi';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('Özellik Türleri');
+    }
+
+    public static function getPluralLabel(): string
+    {
+        return __('Özellik Türleri');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Özellik Türü');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
