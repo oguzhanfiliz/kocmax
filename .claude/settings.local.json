@@ -5,7 +5,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(php:*)",
       "Bash(php /Users/oguzhanfiliz/Desktop/calisma/B2B-B2C-main/artisan cache:clear)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
