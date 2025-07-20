@@ -105,29 +105,62 @@ class VariantsRelationManager extends RelationManager
                     ->columns(3),
 
                 Forms\Components\Section::make('Fiyat ve Stok')
+                    ->description('Varyanta özel fiyat ve stok bilgilerini girin')
                     ->schema([
-                        Forms\Components\TextInput::make('price')
-                            ->label('Fiyat')
-                            ->required()
-                            ->numeric()
-                            ->prefix('₺')
-                            ->step(0.01),
-                        Forms\Components\TextInput::make('cost')
-                            ->label('Maliyet')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->step(0.01),
-                        Forms\Components\TextInput::make('stock')
-                            ->label('Stok')
-                            ->required()
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\TextInput::make('min_stock_level')
-                            ->label('Minimum Stok Seviyesi')
-                            ->numeric()
-                            ->default(0),
+                        Forms\Components\Actions::make([
+                            Forms\Components\Actions\Action::make('pricing_help')
+                                ->label('Fiyatlandırma Rehberi')
+                                ->icon('heroicon-o-currency-dollar')
+                                ->color('success')
+                                ->modalHeading('💰 Fiyatlandırma ve Stok Yönetimi Rehberi')
+                                ->modalDescription('Doğru fiyatlandırma ve stok yönetimi için aşağıdaki rehberi inceleyin.')
+                                ->modalContent(view('filament.modals.pricing-help'))
+                                ->modalSubmitAction(false)
+                                ->modalCancelActionLabel('Anladım')
+                                ->slideOver(),
+                        ])
+                        ->alignEnd(),
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\TextInput::make('price')
+                                    ->label('Satış Fiyatı')
+                                    ->required()
+                                    ->numeric()
+                                    ->prefix('₺')
+                                    ->step(0.01)
+                                    ->placeholder('299.99')
+                                    ->helperText('Müşteriye satış fiyatı (KDV dahil)')
+                                    ->hint('KDV dahil fiyat yazın'),
+                                Forms\Components\TextInput::make('cost')
+                                    ->label('Maliyet Fiyatı')
+                                    ->numeric()
+                                    ->prefix('₺')
+                                    ->step(0.01)
+                                    ->placeholder('150.00')
+                                    ->helperText('Ürünün size maliyeti (isteğe bağlı)')
+                                    ->hint('Kar marjı hesabı için'),
+                                Forms\Components\TextInput::make('stock')
+                                    ->label('Mevcut Stok')
+                                    ->required()
+                                    ->numeric()
+                                    ->default(0)
+                                    ->minValue(0)
+                                    ->placeholder('50')
+                                    ->helperText('Elimizde kaç adet var')
+                                    ->hint('Satışa hazır miktar')
+                                    ->suffixIcon('heroicon-m-cube'),
+                                Forms\Components\TextInput::make('min_stock_level')
+                                    ->label('Kritik Stok Seviyesi')
+                                    ->numeric()
+                                    ->default(5)
+                                    ->minValue(0)
+                                    ->placeholder('10')
+                                    ->helperText('Bu seviyenin altında uyarı alırsınız')
+                                    ->hint('Erken uyarı için')
+                                    ->suffixIcon('heroicon-m-exclamation-triangle'),
+                            ]),
                     ])
-                    ->columns(4),
+                    ->columns(1),
 
                 Forms\Components\Section::make('Durumlar')
                     ->schema([
