@@ -22,6 +22,8 @@ class VariantsRelationManager extends RelationManager
     protected static ?string $recordTitleAttribute = 'name';
     
     protected array $tempVariantOptions = [];
+    
+    protected array $tempVariantImages = [];
 
     public function getTableRecordKey($record): string
     {
@@ -143,17 +145,64 @@ class VariantsRelationManager extends RelationManager
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('Görsel')
+                Forms\Components\Section::make('Görsel ve Boyutlar')
                     ->schema([
-                        Forms\Components\TextInput::make('image_url')
-                            ->label('Resim URL')
-                            ->url()
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('dimensions')
-                            ->label('Boyutlar (JSON)')
-                            ->helperText('Örn: {"length": 30, "width": 20, "height": 10}'),
+                        Forms\Components\FileUpload::make('variant_images')
+                            ->label('Varyant Görselleri')
+                            ->image()
+                            ->multiple()
+                            ->directory('variant-images')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->maxSize(2048)
+                            ->maxFiles(8)
+                            ->imageEditor()
+                            ->reorderable()
+                            ->helperText('İlk görsel ana görsel olarak kullanılır. Maksimum 8 görsel yükleyebilirsiniz. Görselleri sürükleyerek sıralayabilirsiniz.')
+                            ->hint('Önerilen boyutlar: 800x800px veya 1200x1200px'),
+                        Forms\Components\Section::make('Ürün Boyutları')
+                            ->description('Ürünün fiziksel boyutlarını santimetre cinsinden giriniz')
+                            ->schema([
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('dimension_help')
+                                        ->label('Boyut Nasıl Ölçülür?')
+                                        ->icon('heroicon-o-information-circle')
+                                        ->color('info')
+                                        ->modalHeading('Ürün Boyutları Nasıl Ölçülür?')
+                                        ->modalDescription('Ürün boyutlarını doğru şekilde ölçmek için aşağıdaki rehberi takip edin.')
+                                        ->modalContent(view('filament.modals.dimension-help'))
+                                        ->modalSubmitAction(false)
+                                        ->modalCancelActionLabel('Tamam')
+                                        ->slideOver(),
+                                ])
+                                ->alignEnd(),
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('length')
+                                            ->label('Uzunluk (cm)')
+                                            ->helperText('En uzun kenar')
+                                            ->numeric()
+                                            ->step(0.1)
+                                            ->suffix('cm')
+                                            ->placeholder('30.5'),
+                                        Forms\Components\TextInput::make('width')
+                                            ->label('Genişlik (cm)')
+                                            ->helperText('Orta kenar')
+                                            ->numeric()
+                                            ->step(0.1)
+                                            ->suffix('cm')
+                                            ->placeholder('20.0'),
+                                        Forms\Components\TextInput::make('height')
+                                            ->label('Yükseklik (cm)')
+                                            ->helperText('En kısa kenar')
+                                            ->numeric()
+                                            ->step(0.1)
+                                            ->suffix('cm')
+                                            ->placeholder('10.2'),
+                                    ]),
+                            ])
+                            ->columnSpan(2),
                     ])
-                    ->columns(2)
+                    ->columns(3)
                     ->collapsible(),
             ]);
     }
@@ -217,8 +266,9 @@ class VariantsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Yeni Varyant')
                     ->mutateFormDataUsing(function (array $data): array {
-                        // Store variant options for later use
+                        // Store variant options and images for later use
                         $this->tempVariantOptions = $data['variant_options'] ?? [];
+                        $this->tempVariantImages = $data['variant_images'] ?? [];
                         
                         // Process variant options and set color/size fields
                         if (isset($data['variant_options'])) {
@@ -240,6 +290,15 @@ class VariantsRelationManager extends RelationManager
                             }
                         }
                         
+                        // Process dimensions - convert to JSON for backward compatibility
+                        if (!empty($data['length']) || !empty($data['width']) || !empty($data['height'])) {
+                            $dimensions = [];
+                            if (!empty($data['length'])) $dimensions['length'] = (float) $data['length'];
+                            if (!empty($data['width'])) $dimensions['width'] = (float) $data['width'];
+                            if (!empty($data['height'])) $dimensions['height'] = (float) $data['height'];
+                            $data['dimensions'] = $dimensions;
+                        }
+                        
                         // Generate name and SKU if not provided
                         if (empty($data['name'])) {
                             $data['name'] = $this->generateVariantNameFromVariantOptions($data);
@@ -251,8 +310,8 @@ class VariantsRelationManager extends RelationManager
                         // Ensure product_id is set
                         $data['product_id'] = $this->getOwnerRecord()->getKey();
                         
-                        // Remove variant_options from data as it's not a direct field
-                        unset($data['variant_options']);
+                        // Remove variant_options and variant_images from data as they're not direct fields
+                        unset($data['variant_options'], $data['variant_images']);
                         
                         return $data;
                     })
@@ -265,6 +324,19 @@ class VariantsRelationManager extends RelationManager
                                 }
                             }
                             $this->tempVariantOptions = [];
+                        }
+                        
+                        // Save variant images
+                        if (!empty($this->tempVariantImages)) {
+                            foreach ($this->tempVariantImages as $index => $imageUrl) {
+                                $record->images()->create([
+                                    'image_url' => $imageUrl,
+                                    'sort_order' => $index,
+                                    'is_primary' => $index === 0, // First image is primary
+                                    'alt_text' => $record->name . ' - Görsel ' . ($index + 1),
+                                ]);
+                            }
+                            $this->tempVariantImages = [];
                         }
                     }),
                 Tables\Actions\Action::make('bulk_create')
@@ -337,11 +409,23 @@ class VariantsRelationManager extends RelationManager
                             }
                         }
                         $data['variant_options'] = $variantOptions;
+                        
+                        // Load dimensions from JSON for backward compatibility
+                        if (!empty($record->dimensions) && is_array($record->dimensions)) {
+                            $data['length'] = $record->dimensions['length'] ?? null;
+                            $data['width'] = $record->dimensions['width'] ?? null;
+                            $data['height'] = $record->dimensions['height'] ?? null;
+                        }
+                        
+                        // Load existing variant images
+                        $data['variant_images'] = $record->images()->ordered()->pluck('image_url')->toArray();
+                        
                         return $data;
                     })
                     ->mutateFormDataUsing(function (array $data): array {
-                        // Store variant options for later use
+                        // Store variant options and images for later use
                         $this->tempVariantOptions = $data['variant_options'] ?? [];
+                        $this->tempVariantImages = $data['variant_images'] ?? [];
                         
                         // Process variant options and set color/size fields
                         if (isset($data['variant_options'])) {
@@ -363,13 +447,22 @@ class VariantsRelationManager extends RelationManager
                             }
                         }
                         
+                        // Process dimensions - convert to JSON for backward compatibility
+                        if (!empty($data['length']) || !empty($data['width']) || !empty($data['height'])) {
+                            $dimensions = [];
+                            if (!empty($data['length'])) $dimensions['length'] = (float) $data['length'];
+                            if (!empty($data['width'])) $dimensions['width'] = (float) $data['width'];
+                            if (!empty($data['height'])) $dimensions['height'] = (float) $data['height'];
+                            $data['dimensions'] = $dimensions;
+                        }
+                        
                         // Update name if color/size changed
                         if (!empty($data['color']) || !empty($data['size'])) {
                             $data['name'] = $this->generateVariantNameFromVariantOptions($data);
                         }
                         
-                        // Remove variant_options from data as it's not a direct field
-                        unset($data['variant_options']);
+                        // Remove variant_options and variant_images from data as they're not direct fields
+                        unset($data['variant_options'], $data['variant_images']);
                         
                         return $data;
                     })
@@ -379,6 +472,23 @@ class VariantsRelationManager extends RelationManager
                             $optionIds = array_filter(array_values($this->tempVariantOptions));
                             $record->variantOptions()->sync($optionIds);
                             $this->tempVariantOptions = [];
+                        }
+                        
+                        // Sync variant images
+                        if (isset($this->tempVariantImages)) {
+                            // Delete existing images
+                            $record->images()->delete();
+                            
+                            // Create new images
+                            foreach ($this->tempVariantImages as $index => $imageUrl) {
+                                $record->images()->create([
+                                    'image_url' => $imageUrl,
+                                    'sort_order' => $index,
+                                    'is_primary' => $index === 0, // First image is primary
+                                    'alt_text' => $record->name . ' - Görsel ' . ($index + 1),
+                                ]);
+                            }
+                            $this->tempVariantImages = [];
                         }
                     }),
                 Tables\Actions\DeleteAction::make(),
