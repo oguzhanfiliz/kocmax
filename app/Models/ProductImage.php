@@ -36,4 +36,49 @@ class ProductImage extends Model
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->sort_order)) {
+                $model->sort_order = static::where('product_id', $model->product_id)->max('sort_order') + 1;
+            }
+        });
+    }
+
+    public function moveUp()
+    {
+        $previousImage = static::where('product_id', $this->product_id)
+            ->where('sort_order', '<', $this->sort_order)
+            ->orderBy('sort_order', 'desc')
+            ->first();
+
+        if ($previousImage) {
+            $temp = $this->sort_order;
+            $this->sort_order = $previousImage->sort_order;
+            $previousImage->sort_order = $temp;
+            
+            $this->save();
+            $previousImage->save();
+        }
+    }
+
+    public function moveDown()
+    {
+        $nextImage = static::where('product_id', $this->product_id)
+            ->where('sort_order', '>', $this->sort_order)
+            ->orderBy('sort_order', 'asc')
+            ->first();
+
+        if ($nextImage) {
+            $temp = $this->sort_order;
+            $this->sort_order = $nextImage->sort_order;
+            $nextImage->sort_order = $temp;
+            
+            $this->save();
+            $nextImage->save();
+        }
+    }
 }

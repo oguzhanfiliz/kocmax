@@ -11,8 +11,10 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(mysql:*)",
-      "Bash(rm:*)",
-      "Bash(composer:*)"
+      "Bash(composer:*)",
+      "mcp__memoryTool__search-memories",
+      "WebFetch(domain:filamentphp.com)",
+      "WebFetch(domain:filamentexamples.com)"
     ],
     "deny": []
   }

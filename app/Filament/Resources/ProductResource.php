@@ -180,12 +180,13 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                // Temporarily disabled to prevent memory issues
-                // Tables\Columns\ImageColumn::make('primaryImage.image_url')
-                //     ->label('Resim')
-                //     ->circular()
-                //     ->defaultImageUrl('/images/no-image.png')
-                //     ->size(50),
+                Tables\Columns\ImageColumn::make('primaryImage.image')
+                    ->label('Ana Görsel')
+                    ->square()
+                    ->size(60)
+                    ->defaultImageUrl('/images/no-image.png')
+                    ->extraAttributes(['style' => 'border-radius: 8px;'])
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Ürün Adı')
                     ->searchable()
