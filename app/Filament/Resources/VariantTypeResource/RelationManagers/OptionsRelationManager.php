@@ -27,9 +27,9 @@ class OptionsRelationManager extends RelationManager
                     ->maxLength(255)
                     ->helperText('Örn: Red, Small, Cotton')
                     ->live(debounce: 500)
-                    ->afterStateUpdated(function ($set, ?string $state) {
+                    ->afterStateUpdated(function ($set, $get, ?string $state) {
                         $set('slug', Str::slug($state));
-                        if (!$set->get('value')) {
+                        if (!$get('value')) {
                             $set('value', $state);
                         }
                     }),

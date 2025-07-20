@@ -293,25 +293,32 @@ class ProductResource extends Resource
         $memoryBefore = memory_get_usage();
         \Log::info('ProductResource Query - Memory Before: ' . self::formatBytes($memoryBefore));
         
-        $query = parent::getEloquentQuery()
-            ->select([
-                'products.id',
-                'products.name',
-                'products.slug',
-                'products.sku',
-                'products.base_price',
-                'products.is_active',
-                'products.is_featured',
-                'products.created_at',
-                'products.sort_order'
-            ])
-            ->withCount(['variants'])
-            ->orderBy('sort_order', 'asc');
-            
-        // Brand ilişkisi geçici olarak devre dışı - bellek optimizasyonu için
-        // if (\App\Models\Brand::count() > 0) {
-        //     $query->with(['brand:id,name']);
-        // }
+        // Check if we're on the edit page to load full data
+        $isEditPage = request()->route() && 
+                     str_contains(request()->route()->getName(), 'edit') ||
+                     str_contains(request()->url(), '/edit');
+        
+        if ($isEditPage) {
+            // Full query for edit page
+            $query = parent::getEloquentQuery()
+                ->withCount(['variants']);
+        } else {
+            // Optimized query for list page
+            $query = parent::getEloquentQuery()
+                ->select([
+                    'products.id',
+                    'products.name',
+                    'products.slug',
+                    'products.sku',
+                    'products.base_price',
+                    'products.is_active',
+                    'products.is_featured',
+                    'products.created_at',
+                    'products.sort_order'
+                ])
+                ->withCount(['variants'])
+                ->orderBy('sort_order', 'asc');
+        }
             
         $memoryAfter = memory_get_usage();
         \Log::info('ProductResource Query - Memory After: ' . self::formatBytes($memoryAfter));

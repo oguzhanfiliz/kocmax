@@ -23,8 +23,12 @@ class VariantsRelationManager extends RelationManager
 
     public function getTableRecordKey($record): string
     {
+        if ($record === null || !$record instanceof \Illuminate\Database\Eloquent\Model || !$record->exists) {
+            return '';
+        }
         return (string) $record->getKey();
     }
+
 
     public function form(Form $form): Form
     {
@@ -64,7 +68,23 @@ class VariantsRelationManager extends RelationManager
                                 ->required($type->is_required)
                                 ->reactive()
                                 ->afterStateUpdated(function ($set, $get) {
-                                    $this->generateVariantNameFromOptions($set, $get);
+                                    // Generate variant name from selected options
+                                    $variantTypes = VariantType::with('options')->active()->ordered()->get();
+                                    $nameParts = [];
+                                    
+                                    foreach ($variantTypes as $type) {
+                                        $optionId = $get("variant_options.{$type->slug}");
+                                        if ($optionId) {
+                                            $option = $type->options->find($optionId);
+                                            if ($option) {
+                                                $nameParts[] = $option->display_value;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (!empty($nameParts)) {
+                                        $set('name', implode(' - ', $nameParts));
+                                    }
                                 });
                             
                             $fields[] = $field;
@@ -144,20 +164,16 @@ class VariantsRelationManager extends RelationManager
                     ->label('Varyant Adı')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('color')
+                Tables\Columns\TextColumn::make('color')
                     ->label('Renk')
-                    ->colors([
-                        'primary' => 'Mavi',
-                        'success' => 'Yeşil',
-                        'warning' => 'Sarı',
-                        'danger' => 'Kırmızı',
-                        'secondary' => 'Gri',
-                    ])
-                    ->searchable(),
-                Tables\Columns\BadgeColumn::make('size')
+                    ->searchable()
+                    ->badge()
+                    ->color('primary'),
+                Tables\Columns\TextColumn::make('size')
                     ->label('Beden')
-                    ->color('info')
-                    ->searchable(),
+                    ->searchable()
+                    ->badge()
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable()
@@ -169,7 +185,8 @@ class VariantsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')
                     ->badge()
-                    ->color(fn ($state) => match (true) {
+                    ->color(fn ($state, $record) => match (true) {
+                        !$record || $record === null => 'secondary',
                         ($state ?? 0) > 10 => 'success',
                         ($state ?? 0) > 0 => 'warning',
                         default => 'danger',
@@ -204,6 +221,10 @@ class VariantsRelationManager extends RelationManager
                         if (empty($data['sku'])) {
                             $data['sku'] = $this->generateVariantSku($data);
                         }
+                        
+                        // Ensure product_id is set
+                        $data['product_id'] = $this->getOwnerRecord()->getKey();
+                        
                         return $data;
                     }),
                 Tables\Actions\Action::make('bulk_create')
@@ -270,6 +291,14 @@ class VariantsRelationManager extends RelationManager
                         // Update name if color/size changed
                         if (!empty($data['color']) || !empty($data['size'])) {
                             $data['name'] = $this->generateVariantNameFromData($data);
+                        }
+                        return $data;
+                    })
+                    ->mutateRecordDataUsing(function (array $data): array {
+                        // Handle variant options data if needed
+                        if (isset($data['variant_options'])) {
+                            // Process variant options data here
+                            unset($data['variant_options']);
                         }
                         return $data;
                     }),
