@@ -10,7 +10,9 @@
       "Bash(sed:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(rm:*)",
+      "Bash(composer:*)"
     ],
     "deny": []
   }

@@ -219,15 +219,6 @@ class Category extends Model
         }
     }
 
-    /**
-     * Get product attributes for this category
-     */
-    public function productAttributes(): BelongsToMany
-    {
-        return $this->belongsToMany(ProductAttribute::class, 'category_attributes')
-            ->withPivot('sort_order')
-            ->withTimestamps()
-            ->orderByPivot('sort_order');
-    }
+    // ProductAttribute sistemi kaldırıldı
 
 }

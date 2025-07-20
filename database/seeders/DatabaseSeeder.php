@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             CurrencySeeder::class,
-            AttributeTypeSeeder::class,
-            ProductAttributeSeeder::class,
+            // AttributeTypeSeeder::class, // Kaldırıldı
+            // ProductAttributeSeeder::class, // Kaldırıldı
             ProductSeeder::class,
         ]);
     }
