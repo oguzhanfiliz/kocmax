@@ -20,6 +20,8 @@ class VariantsRelationManager extends RelationManager
     protected static string $relationship = 'variants';
     
     protected static ?string $recordTitleAttribute = 'name';
+    
+    protected array $tempVariantOptions = [];
 
     public function getTableRecordKey($record): string
     {
@@ -52,6 +54,7 @@ class VariantsRelationManager extends RelationManager
                     ->columns(3),
 
                 Forms\Components\Section::make('Varyant Özellikleri')
+                    ->description('Ürünün özelliklerini seçin. Hiçbir özellik seçmezseniz standart varyant oluşturulur.')
                     ->schema(function () {
                         $variantTypes = VariantType::with('options')
                             ->active()
@@ -214,9 +217,32 @@ class VariantsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Yeni Varyant')
                     ->mutateFormDataUsing(function (array $data): array {
+                        // Store variant options for later use
+                        $this->tempVariantOptions = $data['variant_options'] ?? [];
+                        
+                        // Process variant options and set color/size fields
+                        if (isset($data['variant_options'])) {
+                            $variantTypes = VariantType::with('options')->active()->ordered()->get();
+                            
+                            foreach ($variantTypes as $type) {
+                                $optionId = $data['variant_options'][$type->slug] ?? null;
+                                if ($optionId) {
+                                    $option = $type->options->find($optionId);
+                                    if ($option) {
+                                        // Set the appropriate field based on type
+                                        if ($type->slug === 'color') {
+                                            $data['color'] = $option->display_value;
+                                        } elseif ($type->slug === 'size' || $type->slug === 'shoe-size') {
+                                            $data['size'] = $option->display_value;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
                         // Generate name and SKU if not provided
                         if (empty($data['name'])) {
-                            $data['name'] = $this->generateVariantNameFromData($data);
+                            $data['name'] = $this->generateVariantNameFromVariantOptions($data);
                         }
                         if (empty($data['sku'])) {
                             $data['sku'] = $this->generateVariantSku($data);
@@ -225,7 +251,21 @@ class VariantsRelationManager extends RelationManager
                         // Ensure product_id is set
                         $data['product_id'] = $this->getOwnerRecord()->getKey();
                         
+                        // Remove variant_options from data as it's not a direct field
+                        unset($data['variant_options']);
+                        
                         return $data;
+                    })
+                    ->after(function ($record) {
+                        // After creating the variant, save the variant options relationships
+                        if (!empty($this->tempVariantOptions)) {
+                            foreach ($this->tempVariantOptions as $typeSlug => $optionId) {
+                                if ($optionId) {
+                                    $record->variantOptions()->attach($optionId);
+                                }
+                            }
+                            $this->tempVariantOptions = [];
+                        }
                     }),
                 Tables\Actions\Action::make('bulk_create')
                     ->label('Toplu Varyant Oluştur')
@@ -287,20 +327,59 @@ class VariantsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        // Update name if color/size changed
-                        if (!empty($data['color']) || !empty($data['size'])) {
-                            $data['name'] = $this->generateVariantNameFromData($data);
+                    ->mutateRecordDataUsing(function (array $data, $record): array {
+                        // Load existing variant options into the form
+                        $variantOptions = [];
+                        foreach ($record->variantOptions as $option) {
+                            $variantType = $option->variantType;
+                            if ($variantType) {
+                                $variantOptions[$variantType->slug] = $option->id;
+                            }
                         }
+                        $data['variant_options'] = $variantOptions;
                         return $data;
                     })
-                    ->mutateRecordDataUsing(function (array $data): array {
-                        // Handle variant options data if needed
+                    ->mutateFormDataUsing(function (array $data): array {
+                        // Store variant options for later use
+                        $this->tempVariantOptions = $data['variant_options'] ?? [];
+                        
+                        // Process variant options and set color/size fields
                         if (isset($data['variant_options'])) {
-                            // Process variant options data here
-                            unset($data['variant_options']);
+                            $variantTypes = VariantType::with('options')->active()->ordered()->get();
+                            
+                            foreach ($variantTypes as $type) {
+                                $optionId = $data['variant_options'][$type->slug] ?? null;
+                                if ($optionId) {
+                                    $option = $type->options->find($optionId);
+                                    if ($option) {
+                                        // Set the appropriate field based on type
+                                        if ($type->slug === 'color') {
+                                            $data['color'] = $option->display_value;
+                                        } elseif ($type->slug === 'size' || $type->slug === 'shoe-size') {
+                                            $data['size'] = $option->display_value;
+                                        }
+                                    }
+                                }
+                            }
                         }
+                        
+                        // Update name if color/size changed
+                        if (!empty($data['color']) || !empty($data['size'])) {
+                            $data['name'] = $this->generateVariantNameFromVariantOptions($data);
+                        }
+                        
+                        // Remove variant_options from data as it's not a direct field
+                        unset($data['variant_options']);
+                        
                         return $data;
+                    })
+                    ->after(function ($record) {
+                        // Sync variant options relationships
+                        if (!empty($this->tempVariantOptions)) {
+                            $optionIds = array_filter(array_values($this->tempVariantOptions));
+                            $record->variantOptions()->sync($optionIds);
+                            $this->tempVariantOptions = [];
+                        }
                     }),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -342,6 +421,28 @@ class VariantsRelationManager extends RelationManager
         ]);
         
         return empty($parts) ? 'Varsayılan' : implode(' - ', $parts);
+    }
+
+    protected function generateVariantNameFromVariantOptions(array $data): string
+    {
+        if (!isset($data['variant_options'])) {
+            return 'Standart Varyant';
+        }
+
+        $variantTypes = VariantType::with('options')->active()->ordered()->get();
+        $nameParts = [];
+        
+        foreach ($variantTypes as $type) {
+            $optionId = $data['variant_options'][$type->slug] ?? null;
+            if ($optionId) {
+                $option = $type->options->find($optionId);
+                if ($option) {
+                    $nameParts[] = $option->display_value;
+                }
+            }
+        }
+        
+        return empty($nameParts) ? 'Standart Varyant' : implode(' - ', $nameParts);
     }
 
     protected function generateVariantSku(array $data): string
