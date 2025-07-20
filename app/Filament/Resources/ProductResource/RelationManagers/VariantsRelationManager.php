@@ -18,6 +18,13 @@ use Illuminate\Support\Collection;
 class VariantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'variants';
+    
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public function getTableRecordKey($record): string
+    {
+        return (string) $record->getKey();
+    }
 
     public function form(Form $form): Form
     {
@@ -163,8 +170,8 @@ class VariantsRelationManager extends RelationManager
                     ->label('Stok')
                     ->badge()
                     ->color(fn ($state) => match (true) {
-                        $state > 10 => 'success',
-                        $state > 0 => 'warning',
+                        ($state ?? 0) > 10 => 'success',
+                        ($state ?? 0) > 0 => 'warning',
                         default => 'danger',
                     })
                     ->sortable(),
@@ -177,12 +184,6 @@ class VariantsRelationManager extends RelationManager
                     ->toggleable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('color')
-                    ->label('Renk')
-                    ->options(ProductColors::getOptions()),
-                Tables\Filters\SelectFilter::make('size')
-                    ->label('Beden')
-                    ->options(ProductSizes::getOptions()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Aktif'),
                 Tables\Filters\Filter::make('low_stock')
@@ -213,12 +214,29 @@ class VariantsRelationManager extends RelationManager
                             ->schema([
                                 Forms\Components\CheckboxList::make('colors')
                                     ->label('Renkler')
-                                    ->options(ProductColors::getOptions())
+                                    ->options([
+                                        'Siyah' => 'Siyah',
+                                        'Beyaz' => 'Beyaz',
+                                        'Kırmızı' => 'Kırmızı',
+                                        'Mavi' => 'Mavi',
+                                        'Yeşil' => 'Yeşil',
+                                        'Sarı' => 'Sarı',
+                                        'Gri' => 'Gri',
+                                        'Kahverengi' => 'Kahverengi',
+                                    ])
                                     ->columns(3)
                                     ->required(),
                                 Forms\Components\CheckboxList::make('sizes')
                                     ->label('Bedenler')
-                                    ->options(ProductSizes::getOptions())
+                                    ->options([
+                                        'XS' => 'XS',
+                                        'S' => 'S',
+                                        'M' => 'M',
+                                        'L' => 'L',
+                                        'XL' => 'XL',
+                                        'XXL' => 'XXL',
+                                        'XXXL' => 'XXXL',
+                                    ])
                                     ->columns(4)
                                     ->required(),
                             ]),

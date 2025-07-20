@@ -7,6 +7,7 @@ namespace App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource;
 use App\Services\ProductCacheService;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -25,7 +26,10 @@ class ListProducts extends ListRecords
                     $service = new ProductCacheService();
                     $service->clearAllProductCaches();
                     
-                    $this->notify('success', 'Cache başarıyla temizlendi.');
+                    Notification::make()
+                        ->title('Cache başarıyla temizlendi.')
+                        ->success()
+                        ->send();
                 })
                 ->requiresConfirmation()
                 ->modalHeading('Cache Temizle')
