@@ -97,11 +97,24 @@ class ReviewsRelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Yeni Yorum Ekle')
+                    ->modalHeading('Yeni Yorum Ekle')
+                    ->modalDescription('Yeni bir yorum ekleyiniz.')
+                    ->modalSubmitActionLabel('Ekle')
+                    ->modalCancelActionLabel('İptal'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Yorumu Düzenle')
+                    ->modalHeading('Yorumu Düzenle')
+                    ->modalDescription('Yorumu düzenleyiniz.')
+                    ->modalSubmitActionLabel('Düzenle')
+                    ->modalCancelActionLabel('İptal'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Yorumu Sil')
+                    ->modalHeading('Yorumu Sil')
+                    ->modalDescription('Yorumu silmek istediğinizden emin misiniz?')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

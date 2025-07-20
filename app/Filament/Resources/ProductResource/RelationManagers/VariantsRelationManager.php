@@ -298,6 +298,10 @@ class VariantsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Yeni Varyant')
+                    ->modalHeading('Yeni Varyant Ekle')
+                    ->modalDescription('Yeni bir varyant ekleyiniz.')
+                    ->modalSubmitActionLabel('Ekle')
+                    ->modalCancelActionLabel('İptal')
                     ->mutateFormDataUsing(function (array $data): array {
                         // Store variant options and images for later use
                         $this->tempVariantOptions = $data['variant_options'] ?? [];
@@ -375,6 +379,10 @@ class VariantsRelationManager extends RelationManager
                 Tables\Actions\Action::make('bulk_create')
                     ->label('Toplu Varyant Oluştur')
                     ->icon('heroicon-o-squares-plus')
+                    ->modalHeading('Toplu Varyant Oluştur')
+                    ->modalDescription('Toplu varyant oluşturmak için aşağıdaki alanları doldurunuz.')
+                    ->modalSubmitActionLabel('Oluştur')
+                    ->modalCancelActionLabel('İptal')
                     ->form([
                         Forms\Components\Section::make('Renk ve Beden Kombinasyonları')
                             ->schema([
@@ -432,6 +440,10 @@ class VariantsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->modalHeading('Varyantı Düzenle')
+                    ->modalDescription('Varyantı düzenleyiniz.')
+                    ->modalSubmitActionLabel('Düzenle')
+                    ->modalCancelActionLabel('İptal')
                     ->mutateRecordDataUsing(function (array $data, $record): array {
                         // Load existing variant options into the form
                         $variantOptions = [];
@@ -523,12 +535,26 @@ class VariantsRelationManager extends RelationManager
                             }
                             $this->tempVariantImages = [];
                         }
-                    }),
-                Tables\Actions\DeleteAction::make(),
+                    })
+                    ->modalHeading('Varyantı Düzenle')
+                    ->modalDescription('Varyantı düzenleyiniz.')
+                    ->modalSubmitActionLabel('Düzenle')
+                    ->modalCancelActionLabel('İptal'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Varyantı Sil')
+                    ->modalHeading('Varyantı Sil')
+                    ->modalDescription('Varyantı silmek istediğinizden emin misiniz?')
+                    ->modalSubmitActionLabel('Sil')
+                    ->modalCancelActionLabel('İptal'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Seçilenleri Sil')
+                        ->modalHeading('Seçilenleri Sil')
+                        ->modalDescription('Seçilen varyantları silmek istediğinizden emin misiniz?')
+                        ->modalSubmitActionLabel('Sil')
+                        ->modalCancelActionLabel('İptal'),
                     Tables\Actions\BulkAction::make('activate')
                         ->label('Aktif Yap')
                         ->icon('heroicon-m-check')

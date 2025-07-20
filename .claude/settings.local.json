@@ -14,7 +14,11 @@
       "Bash(composer:*)",
       "mcp__memoryTool__search-memories",
       "WebFetch(domain:filamentphp.com)",
-      "WebFetch(domain:filamentexamples.com)"
+      "WebFetch(domain:filamentexamples.com)",
+      "mcp__memoryTool__add-memory",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

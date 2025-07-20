@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Infolist;
+use App\Filament\Widgets\CacheManagementWidget;
 
 class Dashboard extends BaseDashboard
 {
@@ -32,6 +33,13 @@ class Dashboard extends BaseDashboard
     public static function canAccess(): bool
     {
         return true; // Herkes dashboard'a erişebilir
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            CacheManagementWidget::class,
+        ];
     }
     
     protected function getHeaderActions(): array
