@@ -121,16 +121,55 @@ class ProductCacheService
     }
 
     /**
+     * Get optimized products list for admin panel
+     */
+    public static function getOptimizedProductsList(int $page = 1, int $perPage = 25): array
+    {
+        $cacheKey = "admin_products_list_page_{$page}_per_{$perPage}";
+        
+        return Cache::remember($cacheKey, 900, function () use ($perPage) { // 15 min cache
+            return Product::select([
+                'id',
+                'name',
+                'slug', 
+                'sku',
+                'base_price',
+                'brand',
+                'brand_id',
+                'is_active',
+                'is_featured',
+                'created_at',
+                'sort_order'
+            ])
+            ->with(['brand:id,name'])
+            ->withCount(['variants'])
+            ->orderBy('sort_order', 'asc')
+            ->paginate($perPage)
+            ->toArray();
+        });
+    }
+
+    /**
      * Clear all product caches
      */
     public function clearAllProductCaches(): void
     {
+        // Clear category cache
+        Cache::forget('categories_tree_select');
+        
+        // Clear admin product lists
+        for ($page = 1; $page <= 20; $page++) {
+            foreach ([10, 25, 50, 100] as $perPage) {
+                Cache::forget("admin_products_list_page_{$page}_per_{$perPage}");
+            }
+        }
+        
         // Use cache tags if available
         if (Cache::supportsTags()) {
             Cache::tags(['products'])->flush();
         } else {
-            // Manual clearing for drivers that don't support tags
-            $products = Product::pluck('id');
+            // Manual clearing - limit to prevent memory issues
+            $products = Product::select('id')->limit(1000)->pluck('id');
             foreach ($products as $productId) {
                 $this->clearProductCache($productId);
             }

@@ -16,7 +16,6 @@ class Product extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'brand_id',
         'name',
         'slug',
         'description',
@@ -33,10 +32,7 @@ class Product extends Model
         'meta_description',
         'meta_keywords',
         'sort_order',
-        'model',
-        'material',
         'gender',
-        'safety_standard',
     ];
 
     protected $casts = [
@@ -81,13 +77,7 @@ class Product extends Model
         return "{$prefix}-{$timestamp}-{$random}";
     }
 
-    /**
-     * Product belongs to a brand
-     */
-    public function brand(): BelongsTo
-    {
-        return $this->belongsTo(Brand::class);
-    }
+    // Brand sistemi kaldırıldı - VariantType olarak kullanılacak
 
     /**
      * Product belongs to many categories
@@ -96,8 +86,7 @@ class Product extends Model
     {
         return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
             ->select(['categories.id', 'categories.name', 'categories.slug'])
-            ->withPivot('id')
-            ->withoutGlobalScopes();
+            ->withPivot('id');
     }
 
     /**
@@ -140,13 +129,7 @@ class Product extends Model
         return $this->hasMany(ProductReview::class)->where('is_approved', true);
     }
 
-    /**
-     * Product has many attribute values
-     */
-    public function attributeValues(): HasMany
-    {
-        return $this->hasMany(ProductAttributeValue::class);
-    }
+    // ProductAttribute sistemi kaldırıldı - Variant sistemi kullanılacak
 
     /**
      * Product belongs to many campaigns
@@ -328,28 +311,9 @@ class Product extends Model
     //     });
     // }
 
-    /**
-     * Get available attribute values for a specific attribute
-     */
-    public function getAvailableAttributeValues($attributeId)
-    {
-        return ProductVariantAttribute::where('product_attribute_id', $attributeId)
-            ->whereIn('product_variant_id', $this->variants()->pluck('id'))
-            ->distinct()
-            ->pluck('value');
-    }
+    // getAvailableAttributeValues kaldırıldı - Variant sistemi kullanılacak
 
-    /**
-     * Get attribute value by attribute ID
-     */
-    public function getAttributeValue($attributeId)
-    {
-        $value = $this->attributeValues()
-            ->where('product_attribute_id', $attributeId)
-            ->first();
-            
-        return $value ? $value->value : null;
-    }
+    // getAttributeValue kaldırıldı - Variant sistemi kullanılacak
 
     /**
      * Get average rating
@@ -427,16 +391,5 @@ class Product extends Model
         });
     }
 
-    /**
-     * Filter by attribute value
-     */
-    public function scopeHasAttributeValue($query, $attributeId, $value)
-    {
-        return $query->whereHas('variants', function ($query) use ($attributeId, $value) {
-            $query->whereHas('attributeValues', function ($query) use ($attributeId, $value) {
-                $query->where('product_attribute_id', $attributeId)
-                    ->where('value', $value);
-            });
-        });
-    }
+    // scopeHasAttributeValue kaldırıldı - Variant sistemi kullanılacak
 }

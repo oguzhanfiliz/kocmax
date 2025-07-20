@@ -168,25 +168,30 @@ class Category extends Model
      */
     public static function getTreeForSelect(): array
     {
-        // Tüm kategorileri tek seferde çek
-        $allCategories = self::orderBy('parent_id', 'asc')
-            ->orderBy('sort_order', 'asc')
-            ->orderBy('name', 'asc')
-            ->get();
-        
-        // Kategorileri parent_id'ye göre grupla
-        $categoriesByParent = $allCategories->groupBy('parent_id');
-        
-        $result = [];
-        
-        // Root kategorilerden başla
-        if (isset($categoriesByParent[null])) {
-            foreach ($categoriesByParent[null] as $category) {
-                self::buildTreeArrayOptimized($category, $result, 0, $categoriesByParent);
+        return \Cache::remember('categories_tree_select', 1800, function () {
+            // Sadece gerekli alanları seç ve bellek kullanımını azalt
+            $allCategories = self::select(['id', 'name', 'parent_id', 'sort_order'])
+                ->where('is_active', true)
+                ->orderBy('parent_id', 'asc')
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('name', 'asc')
+                ->limit(500) // Maksimum kategori sayısı
+                ->get();
+            
+            // Kategorileri parent_id'ye göre grupla
+            $categoriesByParent = $allCategories->groupBy('parent_id');
+            
+            $result = [];
+            
+            // Root kategorilerden başla
+            if (isset($categoriesByParent[null])) {
+                foreach ($categoriesByParent[null] as $category) {
+                    self::buildTreeArrayOptimized($category, $result, 0, $categoriesByParent);
+                }
             }
-        }
-        
-        return $result;
+            
+            return $result;
+        });
     }
 
     /**
@@ -194,17 +199,21 @@ class Category extends Model
      */
     private static function buildTreeArrayOptimized($category, &$result, $depth, $categoriesByParent)
     {
-        // Maksimum derinlik kontrolü
-        if ($depth > 10) {
+        // Maksimum derinlik kontrolü - azaltıldı
+        if ($depth > 5) {
             return;
         }
         
         $prefix = $depth > 0 ? str_repeat('  ', $depth) . '→ ' : '';
         $result[$category->id] = $prefix . $category->name;
         
-        // Alt kategorileri kontrol et
+        // Alt kategorileri kontrol et - maksimum 10 alt kategori
         if (isset($categoriesByParent[$category->id])) {
-            foreach ($categoriesByParent[$category->id] as $child) {
+            $children = $categoriesByParent[$category->id];
+            if ($children->count() > 10) {
+                $children = $children->take(10);
+            }
+            foreach ($children as $child) {
                 self::buildTreeArrayOptimized($child, $result, $depth + 1, $categoriesByParent);
             }
         }

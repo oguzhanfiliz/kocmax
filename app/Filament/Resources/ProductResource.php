@@ -105,35 +105,7 @@ class ProductResource extends Resource
                             ->relationship('categories', 'name')
                             ->multiple()
                             ->searchable()
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(function ($set, $state) {
-                                // Clear existing attribute values when category changes
-                                $set('attribute_values', []);
-                            }),
-                        Forms\Components\Select::make('brand_id')
-                            ->label('Marka')
-                            ->relationship('brand', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Marka Adı')
-                                    ->required()
-                                    ->maxLength(255),
-                            ])
-                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                return $action
-                                    ->modalHeading('Yeni Marka Ekle')
-                                    ->modalButton('Ekle')
-                                    ->modalWidth('lg');
-                            }),
-                        Forms\Components\TextInput::make('model')
-                            ->label('Model')
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('material')
-                            ->label('Malzeme')
-                            ->maxLength(255),
+                            ->preload(),
                         Forms\Components\Select::make('gender')
                             ->label('Cinsiyet')
                             ->options([
@@ -143,109 +115,12 @@ class ProductResource extends Resource
                                 'kids' => 'Çocuk',
                             ])
                             ->default('unisex'),
-                        Forms\Components\TextInput::make('safety_standard')
-                            ->label('Güvenlik Standardı')
-                            ->maxLength(255)
-                            ->helperText('Örn: CE, EN ISO 20345:2011'),
+                        // Brand sistemi kaldırıldı - VariantType olarak kullanılacak
+                        // Teknik özellikler Variant sistemi ile yönetilecek
                     ])
-                    ->columns(3),
-                
-                Section::make('Ürün Özellikleri')
-                    ->schema(function (Get $get) {
-                        $categoryIds = $get('categories');
-                        
-                        if (empty($categoryIds)) {
-                            return [
-                                Forms\Components\Placeholder::make('no_category')
-                                    ->label('Kategori Seçilmedi')
-                                    ->content('Ürün özelliklerini görmek için önce bir kategori seçiniz.')
-                            ];
-                        }
-                        
-                        // Get attributes for selected categories (optimized)
-                        $attributes = ProductAttribute::select('id', 'name', 'attribute_type_id', 'options', 'is_required')
-                        ->with(['attributeType:id,name'])
-                        ->whereHas('categories', function ($query) use ($categoryIds) {
-                            $query->whereIn('category_id', $categoryIds);
-                        })
-                        ->where('is_active', true)
-                        ->orderBy('sort_order')
-                        ->limit(50) // Limit to prevent memory issues
-                        ->get();
-                        
-                        if ($attributes->isEmpty()) {
-                            return [
-                                Forms\Components\Placeholder::make('no_attributes')
-                                    ->label('Özellik Bulunamadı')
-                                    ->content('Seçilen kategorilere ait özellik bulunamadı.')
-                            ];
-                        }
-                        
-                        $fields = [];
-                        
-                        foreach ($attributes as $attribute) {
-                            $attributeType = $attribute->attributeType;
-                            $field = null;
-                            
-                            // Create field based on attribute type
-                            switch ($attributeType->name) {
-                                case 'text':
-                                    $field = Forms\Components\TextInput::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name);
-                                    break;
-                                    
-                                case 'select':
-                                    $field = Forms\Components\Select::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name)
-                                        ->options($attribute->formatted_options);
-                                    break;
-                                    
-                                case 'checkbox':
-                                    $field = Forms\Components\CheckboxList::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name)
-                                        ->options($attribute->formatted_options);
-                                    break;
-                                    
-                                case 'radio':
-                                    $field = Forms\Components\Radio::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name)
-                                        ->options($attribute->formatted_options);
-                                    break;
-                                    
-                                case 'color':
-                                    $field = Forms\Components\ColorPicker::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name);
-                                    break;
-                                    
-                                case 'number':
-                                    $field = Forms\Components\TextInput::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name)
-                                        ->numeric();
-                                    break;
-                                    
-                                case 'date':
-                                    $field = Forms\Components\DatePicker::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name);
-                                    break;
-                                    
-                                default:
-                                    $field = Forms\Components\TextInput::make("attribute_values.{$attribute->id}")
-                                        ->label($attribute->name);
-                                    break;
-                            }
-                            
-                            if ($field) {
-                                if ($attribute->is_required) {
-                                    $field->required();
-                                }
-                                
-                                $fields[] = $field;
-                            }
-                        }
-                        
-                        return $fields;
-                    })
                     ->columns(2),
+                
+                // ProductAttribute sistemi kaldırıldı - Variant sistemi kullanılacak
                 
                 Section::make('Fiyat ve Fiziksel Özellikler')
                     ->schema([
@@ -326,11 +201,7 @@ class ProductResource extends Resource
                 //     ->label('Kategoriler')
                 //     ->separator(', ')
                 //     ->limit(2),
-                Tables\Columns\TextColumn::make('brand')
-                    ->label('Marka')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                // Brand column kaldırıldı
                 Tables\Columns\TextColumn::make('base_price')
                     ->label('Temel Fiyat')
                     ->money('TRY')
@@ -354,15 +225,11 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('categories')
-                    ->label('Kategori')
-                    ->relationship('categories', 'name')
-                    ->multiple()
-                    ->searchable(),
-                Tables\Filters\SelectFilter::make('brand_id')
-                    ->label('Marka')
-                    ->relationship('brand', 'name')
-                    ->preload(),
+                // Brand filtresi geçici olarak devre dışı - bellek optimizasyonu için
+                // Tables\Filters\SelectFilter::make('brand_id')
+                //     ->label('Marka')
+                //     ->relationship('brand', 'name')
+                //     ->preload(),
                 Tables\Filters\SelectFilter::make('gender')
                     ->label('Cinsiyet')
                     ->options([
@@ -422,15 +289,17 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        // Bellek kullanımını logla
+        $memoryBefore = memory_get_usage();
+        \Log::info('ProductResource Query - Memory Before: ' . self::formatBytes($memoryBefore));
+        
+        $query = parent::getEloquentQuery()
             ->select([
                 'products.id',
                 'products.name',
                 'products.slug',
                 'products.sku',
                 'products.base_price',
-                'products.brand',
-                'products.brand_id',
                 'products.is_active',
                 'products.is_featured',
                 'products.created_at',
@@ -438,5 +307,25 @@ class ProductResource extends Resource
             ])
             ->withCount(['variants'])
             ->orderBy('sort_order', 'asc');
+            
+        // Brand ilişkisi geçici olarak devre dışı - bellek optimizasyonu için
+        // if (\App\Models\Brand::count() > 0) {
+        //     $query->with(['brand:id,name']);
+        // }
+            
+        $memoryAfter = memory_get_usage();
+        \Log::info('ProductResource Query - Memory After: ' . self::formatBytes($memoryAfter));
+        \Log::info('ProductResource Query - Memory Diff: ' . self::formatBytes($memoryAfter - $memoryBefore));
+        
+        return $query;
+    }
+    
+    private static function formatBytes($size): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        for ($i = 0; $size > 1024 && $i < count($units) - 1; $i++) {
+            $size /= 1024;
+        }
+        return round($size, 2) . ' ' . $units[$i];
     }
 }

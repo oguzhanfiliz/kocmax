@@ -10,7 +10,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
-class ListProducts extends ListRecords
+class OptimizedListProducts extends ListRecords
 {
     protected static string $resource = ProductResource::class;
 
@@ -35,12 +35,22 @@ class ListProducts extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        // Memory optimized query - sadece gerekli alanları seç
-        return static::getResource()::getEloquentQuery()
-            ->when(
-                request()->has('tableSearch') && !empty(request('tableSearch')),
-                fn($query) => $query->where('name', 'like', '%' . request('tableSearch') . '%')
-                    ->orWhere('sku', 'like', '%' . request('tableSearch') . '%')
-            );
+        // Optimize query for memory efficiency
+        return parent::getTableQuery()
+            ->select([
+                'products.id',
+                'products.name',
+                'products.slug',
+                'products.sku',
+                'products.base_price',
+                'products.brand',
+                'products.brand_id',
+                'products.is_active',
+                'products.is_featured',
+                'products.created_at',
+                'products.sort_order'
+            ])
+            ->with(['brand:id,name'])
+            ->withCount(['variants']);
     }
 }

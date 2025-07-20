@@ -9,7 +9,8 @@
       "Bash(grep:*)",
       "Bash(sed:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(mysql:*)"
     ],
     "deny": []
   }

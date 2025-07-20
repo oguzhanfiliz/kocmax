@@ -40,8 +40,8 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo \App\Helpers\IconHelper::get($expression); ?>";
         });
 
-        // Register observers
-        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
-        \App\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
+        // Observer'lar geçici olarak devre dışı - bellek sorunu çözümü için
+        // \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        // \App\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
     }
 }
