@@ -3,13 +3,11 @@
 namespace App\Filament\Resources\ProductResource\Pages;
 
 use App\Filament\Resources\ProductResource;
-use App\Models\Product;
-use App\Services\VariantGeneratorService;
+use App\Models\ProductAttributeValue;
 use Filament\Actions;
-use Filament\Forms;
-use Filament\Forms\Get;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EditProduct extends EditRecord
 {
@@ -18,54 +16,60 @@ class EditProduct extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('generateVariants')
-                ->label('Varyant Oluştur')
-                ->icon('heroicon-o-squares-plus')
-                ->form(function (Get $get) {
-                    $categoryIds = $this->record->categories->pluck('id')->toArray();
-                    if (empty($categoryIds)) {
-                        return [
-                            Forms\Components\Placeholder::make('no_attributes')
-                                ->label('Önce Kategori Seçin')
-                                ->content('Varyant oluşturmak için lütfen önce ürünün kategorilerini seçin.')
-                        ];
-                    }
-                    $attributes = \App\Models\ProductAttribute::whereHas('categories', function ($query) use ($categoryIds) {
-                        $query->whereIn('categories.id', $categoryIds);
-                    })->where('is_variant', true)->limit(10)->get();
-
-                    if($attributes->isEmpty()) {
-                        return [
-                            Forms\Components\Placeholder::make('no_variant_attributes')
-                                ->label('Varyant Özelliği Yok')
-                                ->content('Seçilen kategorilere atanmış bir varyant özelliği bulunamadı.')
-                        ];
-                    }
-
-                    return $attributes->map(function ($attribute) {
-                        return Forms\Components\TagsInput::make('attributes.' . $attribute->id)
-                            ->label($attribute->name);
-                    })->all();
-                })
-                ->action(function (array $data) {
-                    try {
-                        $service = app(VariantGeneratorService::class);
-                        $variants = $service->generateVariants($this->record, $data['attributes']);
-                        Notification::make()
-                            ->title($variants->count() . ' adet varyant başarıyla oluşturuldu.')
-                            ->success()
-                            ->send();
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Varyant oluşturma başarısız oldu!')
-                            ->body($e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-                }),
             Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Load attribute values
+        $attributeValues = $this->record->attributeValues()->get();
+        
+        $formattedValues = [];
+        foreach ($attributeValues as $value) {
+            $formattedValues[$value->product_attribute_id] = $value->value;
+        }
+        
+        $data['attribute_values'] = $formattedValues;
+        
+        return $data;
+    }
+
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        // Extract attribute values
+        $attributeValues = $data['attribute_values'] ?? [];
+        unset($data['attribute_values']);
+        
+        // Update the record with regular fields
+        $record->update($data);
+        
+        // Update or create attribute values
+        if (!empty($attributeValues)) {
+            DB::transaction(function () use ($record, $attributeValues) {
+                foreach ($attributeValues as $attributeId => $value) {
+                    if (empty($value)) {
+                        continue;
+                    }
+                    
+                    // Handle array values (like from checkbox lists)
+                    if (is_array($value)) {
+                        $value = json_encode($value);
+                    }
+                    
+                    ProductAttributeValue::updateOrCreate(
+                        [
+                            'product_id' => $record->id,
+                            'product_attribute_id' => $attributeId,
+                        ],
+                        [
+                            'value' => $value,
+                        ]
+                    );
+                }
+            });
+        }
+        
+        return $record;
     }
 }

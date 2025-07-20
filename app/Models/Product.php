@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -14,155 +16,132 @@ class Product extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'brand_id',
         'name',
         'slug',
         'description',
+        'short_description',
         'sku',
         'barcode',
-        'price',
-        'discounted_price',
-        'cost',
-        'stock',
-        'min_stock_level',
-        'views',
+        'base_price',
         'weight',
-        'dimensions',
         'is_active',
         'is_featured',
         'is_new',
         'is_bestseller',
-        'sort_order',
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'sort_order',
+        'model',
+        'material',
+        'gender',
+        'safety_standard',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'discounted_price' => 'decimal:2',
-        'cost' => 'decimal:2',
+        'base_price' => 'decimal:2',
         'weight' => 'decimal:3',
-        'dimensions' => 'array',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'is_new' => 'boolean',
         'is_bestseller' => 'boolean',
-        'stock' => 'integer',
-        'min_stock_level' => 'integer',
-        'views' => 'integer',
         'sort_order' => 'integer',
     ];
 
-    // Boot fonksiyonu tamamen kaldırıldı - bellek sorunları nedeniyle
+    protected static function boot()
+    {
+        parent::boot();
 
+        static::creating(function ($product) {
+            if (empty($product->slug)) {
+                $product->slug = Str::slug($product->name);
+            }
+            if (empty($product->sku)) {
+                $product->sku = static::generateSku($product);
+            }
+        });
+
+        static::updating(function ($product) {
+            if ($product->isDirty('name') && empty($product->slug)) {
+                $product->slug = Str::slug($product->name);
+            }
+        });
+    }
+
+    /**
+     * Generate SKU for product
+     */
+    private static function generateSku($product)
+    {
+        $prefix = 'PRD';
+        $timestamp = now()->format('ymd');
+        $random = strtoupper(Str::random(3));
+        
+        return "{$prefix}-{$timestamp}-{$random}";
+    }
+
+    /**
+     * Product belongs to a brand
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * Product belongs to many categories
+     */
     public function categories(): BelongsToMany
     {
-        // Minimalist relationship - bellek sorunları için
-        return $this->belongsToMany(Category::class, 'product_categories');
+        return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
+            ->select(['categories.id', 'categories.name', 'categories.slug'])
+            ->withPivot('id')
+            ->withoutGlobalScopes();
     }
 
-    public function images(): HasMany
-    {
-        return $this->hasMany(ProductImage::class);
-    }
-
-    public function primaryImage()
-    {
-        return $this->hasOne(ProductImage::class)->where('is_primary', true);
-    }
-
+    /**
+     * Product has many variants
+     */
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
     }
 
+    /**
+     * Product has many images
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Product has one primary image
+     */
+    public function primaryImage(): HasOne
+    {
+        return $this->hasOne(ProductImage::class)->where('is_primary', true);
+    }
+
+    /**
+     * Product has many reviews
+     */
     public function reviews(): HasMany
     {
         return $this->hasMany(ProductReview::class);
     }
 
+    /**
+     * Product has many approved reviews
+     */
     public function approvedReviews(): HasMany
     {
         return $this->hasMany(ProductReview::class)->where('is_approved', true);
     }
 
-    public function cartItems(): HasMany
-    {
-        return $this->hasMany(CartItem::class);
-    }
-
-    public function orderItems(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
-
-    public function dealerDiscounts(): HasMany
-    {
-        return $this->hasMany(DealerDiscount::class);
-    }
-
-    public function bulkDiscounts(): HasMany
-    {
-        return $this->hasMany(BulkDiscount::class);
-    }
-
-    public function campaigns(): BelongsToMany
-    {
-        return $this->belongsToMany(Campaign::class, 'campaign_products');
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
-    }
-
-    public function scopeNew($query)
-    {
-        return $query->where('is_new', true);
-    }
-
-    public function scopeBestseller($query)
-    {
-        return $query->where('is_bestseller', true);
-    }
-
-    public function scopeInStock($query)
-    {
-        return $query->where('stock', '>', 0);
-    }
-
-    public function scopeLowStock($query)
-    {
-        return $query->whereColumn('stock', '<=', 'min_stock_level');
-    }
-
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('sort_order')->orderBy('name');
-    }
-
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
-
-    public function isLowStock()
-    {
-        return $this->stock <= $this->min_stock_level;
-    }
-
-    public function incrementViews()
-    {
-        $this->increment('views');
-    }
-
     /**
-     * Get product attribute values
+     * Product has many attribute values
      */
     public function attributeValues(): HasMany
     {
@@ -170,31 +149,294 @@ class Product extends Model
     }
 
     /**
-     * Get attribute value for a specific attribute
+     * Product belongs to many campaigns
+     */
+    public function campaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(Campaign::class, 'campaign_products');
+    }
+
+    /**
+     * Product has many cart items
+     */
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    /**
+     * Product has many order items
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Active products scope
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Featured products scope
+     */
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
+    }
+
+    /**
+     * New products scope
+     */
+    public function scopeNew($query)
+    {
+        return $query->where('is_new', true);
+    }
+
+    /**
+     * Bestseller products scope
+     */
+    public function scopeBestseller($query)
+    {
+        return $query->where('is_bestseller', true);
+    }
+
+    /**
+     * Products with stock scope
+     */
+    public function scopeInStock($query)
+    {
+        return $query->whereHas('variants', function ($query) {
+            $query->where('stock', '>', 0);
+        });
+    }
+
+    /**
+     * Ordered products scope
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Get route key name
+     */
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
+    /**
+     * Get total stock from all variants
+     * Disabled to prevent memory issues
+     */
+    // public function getTotalStockAttribute()
+    // {
+    //     return \Cache::remember("product_total_stock_{$this->id}", 300, function () {
+    //         return $this->variants()->sum('stock');
+    //     });
+    // }
+
+    /**
+     * Get minimum price from variants
+     * Disabled to prevent memory issues
+     */
+    // public function getMinPriceAttribute()
+    // {
+    //     return \Cache::remember("product_min_price_{$this->id}", 300, function () {
+    //         return $this->variants()->min('price') ?? $this->base_price;
+    //     });
+    // }
+
+    /**
+     * Get maximum price from variants
+     * Disabled to prevent memory issues
+     */
+    // public function getMaxPriceAttribute()
+    // {
+    //     return \Cache::remember("product_max_price_{$this->id}", 300, function () {
+    //         return $this->variants()->max('price') ?? $this->base_price;
+    //     });
+    // }
+
+    /**
+     * Get price range string
+     * Disabled to prevent memory issues
+     */
+    // public function getPriceRangeAttribute()
+    // {
+    //     $min = $this->min_price;
+    //     $max = $this->max_price;
+
+    //     if ($min == $max) {
+    //         return number_format($min, 2) . ' ₺';
+    //     }
+
+    //     return number_format($min, 2) . ' - ' . number_format($max, 2) . ' ₺';
+    // }
+
+    /**
+     * Check if product has multiple variants
+     */
+    public function hasVariants()
+    {
+        return $this->variants()->count() > 1;
+    }
+
+    /**
+     * Check if product is in stock
+     * Simplified to prevent memory issues
+     */
+    public function isInStock()
+    {
+        return $this->variants()->where('stock', '>', 0)->exists();
+    }
+
+    /**
+     * Get available colors
+     * Disabled to prevent memory issues
+     */
+    // public function getAvailableColors()
+    // {
+    //     return \Cache::remember("product_colors_{$this->id}", 600, function () {
+    //         return $this->variants()
+    //             ->select('color')
+    //             ->whereNotNull('color')
+    //             ->distinct()
+    //             ->pluck('color')
+    //             ->filter();
+    //     });
+    // }
+
+    /**
+     * Get available sizes
+     * Disabled to prevent memory issues
+     */
+    // public function getAvailableSizes()
+    // {
+    //     return \Cache::remember("product_sizes_{$this->id}", 600, function () {
+    //         return $this->variants()
+    //             ->select('size')
+    //             ->whereNotNull('size')
+    //             ->distinct()
+    //             ->pluck('size')
+    //             ->filter();
+    //     });
+    // }
+
+    /**
+     * Get available attribute values for a specific attribute
+     */
+    public function getAvailableAttributeValues($attributeId)
+    {
+        return ProductVariantAttribute::where('product_attribute_id', $attributeId)
+            ->whereIn('product_variant_id', $this->variants()->pluck('id'))
+            ->distinct()
+            ->pluck('value');
+    }
+
+    /**
+     * Get attribute value by attribute ID
      */
     public function getAttributeValue($attributeId)
     {
-        return $this->attributeValues()
+        $value = $this->attributeValues()
             ->where('product_attribute_id', $attributeId)
-            ->first()?->value;
+            ->first();
+            
+        return $value ? $value->value : null;
     }
 
     /**
-     * Set attribute value
+     * Get average rating
+     * Disabled to prevent memory issues
      */
-    public function setAttributeValue($attributeId, $value)
+    // public function getAverageRatingAttribute()
+    // {
+    //     return $this->approvedReviews()->avg('rating') ?? 0;
+    // }
+
+    /**
+     * Get reviews count
+     * Disabled to prevent memory issues
+     */
+    // public function getReviewsCountAttribute()
+    // {
+    //     return $this->approvedReviews()->count();
+    // }
+
+    /**
+     * Create default variant if product doesn't have any
+     */
+    public function createDefaultVariant()
     {
-        return $this->attributeValues()->updateOrCreate(
-            ['product_attribute_id' => $attributeId],
-            ['value' => $value]
-        );
+        if ($this->variants()->count() === 0) {
+            $this->variants()->create([
+                'name' => 'Varsayılan',
+                'sku' => $this->sku . '-DEFAULT',
+                'price' => $this->base_price,
+                'stock' => 0,
+                'is_active' => true,
+            ]);
+        }
     }
 
     /**
-     * Get current price (discounted or regular)
+     * Get primary category
+     * Disabled to prevent memory issues
      */
-    public function getCurrentPriceAttribute()
+    // public function getPrimaryCategoryAttribute()
+    // {
+    //     return $this->categories()->orderBy('product_categories.id')->first();
+    // }
+
+    /**
+     * Search products by term
+     */
+    public function scopeSearch($query, $term)
     {
-        return $this->discounted_price ?? $this->price;
+        return $query->where(function ($query) use ($term) {
+            $query->where('name', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%")
+                ->orWhere('sku', 'like', "%{$term}%")
+                ->orWhere('barcode', 'like', "%{$term}%");
+        });
+    }
+
+    /**
+     * Filter by category
+     */
+    public function scopeInCategory($query, $categoryId)
+    {
+        return $query->whereHas('categories', function ($query) use ($categoryId) {
+            $query->where('categories.id', $categoryId);
+        });
+    }
+
+    /**
+     * Filter by price range
+     */
+    public function scopePriceRange($query, $min, $max)
+    {
+        return $query->whereHas('variants', function ($query) use ($min, $max) {
+            $query->whereBetween('price', [$min, $max]);
+        });
+    }
+
+    /**
+     * Filter by attribute value
+     */
+    public function scopeHasAttributeValue($query, $attributeId, $value)
+    {
+        return $query->whereHas('variants', function ($query) use ($attributeId, $value) {
+            $query->whereHas('attributeValues', function ($query) use ($attributeId, $value) {
+                $query->where('product_attribute_id', $attributeId)
+                    ->where('value', $value);
+            });
+        });
     }
 }

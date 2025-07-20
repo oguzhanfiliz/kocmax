@@ -57,12 +57,15 @@ class Category extends Model
 
     public function children(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'parent_id')
+            ->select(['id', 'name', 'slug', 'parent_id', 'sort_order', 'is_active']);
     }
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'product_categories');
+        return $this->belongsToMany(Product::class, 'product_categories', 'category_id', 'product_id')
+            ->select(['products.id', 'products.name', 'products.slug', 'products.sku', 'products.base_price', 'products.is_active'])
+            ->withPivot('id');
     }
 
     public function dealerDiscounts(): HasMany
@@ -92,17 +95,10 @@ class Category extends Model
 
     public function getAllChildrenIds()
     {
-        $ids = collect([$this->id]);
-        $visited = [$this->id];
-        
-        $this->children->each(function ($child) use (&$ids, &$visited) {
-            if (!in_array($child->id, $visited)) {
-                $visited[] = $child->id;
-                $ids = $ids->merge($child->getAllChildrenIds());
-            }
+        // Simplified version - only return direct children to prevent memory issues
+        return \Cache::remember("category_children_{$this->id}", 3600, function () {
+            return $this->children()->pluck('id');
         });
-        
-        return $ids->unique()->values();
     }
 
     /**

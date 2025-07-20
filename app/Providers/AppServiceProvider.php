@@ -39,5 +39,9 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('renderIcon', function ($expression) {
             return "<?php echo \App\Helpers\IconHelper::get($expression); ?>";
         });
+
+        // Register observers
+        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
     }
 }
