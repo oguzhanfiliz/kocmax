@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $admin->assignRole('admin');
+        $admin->assignRole(['admin', 'super_admin']);
 
         // Editor kullanıcısı
         $editor = User::updateOrCreate(

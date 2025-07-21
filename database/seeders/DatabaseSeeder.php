@@ -14,11 +14,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
+            PermissionSeederForAdminRole::class, // Admin izinlerini ekle
             UserSeeder::class,
             CategorySeeder::class,
             CurrencySeeder::class,
-            // AttributeTypeSeeder::class, // Kaldırıldı
-            // ProductAttributeSeeder::class, // Kaldırıldı
             ProductSeeder::class,
         ]);
     }
