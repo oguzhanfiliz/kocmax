@@ -17,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
             return new \App\Helpers\IconHelper();
         });
 
+        // Register Pricing System Services
+        $this->registerPricingServices();
+
         // Laravel Ignition Livewire Context Provider hatası için geçici çözüm
         if (class_exists(Ignition::class)) {
             $this->app->singleton('flare.context_providers', function ($app) {
@@ -28,6 +31,37 @@ class AppServiceProvider extends ServiceProvider
                     ->all();
             });
         }
+    }
+
+    /**
+     * Register pricing system services
+     */
+    private function registerPricingServices(): void
+    {
+        // Register CustomerTypeDetector
+        $this->app->singleton(\App\Services\Pricing\CustomerTypeDetector::class);
+        
+        // Register PriceEngine with all strategies
+        $this->app->singleton(\App\Services\Pricing\PriceEngine::class, function ($app) {
+            $customerTypeDetector = $app->make(\App\Services\Pricing\CustomerTypeDetector::class);
+            $priceEngine = new \App\Services\Pricing\PriceEngine($customerTypeDetector);
+            
+            // Register all pricing strategies
+            $priceEngine->addStrategy(new \App\Services\Pricing\B2BPricingStrategy());
+            $priceEngine->addStrategy(new \App\Services\Pricing\B2CPricingStrategy());
+            $priceEngine->addStrategy(new \App\Services\Pricing\GuestPricingStrategy());
+            
+            return $priceEngine;
+        });
+        
+        // Bind PricingService interface to concrete implementation
+        $this->app->bind(
+            \App\Interfaces\Pricing\PricingServiceInterface::class,
+            \App\Services\PricingService::class
+        );
+        
+        // Register PricingService as singleton
+        $this->app->singleton(\App\Services\PricingService::class);
     }
 
     /**

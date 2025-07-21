@@ -39,6 +39,15 @@ class User extends Authenticatable implements FilamentUser
         'is_approved_dealer', // Whether the user is an approved dealer | Kullanıcının onaylanmış bir bayi olup olmadığı
         'dealer_application_date', // The date the user applied to be a dealer | Kullanıcının bayilik başvuru tarihi
         'approved_at', // The date the user's dealer application was approved | Kullanıcının bayi başvurusunun onaylandığı tarih
+        'pricing_tier_id', // Customer pricing tier | Müşteri fiyatlandırma seviyesi
+        'customer_type_override', // Customer type override | Müşteri tipi zorlaması
+        'custom_discount_percentage', // Custom discount percentage | Özel indirim yüzdesi
+        'allow_backorders', // Allow backorders | Ön sipariş izni
+        'payment_terms_days', // Payment terms in days | Ödeme vadesi (gün)
+        'credit_limit', // Credit limit for B2B customers | B2B müşteriler için kredi limiti
+        'loyalty_points', // Loyalty program points | Sadakat programı puanları
+        'last_order_at', // Last order date | Son sipariş tarihi
+        'lifetime_value', // Customer lifetime value | Müşteri yaşam boyu değeri
     ];
 
     /**
@@ -67,6 +76,13 @@ class User extends Authenticatable implements FilamentUser
         'dealer_discount_percentage' => 'float',
         'dealer_application_date' => 'datetime',
         'approved_at' => 'datetime',
+        'custom_discount_percentage' => 'decimal:2',
+        'allow_backorders' => 'boolean',
+        'payment_terms_days' => 'integer',
+        'credit_limit' => 'decimal:2',
+        'loyalty_points' => 'integer',
+        'last_order_at' => 'datetime',
+        'lifetime_value' => 'decimal:2',
     ];
 
     /**
@@ -89,7 +105,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function isDealer(): bool
     {
-        return $this->is_approved_dealer;
+        return $this->hasRole('dealer') || $this->is_approved_dealer;
     }
 
     /**
@@ -129,6 +145,68 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Get the user's pricing tier.
+     * Kullanıcının fiyatlandırma seviyesini alır.
+     */
+    public function pricingTier()
+    {
+        return $this->belongsTo(CustomerPricingTier::class, 'pricing_tier_id');
+    }
+
+    /**
+     * Get the user's orders.
+     * Kullanıcının siparişlerini alır.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+
+    /**
+     * Get customer type with override support
+     */
+    public function getCustomerType(): \App\Enums\CustomerType
+    {
+        if ($this->customer_type_override) {
+            return \App\Enums\CustomerType::from($this->customer_type_override);
+        }
+
+        return app(\App\Services\Pricing\CustomerTypeDetector::class)->detect($this);
+    }
+
+    /**
+     * Check if user has custom pricing
+     */
+    public function hasCustomPricing(): bool
+    {
+        return $this->custom_discount_percentage > 0 || $this->pricing_tier_id !== null;
+    }
+
+    /**
+     * Get effective discount percentage
+     */
+    public function getEffectiveDiscountPercentage(): float
+    {
+        // Custom discount takes priority
+        if ($this->custom_discount_percentage > 0) {
+            return $this->custom_discount_percentage;
+        }
+
+        // Then pricing tier discount
+        if ($this->pricingTier && $this->pricingTier->isActive()) {
+            return $this->pricingTier->discount_percentage;
+        }
+
+        // Legacy dealer discount
+        if ($this->dealer_discount_percentage > 0) {
+            return $this->dealer_discount_percentage;
+        }
+
+        return 0;
+    }
+
+    /**
      * Get the user's reviews.
      * Kullanıcının yorumlarını alır.
      */
@@ -153,15 +231,6 @@ class User extends Authenticatable implements FilamentUser
     public function activeCart()
     {
         return $this->hasOne(Cart::class)->latest();
-    }
-
-    /**
-     * Get the user's orders.
-     * Kullanıcının siparişlerini alır.
-     */
-    public function orders(): HasMany
-    {
-        return $this->hasMany(Order::class);
     }
 
     /**

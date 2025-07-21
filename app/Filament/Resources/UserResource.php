@@ -93,6 +93,67 @@ class UserResource extends Resource
                             ->label('Onaylanma Tarihi'),
                     ])
                     ->columns(2),
+
+                Forms\Components\Section::make('Fiyatlandırma')
+                    ->schema([
+                        Forms\Components\Select::make('pricing_tier_id')
+                            ->label('Fiyatlandırma Seviyesi')
+                            ->relationship('pricingTier', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
+                        Forms\Components\Select::make('customer_type_override')
+                            ->label('Müşteri Tipi (Zorla)')
+                            ->options([
+                                'b2b' => 'B2B',
+                                'b2c' => 'B2C',
+                                'wholesale' => 'Toptan',
+                                'retail' => 'Perakende',
+                            ])
+                            ->nullable()
+                            ->helperText('Otomatik tespit edileni geçersiz kılmak için'),
+                        Forms\Components\TextInput::make('custom_discount_percentage')
+                            ->label('Özel İndirim Oranı (%)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->suffix('%')
+                            ->nullable(),
+                        Forms\Components\TextInput::make('credit_limit')
+                            ->label('Kredi Limiti (₺)')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->nullable(),
+                        Forms\Components\TextInput::make('payment_terms_days')
+                            ->label('Ödeme Vadesi (Gün)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
+                        Forms\Components\Toggle::make('allow_backorders')
+                            ->label('Ön Sipariş İzni')
+                            ->default(false),
+                    ])
+                    ->columns(3),
+
+                Forms\Components\Section::make('Sadakat ve İstatistikler')
+                    ->schema([
+                        Forms\Components\TextInput::make('loyalty_points')
+                            ->label('Sadakat Puanları')
+                            ->numeric()
+                            ->default(0)
+                            ->disabled(),
+                        Forms\Components\TextInput::make('lifetime_value')
+                            ->label('Yaşam Boyu Değer (₺)')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->disabled(),
+                        Forms\Components\DateTimePicker::make('last_order_at')
+                            ->label('Son Sipariş Tarihi')
+                            ->disabled(),
+                    ])
+                    ->columns(3)
+                    ->collapsible()
+                    ->collapsed(),
                 
                 Forms\Components\Section::make('Güvenlik')
                     ->schema([
