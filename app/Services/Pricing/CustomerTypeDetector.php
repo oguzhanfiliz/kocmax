@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Pricing;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Models\User;
 
 class CustomerTypeDetector

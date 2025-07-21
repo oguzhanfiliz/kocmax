@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;

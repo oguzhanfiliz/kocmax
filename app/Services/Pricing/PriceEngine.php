@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Pricing;
 
 use App\Contracts\Pricing\PricingStrategyInterface;
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Exceptions\Pricing\InvalidPriceException;
 use App\Exceptions\Pricing\PricingException;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\ValueObjects\PriceResult;
+use App\ValueObjects\Pricing\PriceResult;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;

@@ -3,7 +3,7 @@
 namespace Tests\Unit\Pricing;
 
 use App\Services\Pricing\CustomerTypeDetector;
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Models\User;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;

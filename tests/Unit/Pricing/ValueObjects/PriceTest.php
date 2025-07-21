@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Pricing\ValueObjects;
 
-use App\ValueObjects\Price;
+use App\ValueObjects\Pricing\Price;
 use PHPUnit\Framework\TestCase;
 use InvalidArgumentException;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces\Pricing;
 
-use App\ValueObjects\PriceResult;
+use App\ValueObjects\Pricing\PriceResult;
 
 interface PriceDecoratorInterface
 {
