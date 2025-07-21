@@ -276,7 +276,7 @@ FROM dealer_discounts;
 ## Next Steps
 
 1. ✅ Dokümantasyon tamamlandı
-2. 🔄 Core interface'lerin oluşturulması
+2. ✅ Core interface'lerin oluşturulması
 3. 🔄 Strategy pattern implementasyonu
 4. 🔄 Database migration'ları
 5. 🔄 Filament admin interface güncellemeleri
