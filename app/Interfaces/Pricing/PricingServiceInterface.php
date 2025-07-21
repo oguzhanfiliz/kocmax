@@ -6,7 +6,7 @@ namespace App\Interfaces\Pricing;
 
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\ValueObjects\PriceResult;
+use App\ValueObjects\Pricing\PriceResult;
 use Illuminate\Support\Collection;
 
 interface PricingServiceInterface

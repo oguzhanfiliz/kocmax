@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Contracts\Pricing;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\ValueObjects\Price;
-use App\ValueObjects\PriceResult;
+use App\ValueObjects\Pricing\Price;
+use App\ValueObjects\Pricing\PriceResult;
 use Illuminate\Support\Collection;
 
 interface PricingStrategyInterface

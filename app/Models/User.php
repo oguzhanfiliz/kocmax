@@ -166,10 +166,10 @@ class User extends Authenticatable implements FilamentUser
     /**
      * Get customer type with override support
      */
-    public function getCustomerType(): \App\Enums\CustomerType
+    public function getCustomerType(): \App\Enums\Pricing\CustomerType
     {
         if ($this->customer_type_override) {
-            return \App\Enums\CustomerType::from($this->customer_type_override);
+            return \App\Enums\Pricing\CustomerType::from($this->customer_type_override);
         }
 
         return app(\App\Services\Pricing\CustomerTypeDetector::class)->detect($this);

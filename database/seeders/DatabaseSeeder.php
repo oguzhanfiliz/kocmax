@@ -12,14 +12,50 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            PermissionSeeder::class,
-            UserSeeder::class,
-            CategorySeeder::class,
-            CurrencySeeder::class,
-            // AttributeTypeSeeder::class, // Kaldırıldı
-            // ProductAttributeSeeder::class, // Kaldırıldı
-            ProductSeeder::class,
-        ]);
+        $this->command->info('🚀 Database seeding başlıyor...');
+        
+        $seeders = [
+            'İzin sistemi' => [
+                PermissionSeeder::class,
+                PermissionSeederForAdminRole::class,
+            ],
+            'Temel veriler' => [
+                CurrencySeeder::class,
+                CategorySeeder::class,
+                SkuConfigurationSeeder::class,
+                VariantTypeSeeder::class,
+            ],
+            'Fiyatlandırma sistemi' => [
+                CustomerPricingTierSeeder::class,
+                PricingRuleSeeder::class,
+            ],
+            'Kullanıcılar ve ürünler' => [
+                UserSeeder::class,
+                ProductSeeder::class,
+                DealerApplicationSeeder::class,
+                ProductReviewSeeder::class,
+            ]
+        ];
+
+        foreach ($seeders as $groupName => $seederClasses) {
+            $this->command->info("📁 {$groupName} seeders çalıştırılıyor...");
+            
+            foreach ($seederClasses as $seederClass) {
+                $this->command->info("  ⏳ " . class_basename($seederClass) . " çalıştırılıyor...");
+                $this->call($seederClass);
+            }
+            
+            $this->command->info("  ✅ {$groupName} tamamlandı!");
+        }
+        
+        $this->command->info('🎉 Tüm seeder işlemleri başarıyla tamamlandı!');
+        $this->command->info('📊 Sistem özeti:');
+        $this->command->info('   👥 Kullanıcılar: ' . \App\Models\User::count());
+        $this->command->info('   🏢 Müşteri seviyeleri: ' . \App\Models\CustomerPricingTier::count());
+        $this->command->info('   📋 Fiyat kuralları: ' . \App\Models\PricingRule::count());
+        $this->command->info('   📦 Ürünler: ' . \App\Models\Product::count());
+        $this->command->info('   🎨 Ürün varyantları: ' . \App\Models\ProductVariant::count());
+        $this->command->info('   📂 Kategoriler: ' . \App\Models\Category::count());
+        $this->command->info('   💱 Para birimleri: ' . \App\Models\Currency::count());
     }
 }

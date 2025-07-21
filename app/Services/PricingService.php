@@ -8,7 +8,7 @@ use App\Interfaces\Pricing\PricingServiceInterface;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Pricing\PriceEngine;
-use App\ValueObjects\PriceResult;
+use App\ValueObjects\Pricing\PriceResult;
 use Illuminate\Support\Collection;
 
 class PricingService implements PricingServiceInterface

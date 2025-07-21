@@ -19,22 +19,22 @@ class CurrencySeeder extends Seeder
             'name' => 'US Dollar',
             'code' => 'USD',
             'symbol' => '$',
-            'exchange_rate' => 1.00,
-            'is_default' => true,
+            'exchange_rate' => 40.00,
         ]);
 
         Currency::create([
             'name' => 'Euro',
             'code' => 'EUR',
             'symbol' => '€',
-            'exchange_rate' => 0.92,
+            'exchange_rate' => 46.00,
         ]);
 
         Currency::create([
             'name' => 'Turkish Lira',
             'code' => 'TRY',
             'symbol' => '₺',
-            'exchange_rate' => 32.50,
+            'exchange_rate' => 1.00,
+            'is_default' => true,
         ]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Filament\Resources\PriceHistoryResource\Pages;
 use App\Models\PriceHistory;
 use Filament\Resources\Resource;

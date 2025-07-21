@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Pricing;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\ValueObjects\Discount;
-use App\ValueObjects\Price;
+use App\ValueObjects\Pricing\Discount;
+use App\ValueObjects\Pricing\Price;
 use Illuminate\Support\Collection;
 
 class B2BPricingStrategy extends AbstractPricingStrategy

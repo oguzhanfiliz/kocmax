@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\ValueObjects;
+namespace App\ValueObjects\Pricing;
 
-use App\Enums\CustomerType;
+use App\Enums\Pricing\CustomerType;
 use Illuminate\Support\Collection;
 
 class PriceResult
