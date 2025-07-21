@@ -384,6 +384,109 @@ class OrderService
 }
 ```
 
+## 📦 Product & Variant Management
+
+### Complex Variant Management in Filament
+This pattern demonstrates a sophisticated approach to managing products with multiple variants (like size and color) directly within a Filament resource. It uses a custom action to create variants, dynamically loads data, and provides clear user feedback.
+
+```php
+// In ProductResource.php
+
+// 1. Action to trigger variant creation modal
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\CreateAction::make(),
+        Action::make('createVariant')
+            ->label('Create New Variant')
+            ->action(fn () => $this->dispatch('open-variant-modal'))
+            ->color('success')
+            ->icon('heroicon-o-plus-circle'),
+    ];
+}
+
+// 2. Form schema for creating a new variant
+public static function getVariantForm(): array
+{
+    return [
+        Forms\Components\Select::make('color_id')
+            ->label('Color')
+            ->options(Color::all()->pluck('name', 'id'))
+            ->required(),
+        Forms\Components\Select::make('size_id')
+            ->label('Size')
+            ->options(Size::all()->pluck('name', 'id'))
+            ->required(),
+        Forms\Components\TextInput::make('price')
+            ->label('Variant Price')
+            ->numeric()
+            ->prefix('₺'),
+        Forms\Components\TextInput::make('stock')
+            ->label('Stock Quantity')
+            ->integer()
+            ->required(),
+        Forms\Components\FileUpload::make('image')
+            ->label('Variant Image')
+            ->image(),
+    ];
+}
+
+// 3. Handling the variant creation logic
+public function createVariantAction(array $data): void
+{
+    $product = $this->getRecord();
+
+    $variant = $product->variants()->create([
+        'price' => $data['price'],
+        'stock_quantity' => $data['stock'],
+    ]);
+
+    // Attach attributes (color, size)
+    $variant->attributes()->attach([
+        $data['color_id'],
+        $data['size_id'],
+    ]);
+
+    // Handle image upload
+    if (!empty($data['image'])) {
+        $variant->addMedia($data['image'])->toMediaCollection('variants');
+    }
+
+    Notification::make()
+        ->title('Variant created successfully')
+        ->success()
+        ->send();
+}
+```
+
+### Product Image Management with Accessors
+This pattern shows how to manage product images and provide a convenient URL accessor for use in the frontend.
+
+```php
+// In ProductImage.php model
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+
+class ProductImage extends Model
+{
+    protected $fillable = ['product_id', 'path', 'is_main'];
+
+    /**
+     * Get the full URL for the image.
+     *
+     * @return string
+     */
+    public function getUrlAttribute(): string
+    {
+        return Storage::url($this->path);
+    }
+}
+
+// Usage in a Blade view or API response:
+// $productImage->url
+```
+
 ## 🔐 Authorization Patterns
 
 ### Policy-Based Authorization

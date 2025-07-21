@@ -212,6 +212,11 @@ class Product extends Model
         return number_format($this->base_price, 2) . ' ' . $this->currency->symbol;
     }
 
+    public function getUrlAttribute(): string
+    {
+        return Storage::url($this->path);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -308,6 +313,41 @@ class ProductResource extends Resource
             'create' => Pages\CreateProduct::route('/create'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
+    }
+}
+```
+
+### Advanced: Custom Actions and Widgets
+```php
+// Example: Custom action in ProductResource to create a variant
+protected function getHeaderActions(): array
+{
+    return [
+        Actions\CreateAction::make(),
+        Action::make('createVariant')
+            ->label('Create Variant')
+            ->form([
+                // Form fields for the variant
+            ])
+            ->action(function (array $data) {
+                // Logic to create the variant
+            })
+    ];
+}
+
+// Example: Dashboard Widget for Cache Management
+class CacheManagementWidget extends BaseWidget
+{
+    protected static string $view = 'filament.widgets.cache-management-widget';
+
+    public function clearCache(string $cacheKey): void
+    {
+        Cache::forget($cacheKey);
+        $this->dispatch('cache-cleared');
+        Notification::make()
+            ->title('Cache Cleared')
+            ->success()
+            ->send();
     }
 }
 ```
@@ -517,6 +557,10 @@ class ExchangeRateService
     }
 }
 ```
+
+### Debugging
+- Use `barryvdh/laravel-debugbar` for local development to identify performance bottlenecks, view query counts, and inspect application state.
+- Write targeted tests to isolate and replicate performance issues before and after optimization.
 
 ## Error Handling
 

@@ -63,6 +63,13 @@ class Product extends Model
                 $product->slug = Str::slug($product->name);
             }
         });
+
+        static::saved(function ($product) {
+            // Kategori güncellemelerini kontrol et
+            if (request()->has('categories')) {
+                $product->validateAndSyncCategories(request('categories'));
+            }
+        });
     }
 
     /**
@@ -392,4 +399,44 @@ class Product extends Model
     }
 
     // scopeHasAttributeValue kaldırıldı - Variant sistemi kullanılacak
+
+    /**
+     * Validate and sync categories with parent requirement
+     */
+    public function validateAndSyncCategories($categoryIds)
+    {
+        if (empty($categoryIds) || !is_array($categoryIds)) {
+            return;
+        }
+
+        $allRequiredCategories = collect();
+
+        foreach ($categoryIds as $categoryId) {
+            $category = Category::find($categoryId);
+            if (!$category) {
+                continue;
+            }
+
+            // Add the category itself
+            $allRequiredCategories->push($categoryId);
+
+            // Add all parent categories
+            $parent = $category->parent;
+            $visited = [$categoryId];
+            $depth = 0;
+
+            while ($parent && $depth < 10) {
+                if (in_array($parent->id, $visited)) {
+                    break; // Prevent infinite loop
+                }
+                $visited[] = $parent->id;
+                $allRequiredCategories->push($parent->id);
+                $parent = $parent->parent;
+                $depth++;
+            }
+        }
+
+        // Sync with all required categories (including parents)
+        $this->categories()->sync($allRequiredCategories->unique()->values()->toArray());
+    }
 }

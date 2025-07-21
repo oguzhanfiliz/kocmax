@@ -102,10 +102,45 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('categories')
                             ->label('Kategoriler')
-                            ->relationship('categories', 'name')
                             ->multiple()
                             ->searchable()
-                            ->preload(),
+                            ->options(Category::getTreeForSelect())
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state && is_array($state)) {
+                                    $allCategoryIds = collect($state);
+                                    
+                                    // Cache ile kategori bilgilerini toplu olarak al
+                                    $categories = \Cache::remember('categories_with_parents_' . md5(implode(',', $state)), 300, function () use ($state) {
+                                        return Category::whereIn('id', $state)
+                                            ->with(['parent.parent.parent.parent']) // 4 level parent
+                                            ->get();
+                                    });
+                                    
+                                    foreach ($categories as $category) {
+                                        // Üst kategorileri bulup ekle
+                                        $parent = $category->parent;
+                                        $visited = [$category->id];
+                                        $depth = 0;
+                                        
+                                        while ($parent && $depth < 10) {
+                                            if (in_array($parent->id, $visited)) {
+                                                break;
+                                            }
+                                            $visited[] = $parent->id;
+                                            $allCategoryIds->push($parent->id);
+                                            $parent = $parent->parent;
+                                            $depth++;
+                                        }
+                                    }
+                                    
+                                    $finalCategories = $allCategoryIds->unique()->values()->toArray();
+                                    if (count($finalCategories) !== count($state)) {
+                                        $set('categories', $finalCategories);
+                                    }
+                                }
+                            })
+                            ->helperText('Kategoriler hiyerarşik olarak gösterilir. Alt kategori seçtiğinizde üst kategoriler otomatik eklenir. Manuel silinen üst kategoriler backend tarafından tekrar eklenir.'),
                         Forms\Components\Select::make('gender')
                             ->label('Cinsiyet')
                             ->options([
