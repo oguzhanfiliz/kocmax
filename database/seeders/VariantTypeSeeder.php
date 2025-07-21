@@ -11,15 +11,19 @@ class VariantTypeSeeder extends Seeder
     public function run(): void
     {
         // Renk Varyant Türü
-        $colorType = VariantType::create([
-            'name' => 'Color',
-            'slug' => 'color',
-            'display_name' => 'Renk',
-            'input_type' => 'color',
-            'is_required' => true,
-            'is_active' => true,
-            'sort_order' => 1,
-        ]);
+        $colorType = VariantType::firstOrCreate(
+            [
+                'slug' => 'color',
+            ],
+            [
+                'name' => 'Color',
+                'display_name' => 'Renk',
+                'input_type' => 'color',
+                'is_required' => true,
+                'is_active' => true,
+                'sort_order' => 1,
+            ]
+        );
 
         // Renk Seçenekleri
         $colors = [
@@ -35,27 +39,35 @@ class VariantTypeSeeder extends Seeder
         ];
 
         foreach ($colors as $index => $color) {
-            VariantOption::create([
-                'variant_type_id' => $colorType->id,
-                'name' => $color['name'],
-                'value' => $color['value'],
-                'slug' => strtolower($color['name']),
-                'hex_color' => $color['hex_color'],
-                'sort_order' => $index,
-                'is_active' => true,
-            ]);
+            VariantOption::firstOrCreate(
+                [
+                    'variant_type_id' => $colorType->id,
+                    'slug' => strtolower($color['name']),
+                ],
+                [
+                    'name' => $color['name'],
+                    'value' => $color['value'],
+                    'hex_color' => $color['hex_color'],
+                    'sort_order' => $index,
+                    'is_active' => true,
+                ]
+            );
         }
 
         // Beden Varyant Türü
-        $sizeType = VariantType::create([
-            'name' => 'Size',
-            'slug' => 'size',
-            'display_name' => 'Beden',
-            'input_type' => 'select',
-            'is_required' => true,
-            'is_active' => true,
-            'sort_order' => 2,
-        ]);
+        $sizeType = VariantType::firstOrCreate(
+            [
+                'slug' => 'size',
+            ],
+            [
+                'name' => 'Size',
+                'display_name' => 'Beden',
+                'input_type' => 'select',
+                'is_required' => true,
+                'is_active' => true,
+                'sort_order' => 2,
+            ]
+        );
 
         // Beden Seçenekleri
         $sizes = [
@@ -70,37 +82,49 @@ class VariantTypeSeeder extends Seeder
         ];
 
         foreach ($sizes as $index => $size) {
-            VariantOption::create([
-                'variant_type_id' => $sizeType->id,
-                'name' => $size['name'],
-                'value' => $size['value'],
-                'slug' => strtolower(str_replace(' ', '-', $size['name'])),
-                'sort_order' => $index,
-                'is_active' => true,
-            ]);
+            VariantOption::firstOrCreate(
+                [
+                    'variant_type_id' => $sizeType->id,
+                    'slug' => strtolower(str_replace(' ', '-', $size['name'])),
+                ],
+                [
+                    'name' => $size['name'],
+                    'value' => $size['value'],
+                    'sort_order' => $index,
+                    'is_active' => true,
+                ]
+            );
         }
 
         // Ayakkabı Numarası Varyant Türü
-        $shoeType = VariantType::create([
-            'name' => 'Shoe Size',
-            'slug' => 'shoe-size',
-            'display_name' => 'Ayakkabı Numarası',
-            'input_type' => 'select',
-            'is_required' => false,
-            'is_active' => true,
-            'sort_order' => 3,
-        ]);
+        $shoeType = VariantType::firstOrCreate(
+            [
+                'slug' => 'shoe-size',
+            ],
+            [
+                'name' => 'Shoe Size',
+                'display_name' => 'Ayakkabı Numarası',
+                'input_type' => 'select',
+                'is_required' => false,
+                'is_active' => true,
+                'sort_order' => 3,
+            ]
+        );
 
         // Ayakkabı Numarası Seçenekleri
         for ($i = 36; $i <= 48; $i++) {
-            VariantOption::create([
-                'variant_type_id' => $shoeType->id,
-                'name' => (string)$i,
-                'value' => (string)$i,
-                'slug' => (string)$i,
-                'sort_order' => $i - 36,
-                'is_active' => true,
-            ]);
+            VariantOption::firstOrCreate(
+                [
+                    'variant_type_id' => $shoeType->id,
+                    'slug' => (string)$i,
+                ],
+                [
+                    'name' => (string)$i,
+                    'value' => (string)$i,
+                    'sort_order' => $i - 36,
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }
