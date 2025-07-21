@@ -63,13 +63,14 @@ jobs:
           # Database migrations çalıştır (eğer varsa)
           php artisan migrate --force
           php artisan db:seed --force
-          php artisan shield:generate --all 
+          yes | php artisan shield:generate --all
           php artisan db:seed --class=PermissionSeederForAdminRole
           
           # Storage link oluştur (eğer yoksa)
           php artisan storage:link
           
-          # Dosya izinlerini düzenle
+          # Dosya sahipliğini ve izinlerini düzenle
+          chown -R mutfakyapimnet:mutfakyapimnet .
           find . -type f -exec chmod 644 {} \;
           find . -type d -exec chmod 755 {} \;
           
@@ -78,11 +79,11 @@ jobs:
           chmod -R 775 bootstrap/cache
           
           # NPM dependencies (eğer frontend assets varsa)
-          npm ci --production
+          npm ci
           npm run build
           
           # Maintenance mode kapat
-          $PHP_PATH artisan up
+          php artisan up
           
           echo "Deploy completed successfully!"
         EOF
