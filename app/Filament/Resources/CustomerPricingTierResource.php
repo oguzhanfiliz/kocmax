@@ -21,6 +21,18 @@ class CustomerPricingTierResource extends Resource
     
     protected static ?int $navigationSort = 1;
 
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view',
+            'view_any',
+            'create',
+            'update',
+            'delete',
+            'delete_any',
+        ];
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('Müşteri Seviyeleri');
@@ -240,21 +252,21 @@ class CustomerPricingTierResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->can('view_any_customer_pricing_tier');
+        return auth()->user()->can('view_any_customer::pricing::tier');
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->can('create_customer_pricing_tier');
+        return auth()->user()->can('create_customer::pricing::tier');
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()->can('update_customer_pricing_tier');
+        return auth()->user()->can('update_customer::pricing::tier');
     }
 
     public static function canDelete($record): bool
     {
-        return auth()->user()->can('delete_customer_pricing_tier');
+        return auth()->user()->can('delete_customer::pricing::tier');
     }
 }
