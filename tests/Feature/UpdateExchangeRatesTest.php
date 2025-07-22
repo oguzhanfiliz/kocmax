@@ -21,6 +21,7 @@ class UpdateExchangeRatesTest extends TestCase
         $initialEurRate = Currency::where('code', 'EUR')->first()->exchange_rate;
 
         $this->mock(ExchangeRateService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getProviderDisplayName')->andReturn('Test Provider');
             $mock->shouldReceive('updateRates')->once()->andReturnUsing(function () {
                 Currency::where('code', 'EUR')->update(['exchange_rate' => 0.93]);
                 Currency::where('code', 'TRY')->update(['exchange_rate' => 1.00]);

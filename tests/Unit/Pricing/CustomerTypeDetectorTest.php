@@ -18,6 +18,11 @@ class CustomerTypeDetectorTest extends TestCase
     {
         parent::setUp();
         $this->detector = new CustomerTypeDetector();
+        
+        // Create necessary roles for tests
+        \Spatie\Permission\Models\Role::create(['name' => 'dealer']);
+        \Spatie\Permission\Models\Role::create(['name' => 'wholesale']);
+        \Spatie\Permission\Models\Role::create(['name' => 'retail']);
     }
 
     public function test_detects_guest_user_when_no_user_provided()

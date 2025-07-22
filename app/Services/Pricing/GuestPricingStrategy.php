@@ -22,7 +22,7 @@ class GuestPricingStrategy extends AbstractPricingStrategy
     {
         // Guests pay the full retail price (same as B2C)
         $price = $variant->price ?? $variant->product->base_price;
-        return new Price($price);
+        return new Price((float) $price);
     }
 
     public function getAvailableDiscounts(

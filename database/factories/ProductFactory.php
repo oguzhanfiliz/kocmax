@@ -24,8 +24,8 @@ class ProductFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name),
             'description' => 'Test açıklama',
-            'price' => 100.00,
-            'stock' => 50,
+            'sku' => 'PRD-' . date('ymd') . '-' . strtoupper(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[0] . str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[1] . str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[2]),
+            'base_price' => 100.00,
             'is_active' => true,
             'is_featured' => false,
         ];

@@ -22,7 +22,7 @@ class B2CPricingStrategy extends AbstractPricingStrategy
     {
         // B2C customers pay the full retail price
         $price = $variant->price ?? $variant->product->base_price;
-        return new Price($price);
+        return new Price((float) $price);
     }
 
     public function getAvailableDiscounts(

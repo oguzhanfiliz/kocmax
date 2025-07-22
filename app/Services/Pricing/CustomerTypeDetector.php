@@ -6,13 +6,59 @@ namespace App\Services\Pricing;
 
 use App\Enums\Pricing\CustomerType;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class CustomerTypeDetector
 {
-    public function detect(?User $customer = null): CustomerType
+    public function detect(?User $customer = null, array $context = []): CustomerType
     {
         if (!$customer) {
             return CustomerType::GUEST;
+        }
+
+        // If no context, try to get from cache
+        if (empty($context)) {
+            $cacheKey = "customer_type_{$customer->id}";
+            $cached = Cache::get($cacheKey);
+            if ($cached) {
+                return CustomerType::from($cached);
+            }
+        }
+
+        $customerType = $this->doDetect($customer, $context);
+
+        // Cache result if no context was provided
+        if (empty($context)) {
+            Cache::put("customer_type_{$customer->id}", $customerType->value, 3600); // 1 hour
+        }
+
+        return $customerType;
+    }
+
+    private function doDetect(User $customer, array $context = []): CustomerType
+    {
+        // Check for customer type override first
+        if (!empty($customer->customer_type_override)) {
+            return CustomerType::from($customer->customer_type_override);
+        }
+
+        // Check context for forced type
+        if (isset($context['force_type'])) {
+            return CustomerType::from($context['force_type']);
+        }
+
+        // Check context for B2B behavioral indicators
+        if (isset($context['order_quantity']) && $context['order_quantity'] >= 100) {
+            return CustomerType::B2B;
+        }
+
+        if (isset($context['order_frequency']) && $context['order_frequency'] === 'high') {
+            return CustomerType::B2B;
+        }
+
+        // Check for high volume wholesale qualification
+        if (($customer->lifetime_value ?? 0) >= 50000) {
+            return CustomerType::WHOLESALE;
         }
 
         // Check user roles to determine customer type
@@ -29,7 +75,7 @@ class CustomerTypeDetector
         }
 
         // Check if user has dealer-related fields
-        if ($customer->is_dealer ?? false) {
+        if ($customer->is_approved_dealer ?? false) {
             return CustomerType::B2B;
         }
 
@@ -50,6 +96,11 @@ class CustomerTypeDetector
     public function isB2CCustomer(?User $customer = null): bool
     {
         return $this->detect($customer)->isB2C();
+    }
+
+    public function isWholesaleCustomer(?User $customer = null): bool
+    {
+        return $this->detect($customer) === CustomerType::WHOLESALE;
     }
 
     public function canAccessDealerPrices(?User $customer = null): bool

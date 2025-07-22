@@ -29,7 +29,7 @@ class B2BPricingStrategy extends AbstractPricingStrategy
             $price = $price * (1 - $defaultDiscount / 100);
         }
         
-        return new Price($price);
+        return new Price((float) $price);
     }
 
     public function getAvailableDiscounts(

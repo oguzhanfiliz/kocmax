@@ -60,13 +60,13 @@ class PricingWorkflowTest extends TestCase
                 'product_id' => $product->id,
                 'name' => 'Small - White',
                 'price' => 150.00,
-                'stock_quantity' => 100
+                'stock' => 100
             ]),
             ProductVariant::factory()->create([
                 'product_id' => $product->id,
                 'name' => 'Large - Yellow',
                 'price' => 160.00,
-                'stock_quantity' => 50
+                'stock' => 50
             ])
         ]);
 
@@ -148,7 +148,7 @@ class PricingWorkflowTest extends TestCase
         $variant = ProductVariant::factory()->create([
             'name' => 'Safety Vest - Medium',
             'price' => 75.00,
-            'stock_quantity' => 200
+            'stock' => 200
         ]);
 
         // 3. Create B2C-specific rules
@@ -227,7 +227,7 @@ class PricingWorkflowTest extends TestCase
         $variant = ProductVariant::factory()->create([
             'name' => 'Basic Safety Gloves',
             'price' => 25.00,
-            'stock_quantity' => 500
+            'stock' => 500
         ]);
 
         $guestPromo = PricingRule::factory()->create([
@@ -377,7 +377,7 @@ class PricingWorkflowTest extends TestCase
     {
         $variant = ProductVariant::factory()->create([
             'price' => 50.00,
-            'stock_quantity' => 20
+            'stock' => 20
         ]);
 
         $user = User::factory()->create([
