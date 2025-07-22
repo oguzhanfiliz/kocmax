@@ -63,7 +63,6 @@ jobs:
           # Database migrations çalıştır (eğer varsa)
           php artisan migrate --force
           php artisan db:seed --force
-          yes | php artisan shield:generate --all
           php artisan db:seed --class=PermissionSeederForAdminRole
           
           # Storage link oluştur (eğer yoksa)
