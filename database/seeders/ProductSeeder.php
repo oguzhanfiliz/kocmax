@@ -24,7 +24,24 @@ class ProductSeeder extends Seeder
         // Bellek kullanımını azaltmak için batch processing kullan
         DB::connection()->disableQueryLog();
         
-        // Mevcut test ürünlerini temizle
+        // Mevcut seeder ürünlerini temizle (ISG- ile başlayan SKU'lar)
+        $this->command->info("Mevcut seeder ürünleri temizleniyor...");
+        
+        // Seeder ürünlerini tespit et
+        $seederProductIds = DB::table('products')
+            ->where('sku', 'like', 'ISG-%')
+            ->pluck('id');
+
+        if ($seederProductIds->isNotEmpty()) {
+            // İlişkili tabloları temizle
+            DB::table('product_categories')->whereIn('product_id', $seederProductIds)->delete();
+            DB::table('product_variants')->whereIn('product_id', $seederProductIds)->delete();
+            DB::table('products')->whereIn('id', $seederProductIds)->delete();
+            
+            $this->command->info("Temizlenen ürün sayısı: " . $seederProductIds->count());
+        }
+        
+        // Test ürünlerini de temizle
         DB::table('product_categories')->whereIn('product_id', function($query) {
             $query->select('id')->from('products')->where('name', 'like', 'Test Ürün %');
         })->delete();
@@ -212,6 +229,19 @@ class ProductSeeder extends Seeder
             $variants = $data['variants'];
             unset($data['variants']);
             
+            // Benzersiz SKU kontrolü
+            $baseSku = $data['sku'];
+            $sku = $baseSku;
+            $counter = 1;
+            
+            while (DB::table('products')->where('sku', $sku)->exists()) {
+                $sku = $baseSku . '-' . $counter;
+                $counter++;
+                $this->command->warn("SKU zaten mevcut, yeni SKU: " . $sku);
+            }
+            
+            $data['sku'] = $sku;
+            
             // Timestamps ekle
             $data['created_at'] = now();
             $data['updated_at'] = now();
@@ -229,10 +259,21 @@ class ProductSeeder extends Seeder
             
             // Varyantları oluştur
             foreach ($variants as $variantIndex => $variant) {
+                // Benzersiz SKU oluştur
+                $baseVariantSku = $data['sku'] . '-' . strtoupper(substr($variant['color'], 0, 3)) . '-' . str_replace(' ', '', $variant['size']);
+                $variantSku = $baseVariantSku;
+                $counter = 1;
+                
+                // SKU benzersizliğini kontrol et
+                while (DB::table('product_variants')->where('sku', $variantSku)->exists()) {
+                    $variantSku = $baseVariantSku . '-' . $counter;
+                    $counter++;
+                }
+                
                 $variantData = [
                     'product_id' => $productId,
                     'name' => $variant['color'] . ' - ' . $variant['size'],
-                    'sku' => $data['sku'] . '-' . strtoupper(substr($variant['color'], 0, 3)) . '-' . str_replace(' ', '', $variant['size']),
+                    'sku' => $variantSku,
                     'price' => $variant['price'],
                     'stock' => $variant['stock'],
                     'color' => $variant['color'],
