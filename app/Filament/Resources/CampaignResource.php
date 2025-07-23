@@ -48,7 +48,7 @@ class CampaignResource extends Resource
                     ->description('Kampanya genel bilgilerini girin.')
                     ->icon('heroicon-o-megaphone')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 TextInput::make('name')
                                     ->label('Kampanya Adı')
@@ -56,10 +56,72 @@ class CampaignResource extends Resource
                                     ->maxLength(255)
                                     ->placeholder('Örn: Bahar İndirimi 2025'),
 
+                                Select::make('type')
+                                    ->label('Kampanya Türü')
+                                    ->required()
+                                    ->options(array_reduce(
+                                        \App\Enums\Campaign\CampaignType::cases(),
+                                        function ($carry, $case) {
+                                            $carry[$case->value] = $case->getIcon() . ' ' . $case->getLabel();
+                                            return $carry;
+                                        },
+                                        []
+                                    ))
+                                    ->searchable()
+                                    ->preload()
+                                    ->reactive()
+                                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', str($state)->slug()))
+                                    ->helperText('Kampanya türünü seçin. Detaylar için ℹ️ butonuna tıklayın.')
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('info')
+                                            ->icon('heroicon-o-information-circle')
+                                            ->color('gray')
+                                            ->tooltip('Kampanya türü detaylarını görüntüle')
+                                            ->modalHeading(fn ($get) => 
+                                                $get('type') ? 
+                                                \App\Enums\Campaign\CampaignType::tryFrom($get('type'))->getIcon() . ' ' . 
+                                                \App\Enums\Campaign\CampaignType::tryFrom($get('type'))->getLabel() . ' - Detaylar' 
+                                                : 'Kampanya Türü Detayları'
+                                            )
+                                            ->modalContent(fn ($get) => 
+                                                $get('type') ? 
+                                                new \Illuminate\Support\HtmlString(
+                                                    '<div class="prose max-w-none">' . 
+                                                    str(\App\Enums\Campaign\CampaignType::tryFrom($get('type'))->getDetailedDescription())
+                                                        ->markdown() . 
+                                                    '</div>'
+                                                ) : 
+                                                new \Illuminate\Support\HtmlString('<p>Lütfen önce bir kampanya türü seçin.</p>')
+                                            )
+                                            ->modalSubmitAction(false)
+                                            ->modalCancelActionLabel('Kapat')
+                                    ),
+
                                 Toggle::make('is_active')
                                     ->label('Aktif')
                                     ->default(true)
                                     ->helperText('Kampanyanın kullanıma açık olup olmadığını belirler'),
+                            ]),
+
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('slug')
+                                    ->label('URL Kodu')
+                                    ->required()
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->rules(['regex:/^[a-z0-9\-]+$/'])
+                                    ->helperText('Sadece küçük harf, rakam ve tire (-) kullanın'),
+
+                                Select::make('status')
+                                    ->label('Durum')
+                                    ->options([
+                                        'draft' => '📝 Taslak',
+                                        'active' => '✅ Aktif',
+                                        'paused' => '⏸️ Durduruldu',
+                                        'expired' => '⏰ Süresi Doldu',
+                                    ])
+                                    ->default('draft'),
                             ]),
 
                         Textarea::make('description')
@@ -74,63 +136,168 @@ class CampaignResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DateTimePicker::make('start_date')
+                                DateTimePicker::make('starts_at')
                                     ->label('Başlangıç Tarihi')
                                     ->required()
                                     ->displayFormat('d.m.Y H:i')
                                     ->seconds(false)
                                     ->default(now()),
 
-                                DateTimePicker::make('end_date')
+                                DateTimePicker::make('ends_at')
                                     ->label('Bitiş Tarihi')
                                     ->required()
                                     ->displayFormat('d.m.Y H:i')
                                     ->seconds(false)
-                                    ->after('start_date')
+                                    ->after('starts_at')
                                     ->default(now()->addDays(30)),
                             ]),
                     ]),
 
-                Section::make('İndirim Ayarları')
-                    ->description('Kampanya indirim değerlerini belirleyin.')
-                    ->icon('heroicon-o-currency-dollar')
+                // X Al Y Hediye Kampanya Ayarları
+                Section::make('🎁 Hediye Kampanya Ayarları')
+                    ->description('Hangi ürünler alındığında hangi ürünler hediye verilecek?')
+                    ->icon('heroicon-o-gift')
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'buy_x_get_y_free')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('discount_type')
+                                Select::make('trigger_products')
+                                    ->label('Tetikleyici Ürünler')
+                                    ->relationship('products', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->helperText('Bu ürünler alındığında kampanya tetiklenir'),
+
+                                Select::make('reward_products') 
+                                    ->label('Hediye Ürünler')
+                                    ->relationship('rewardProducts', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->helperText('Bu ürünler hediye olarak verilir'),
+                            ]),
+
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('required_quantity')
+                                    ->label('Gerekli Adet')
+                                    ->numeric()
+                                    ->default(3)
+                                    ->helperText('Kaç adet alınması gerekir?'),
+
+                                TextInput::make('free_quantity')
+                                    ->label('Hediye Adet')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->helperText('Kaç adet hediye verilir?'),
+
+                                Toggle::make('require_all_triggers')
+                                    ->label('Tümü Gerekli')
+                                    ->default(false)
+                                    ->helperText('Tüm tetikleyici ürünler mi yoksa herhangi biri mi?'),
+                            ]),
+                    ]),
+
+                // Paket İndirim Kampanya Ayarları  
+                Section::make('📦 Paket İndirim Ayarları')
+                    ->description('Hangi ürünler birlikte alındığında indirim yapılacak?')
+                    ->icon('heroicon-o-cube')
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'bundle_discount')
+                    ->schema([
+                        Select::make('bundle_products')
+                            ->label('Paket Ürünleri')
+                            ->relationship('products', 'name')
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->helperText('Bu ürünler birlikte alındığında indirim uygulanır'),
+
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('bundle_discount_type')
                                     ->label('İndirim Türü')
                                     ->options([
-                                        'percentage' => '📊 Yüzde (%) İndirim',
-                                        'fixed' => '💰 Sabit Tutar (₺) İndirim',
+                                        'percentage' => '📊 Yüzde İndirim',
+                                        'fixed' => '💰 Sabit Tutar İndirim', 
+                                        'bundle_price' => '🏷️ Sabit Paket Fiyatı',
+                                        'cheapest_free' => '🎁 En Ucuz Ürün Bedava',
                                     ])
-                                    ->required()
                                     ->default('percentage')
-                                    ->live(),
+                                    ->reactive(),
 
-                                TextInput::make('discount_value')
+                                TextInput::make('bundle_discount_value')
                                     ->label('İndirim Değeri')
-                                    ->required()
                                     ->numeric()
-                                    ->suffix(fn (Forms\Get $get) => $get('discount_type') === 'percentage' ? '%' : '₺')
+                                    ->suffix(fn (Forms\Get $get) => match($get('bundle_discount_type')) {
+                                        'percentage' => '%',
+                                        'fixed', 'bundle_price' => '₺',
+                                        default => ''
+                                    })
+                                    ->visible(fn (Forms\Get $get) => $get('bundle_discount_type') !== 'cheapest_free'),
+                            ]),
+                    ]),
+
+                // Ücretsiz Kargo Kampanya Ayarları
+                Section::make('🚚 Ücretsiz Kargo Ayarları')
+                    ->description('Hangi koşullarda kargo ücretsiz olacak?')
+                    ->icon('heroicon-o-truck')
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'free_shipping')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('free_shipping_min_amount')
+                                    ->label('Minimum Sepet Tutarı')
+                                    ->numeric()
+                                    ->suffix('₺')
+                                    ->default(200)
+                                    ->helperText('Bu tutarın üzerinde kargo bedava'),
+
+                                Select::make('free_shipping_products')
+                                    ->label('Özel Ürünler (Opsiyonel)')
+                                    ->relationship('products', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->helperText('Bu ürünlerde her zaman kargo bedava'),
+                            ]),
+                    ]),
+
+                // Flaş İndirim Kampanya Ayarları
+                Section::make('⚡ Flaş İndirim Ayarları')
+                    ->description('Sınırlı süre indirim kampanyası ayarları')
+                    ->icon('heroicon-o-bolt')
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'flash_sale')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Select::make('flash_discount_type')
+                                    ->label('İndirim Türü')
+                                    ->options([
+                                        'percentage' => '📊 Yüzde İndirim',
+                                        'fixed' => '💰 Sabit Tutar İndirim',
+                                    ])
+                                    ->default('percentage')
+                                    ->reactive(),
+
+                                TextInput::make('flash_discount_value')
+                                    ->label('İndirim Değeri')
+                                    ->numeric()
+                                    ->suffix(fn (Forms\Get $get) => $get('flash_discount_type') === 'percentage' ? '%' : '₺')
                                     ->helperText(function (Forms\Get $get) {
-                                        if ($get('discount_type') === 'percentage') {
-                                            return 'Örn: 25 yazdığınızda %25 indirim olur';
+                                        if ($get('flash_discount_type') === 'percentage') {
+                                            return 'Örn: 50 yazdığınızda %50 indirim olur';
                                         }
                                         return 'Örn: 100 yazdığınızda 100₺ indirim olur';
                                     }),
                             ]),
-                    ]),
 
-                Section::make('Kampanya Ürünleri')
-                    ->description('Kampanyanın hangi ürünlerde geçerli olacağını seçin.')
-                    ->icon('heroicon-o-cube')
-                    ->schema([
-                        Select::make('products')
-                            ->label('Ürünler')
+                        Select::make('flash_sale_products')
+                            ->label('İndirim Yapılacak Ürünler')
                             ->relationship('products', 'name')
                             ->multiple()
-                            ->searchable()
                             ->preload()
+                            ->searchable()
                             ->helperText('Hiçbir ürün seçmezseniz tüm ürünlerde geçerli olur'),
                     ]),
             ]);
@@ -146,25 +313,31 @@ class CampaignResource extends Resource
                     ->weight('bold')
                     ->color('primary'),
 
-                BadgeColumn::make('discount_type')
-                    ->label('İndirim Türü')
+                TextColumn::make('type')
+                    ->label('Kampanya Türü')
+                    ->formatStateUsing(function (string $state): string {
+                        $type = \App\Enums\Campaign\CampaignType::tryFrom($state);
+                        return $type ? $type->getIcon() . ' ' . $type->getLabel() : $state;
+                    })
+                    ->badge()
+                    ->sortable(),
+
+                TextColumn::make('status')
+                    ->label('Durum')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'percentage' => 'Yüzde',
-                        'fixed' => 'Sabit Tutar',
+                        'draft' => '📝 Taslak',
+                        'active' => '✅ Aktif',
+                        'paused' => '⏸️ Durduruldu',
+                        'expired' => '⏰ Süresi Doldu',
                         default => $state,
                     })
+                    ->badge()
                     ->colors([
-                        'success' => 'percentage',
-                        'warning' => 'fixed',
-                    ]),
-
-                TextColumn::make('discount_value')
-                    ->label('İndirim')
-                    ->formatStateUsing(fn (Campaign $record): string => 
-                        $record->discount_type === 'percentage' 
-                            ? '%' . number_format($record->discount_value, 1)
-                            : '₺' . number_format($record->discount_value, 2)
-                    )
+                        'success' => 'active',
+                        'warning' => 'paused',
+                        'gray' => 'draft',
+                        'danger' => 'expired',
+                    ])
                     ->sortable(),
 
                 TextColumn::make('products_count')
@@ -202,12 +375,12 @@ class CampaignResource extends Resource
                         'secondary' => 'Bilinmeyen',
                     ]),
 
-                TextColumn::make('start_date')
+                TextColumn::make('starts_at')
                     ->label('Başlangıç')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
 
-                TextColumn::make('end_date')
+                TextColumn::make('ends_at')
                     ->label('Bitiş')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
@@ -220,7 +393,7 @@ class CampaignResource extends Resource
                         }
                         
                         if ($record->isUpcoming()) {
-                            $days = now()->diffInDays($record->start_date);
+                            $days = now()->diffInDays($record->starts_at);
                             return "{$days} gün sonra";
                         }
                         
@@ -259,21 +432,21 @@ class CampaignResource extends Resource
                     ->label('Şu Anda Aktif')
                     ->query(fn (Builder $query): Builder => 
                         $query->where('is_active', true)
-                            ->where('start_date', '<=', now())
-                            ->where('end_date', '>=', now())
+                            ->where('starts_at', '<=', now())
+                            ->where('ends_at', '>=', now())
                     ),
 
                 Filter::make('upcoming')
                     ->label('Yaklaşan')
                     ->query(fn (Builder $query): Builder => 
                         $query->where('is_active', true)
-                            ->where('start_date', '>', now())
+                            ->where('starts_at', '>', now())
                     ),
 
                 Filter::make('expired')
                     ->label('Süresi Dolmuş')
                     ->query(fn (Builder $query): Builder => 
-                        $query->where('end_date', '<', now())
+                        $query->where('ends_at', '<', now())
                     ),
             ])
             ->actions([
@@ -287,8 +460,8 @@ class CampaignResource extends Resource
                     ->action(function (Campaign $record) {
                         $newCampaign = $record->replicate();
                         $newCampaign->name = $record->name . ' (Kopya)';
-                        $newCampaign->start_date = now();
-                        $newCampaign->end_date = now()->addDays(30);
+                        $newCampaign->starts_at = now();
+                        $newCampaign->ends_at = now()->addDays(30);
                         $newCampaign->save();
                         
                         // Copy product relationships
@@ -338,8 +511,8 @@ class CampaignResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
             ->count();
     }
 

@@ -30,28 +30,28 @@ class ListCampaigns extends ListRecords
                 
             'active' => Tab::make('Aktif')
                 ->badge(Campaign::where('is_active', true)
-                    ->where('start_date', '<=', now())
-                    ->where('end_date', '>=', now())
+                    ->where('starts_at', '<=', now())
+                    ->where('ends_at', '>=', now())
                     ->count())
                 ->modifyQueryUsing(fn (Builder $query) => 
                     $query->where('is_active', true)
-                        ->where('start_date', '<=', now())
-                        ->where('end_date', '>=', now())
+                        ->where('starts_at', '<=', now())
+                        ->where('ends_at', '>=', now())
                 ),
                 
             'upcoming' => Tab::make('Yaklaşan')
                 ->badge(Campaign::where('is_active', true)
-                    ->where('start_date', '>', now())
+                    ->where('starts_at', '>', now())
                     ->count())
                 ->modifyQueryUsing(fn (Builder $query) => 
                     $query->where('is_active', true)
-                        ->where('start_date', '>', now())
+                        ->where('starts_at', '>', now())
                 ),
                 
             'expired' => Tab::make('Süresi Dolmuş')
-                ->badge(Campaign::where('end_date', '<', now())->count())
+                ->badge(Campaign::where('ends_at', '<', now())->count())
                 ->modifyQueryUsing(fn (Builder $query) => 
-                    $query->where('end_date', '<', now())
+                    $query->where('ends_at', '<', now())
                 ),
                 
             'inactive' => Tab::make('Pasif')

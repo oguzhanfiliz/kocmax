@@ -22,8 +22,8 @@ class EditCampaign extends EditRecord
                 ->action(function () {
                     $newCampaign = $this->record->replicate();
                     $newCampaign->name = $this->record->name . ' (Kopya)';
-                    $newCampaign->start_date = now();
-                    $newCampaign->end_date = now()->addDays(30);
+                    $newCampaign->starts_at = now();
+                    $newCampaign->ends_at = now()->addDays(30);
                     $newCampaign->save();
                     
                     // Copy product relationships
