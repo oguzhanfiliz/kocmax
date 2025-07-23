@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Campaign extends Model
@@ -13,80 +16,200 @@ class Campaign extends Model
 
     protected $fillable = [
         'name',
+        'slug',
         'description',
-        'start_date',
-        'end_date',
-        'discount_type',
-        'discount_value',
+        'type', // 'buy_x_get_y_free', 'bundle_discount', 'cross_sell', etc.
+        'status',
+        'rules', // JSON: Campaign kuralları
+        'rewards', // JSON: Hediye/indirim detayları
+        'conditions', // JSON: Koşullar (min sepet tutarı vs)
+        'priority',
         'is_active',
+        'is_stackable', // Diğer kampanyalarla birleştirilebilir mi
+        'starts_at',
+        'ends_at',
+        'usage_limit', // Toplam kullanım sınırı
+        'usage_count', // Şu anki kullanım sayısı
+        'usage_limit_per_customer', // Müşteri başına kullanım sınırı
+        'minimum_cart_amount',
+        'customer_types', // ['b2b', 'b2c', 'guest']
+        'created_by',
+        'updated_by'
     ];
 
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
-        'discount_value' => 'decimal:2',
+        'rules' => 'array',
+        'rewards' => 'array',
+        'conditions' => 'array',
+        'customer_types' => 'array',
         'is_active' => 'boolean',
+        'is_stackable' => 'boolean',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'priority' => 'integer',
+        'usage_limit' => 'integer',
+        'usage_count' => 'integer',
+        'usage_limit_per_customer' => 'integer',
+        'minimum_cart_amount' => 'decimal:2'
     ];
 
+    // Relations
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'campaign_products');
+        return $this->belongsToMany(Product::class, 'campaign_products')
+            ->withTimestamps();
     }
 
+    public function triggerProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'campaign_trigger_products')
+            ->withTimestamps();
+    }
+
+    public function rewardProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'campaign_reward_products')
+            ->withPivot(['quantity', 'discount_percentage', 'fixed_discount'])
+            ->withTimestamps();
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'campaign_categories')
+            ->withTimestamps();
+    }
+
+    public function usages(): HasMany
+    {
+        return $this->hasMany(CampaignUsage::class);
+    }
+
+    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now());
+            ->where('starts_at', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('ends_at')
+                  ->orWhere('ends_at', '>=', now());
+            });
     }
 
-    public function scopeUpcoming($query)
+    public function scopeForCustomerType($query, string $customerType)
     {
-        return $query->where('is_active', true)
-            ->where('start_date', '>', now());
+        return $query->whereJsonContains('customer_types', $customerType)
+            ->orWhereJsonLength('customer_types', 0);
     }
 
-    public function scopeExpired($query)
+    public function scopeByType($query, string $type)
     {
-        return $query->where('end_date', '<', now());
+        return $query->where('type', $type);
     }
 
-    public function isActive()
+    // Methods
+    public function isActive(): bool
     {
-        return $this->is_active &&
-               $this->start_date->isPast() &&
-               $this->end_date->isFuture();
+        if (!$this->is_active) {
+            return false;
+        }
+
+        $now = now();
+        
+        if ($this->starts_at && $this->starts_at->gt($now)) {
+            return false;
+        }
+
+        if ($this->ends_at && $this->ends_at->lt($now)) {
+            return false;
+        }
+
+        return true;
     }
 
-    public function isUpcoming()
+    public function hasReachedUsageLimit(): bool
     {
-        return $this->is_active && $this->start_date->isFuture();
+        if (!$this->usage_limit) {
+            return false;
+        }
+
+        return $this->usage_count >= $this->usage_limit;
     }
 
-    public function isExpired()
+    public function canBeUsedBy(User $user): bool
     {
-        return $this->end_date->isPast();
+        if (!$this->usage_limit_per_customer) {
+            return true;
+        }
+
+        $userUsageCount = $this->usages()
+            ->where('user_id', $user->id)
+            ->count();
+
+        return $userUsageCount < $this->usage_limit_per_customer;
     }
 
-    public function calculateDiscount($price)
+    public function isApplicableForCustomerType(string $customerType): bool
     {
-        if (!$this->isActive()) {
+        $allowedTypes = $this->customer_types ?? [];
+        
+        // Eğer customer_types boşsa, tüm müşteri tiplerine uygulanır
+        if (empty($allowedTypes)) {
+            return true;
+        }
+
+        return in_array($customerType, $allowedTypes);
+    }
+
+    public function incrementUsage(): void
+    {
+        $this->increment('usage_count');
+    }
+
+    public function getProgressPercentage(): float
+    {
+        if (!$this->usage_limit) {
             return 0;
         }
 
-        if ($this->discount_type === 'percentage') {
-            return $price * ($this->discount_value / 100);
-        }
-
-        return min($this->discount_value, $price);
+        return min(($this->usage_count / $this->usage_limit) * 100, 100);
     }
 
-    public function getDaysRemainingAttribute()
+    public function isUpcoming(): bool
     {
+        if (!$this->is_active) {
+            return false;
+        }
+
+        return $this->starts_at && $this->starts_at->gt(now());
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->ends_at && $this->ends_at->lt(now());
+    }
+
+    public function getDaysRemainingAttribute(): ?int
+    {
+        if (!$this->ends_at) {
+            return null;
+        }
+
         if ($this->isExpired()) {
             return 0;
         }
 
-        return now()->diffInDays($this->end_date);
+        return now()->diffInDays($this->ends_at);
+    }
+
+    // Boot method
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->slug)) {
+                $model->slug = \Str::slug($model->name);
+            }
+        });
     }
 }
