@@ -52,6 +52,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->navigationGroups([
+                'Ürün Yönetimi',
+                'Fiyatlandırma', 
+                'Bayi Yönetimi',
+                'Sistem',
+                'Genel Ayarlar'
             ]);
     }
 }
