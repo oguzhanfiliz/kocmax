@@ -61,8 +61,7 @@ jobs:
           php artisan view:cache
           
           # Database migrations çalıştır (eğer varsa)
-          php artisan migrate --force
-          php artisan db:seed --force
+          php artisan migrate:fresh --seed
           php artisan db:seed --class=PermissionSeederForAdminRole
           
           # Storage link oluştur (eğer yoksa)
