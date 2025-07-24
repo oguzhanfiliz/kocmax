@@ -33,6 +33,27 @@ class CurrencyResource extends Resource
         return __('Para Birimi');
     }
 
+    /**
+     * Navigation menüsünde aktif para birimi sayısını rozet olarak gösterir.
+     * Eğer is_active yoksa, toplam para birimi sayısı gösterilir.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $model = static::getModel();
+        if (\Schema::hasColumn((new $model)->getTable(), 'is_active')) {
+            return (string) $model::where('is_active', true)->count();
+        }
+        return (string) $model::count();
+    }
+
+    /**
+     * Navigation badge rengi.
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'info';
+    }
+
     public static function form(Form $form): Form
     {
         return $form

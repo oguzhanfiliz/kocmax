@@ -48,6 +48,22 @@ class CustomerPricingTierResource extends Resource
         return __('Müşteri Seviyesi');
     }
 
+    /**
+     * Navigation menüsünde aktif müşteri seviyesi sayısını rozet olarak gösterir.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::where('is_active', true)->count();
+    }
+
+    /**
+     * Navigation badge rengi.
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'success';
+    }
+
     public static function form(Form $form): Form
     {
         return $form

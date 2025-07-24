@@ -34,6 +34,22 @@ class PriceHistoryResource extends Resource
         return __('Fiyat Değişikliği');
     }
 
+    /**
+     * Navigation menüsünde toplam fiyat değişikliği kaydı sayısını rozet olarak gösterir.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    }
+
+    /**
+     * Navigation badge rengi.
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'info';
+    }
+
     // Read-only resource - no create/edit forms
     public static function canCreate(): bool
     {

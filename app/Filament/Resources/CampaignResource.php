@@ -510,7 +510,7 @@ class CampaignResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('is_active', true)
+        return (string) static::getModel()::where('is_active', true)
             ->where('starts_at', '<=', now())
             ->where('ends_at', '>=', now())
             ->count();

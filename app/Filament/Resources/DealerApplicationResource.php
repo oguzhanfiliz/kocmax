@@ -31,6 +31,22 @@ class DealerApplicationResource extends Resource
         return __('Bayi Başvurusu');
     }
 
+    /**
+     * Navigation menüsünde beklemede olan bayi başvurusu sayısını rozet olarak gösterir.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::where('status', 'pending')->count();
+    }
+
+    /**
+     * Navigation badge rengi.
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
