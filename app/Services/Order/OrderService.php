@@ -108,8 +108,6 @@ class OrderService implements OrderServiceInterface
                 'reason' => $reason
             ]);
 
-            return true;
-
         } catch (\Exception $e) {
             Log::error('Failed to update order status', [
                 'order_id' => $order->id,
@@ -120,14 +118,16 @@ class OrderService implements OrderServiceInterface
         }
     }
 
-    public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): bool
+    public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): void
     {
         if (!$order->canBeCancelled()) {
             Log::warning('Order cancellation attempted but not allowed', [
                 'order_id' => $order->id,
                 'current_status' => $order->status->value
             ]);
-            return false;
+            throw new \App\Exceptions\Order\OrderCannotBeCancelledException(
+                "Order {$order->id} cannot be cancelled in status {$order->status->value}"
+            );
         }
 
         try {
@@ -152,8 +152,6 @@ class OrderService implements OrderServiceInterface
                 'cancelled_by' => $cancelledBy?->id,
                 'reason' => $reason
             ]);
-
-            return true;
 
         } catch (\Exception $e) {
             Log::error('Failed to cancel order', [
