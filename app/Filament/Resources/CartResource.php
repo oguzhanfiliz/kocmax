@@ -22,9 +22,13 @@ class CartResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationGroup = 'E-Commerce';
+    protected static ?string $navigationGroup = 'Satış Yönetimi';
 
-    protected static ?string $navigationLabel = 'Carts';
+    protected static ?string $navigationLabel = 'Sepetler';
+    
+    protected static ?string $modelLabel = 'Sepet';
+    
+    protected static ?string $pluralModelLabel = 'Sepetler';
 
     protected static ?int $navigationSort = 1;
 

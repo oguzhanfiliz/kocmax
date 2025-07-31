@@ -29,25 +29,25 @@ class CartOverviewWidget extends BaseWidget
         $conversionRate = $totalCartsLast30Days > 0 ? ($cartsWithOrders / $totalCartsLast30Days) * 100 : 0;
 
         return [
-            Stat::make('Active Carts (24h)', $activeCarts)
-                ->description('Carts updated in last 24 hours')
+            Stat::make('Aktif Sepetler (24s)', $activeCarts)
+                ->description('Son 24 saatte güncellenen sepetler')
                 ->descriptionIcon('heroicon-m-shopping-cart')
                 ->color('success')
                 ->chart([7, 12, 8, 15, 10, 18, $activeCarts]),
 
-            Stat::make('Abandoned Carts', $abandonedCarts)
-                ->description('Carts abandoned in last week')
+            Stat::make('Terk Edilmiş Sepetler', $abandonedCarts)
+                ->description('Son haftada terk edilmiş sepetler')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('warning')
                 ->chart([15, 12, 18, 10, 8, 15, $abandonedCarts]),
 
-            Stat::make('Total Cart Value (24h)', '₺' . number_format($totalCartValue, 2))
-                ->description('Total value of active carts')
+            Stat::make('Toplam Sepet Değeri (24s)', '₺' . number_format($totalCartValue, 2))
+                ->description('Aktif sepetlerin toplam değeri')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('info'),
 
-            Stat::make('Conversion Rate (30d)', number_format($conversionRate, 1) . '%')
-                ->description('Cart to order conversion rate')
+            Stat::make('Dönüşüm Oranı (30g)', number_format($conversionRate, 1) . '%')
+                ->description('Sepetten siparişe dönüşüm oranı')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($conversionRate > 50 ? 'success' : ($conversionRate > 25 ? 'warning' : 'danger')),
         ];
