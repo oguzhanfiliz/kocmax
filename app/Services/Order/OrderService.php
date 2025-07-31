@@ -79,7 +79,7 @@ class OrderService implements OrderServiceInterface
         }
     }
 
-    public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): bool
+    public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): void
     {
         try {
             $currentState = $this->statusService->getOrderState($order);
@@ -90,7 +90,9 @@ class OrderService implements OrderServiceInterface
                     'current_status' => $order->status->value,
                     'attempted_status' => $newStatus->value
                 ]);
-                return false;
+                throw new \App\Exceptions\Order\InvalidStatusTransitionException(
+                    "Cannot transition from {$order->status->value} to {$newStatus->value}"
+                );
             }
 
             $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);

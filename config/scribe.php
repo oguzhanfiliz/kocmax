@@ -16,7 +16,14 @@ return [
 
     // Text to place in the "Introduction" section, right after the `description`. Markdown and HTML are supported.
     'intro_text' => <<<INTRO
-        This documentation aims to provide all the information you need to work with our API.
+        This documentation provides comprehensive information for integrating with our B2B/B2C e-commerce platform API.
+
+        ## Key Features
+        - **Cart Management**: Session-based and persistent cart functionality
+        - **Order Processing**: Complete order lifecycle management  
+        - **Pricing System**: Dynamic B2B/B2C pricing with customer tiers
+        - **Product Catalog**: Advanced product and variant management
+        - **User Management**: Unified B2B dealer and B2C customer accounts
 
         <aside>As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
         You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).</aside>
@@ -172,7 +179,12 @@ return [
         // You can override this by listing the groups, subgroups and endpoints here in the order you want them.
         // See https://scribe.knuckles.wtf/blog/laravel-v4#easier-sorting and https://scribe.knuckles.wtf/laravel/reference/config#order for details
         // Note: does not work for `external` docs types
-        'order' => [],
+        'order' => [
+            'Cart Management',
+            'Order Management', 
+            'User Management',
+            'Product Catalog',
+        ],
     ],
 
     // Custom logo path. This will be used as the value of the src attribute for the <img> tag,
