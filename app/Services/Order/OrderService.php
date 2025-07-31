@@ -192,14 +192,9 @@ class OrderService implements OrderServiceInterface
         );
     }
 
-    public function processPayment(Order $order, string $paymentMethod, float $amount, array $paymentData): PaymentResult
+    public function processPayment(Order $order, array $paymentData): PaymentResult
     {
-        $completePaymentData = array_merge($paymentData, [
-            'payment_method' => $paymentMethod,
-            'amount' => $amount
-        ]);
-        
-        return $this->paymentService->processPayment($order, $completePaymentData);
+        return $this->paymentService->processPayment($order, $paymentData);
     }
 
     public function processRefund(Order $order, float $refundAmount, ?string $reason = null): PaymentResult
