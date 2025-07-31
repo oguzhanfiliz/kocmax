@@ -43,6 +43,7 @@ class CheckoutCoordinator
                 ]);
                 
                 // Step 3: Create order from checkout context
+                $checkoutData['cart_id'] = $cart->id;
                 $order = $this->orderService->createFromCheckout($checkoutContext, $checkoutData);
                 
                 // Step 4: Clear cart after successful order creation

@@ -18,6 +18,7 @@ class OrderCreationService
         $order = Order::create([
             'order_number' => $orderNumber,
             'user_id' => $context->getCustomerType() !== 'guest' ? $orderData['user_id'] ?? null : null,
+            'cart_id' => $orderData['cart_id'] ?? null,
             'customer_type' => strtoupper($context->getCustomerType()),
             'status' => 'pending',
             'payment_status' => 'pending',
