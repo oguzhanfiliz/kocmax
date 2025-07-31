@@ -14,11 +14,13 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         \App\Models\Campaign::class => \App\Policies\CampaignPolicy::class,
+        \App\Models\Cart::class => \App\Policies\CartPolicy::class,
         \App\Models\Category::class => \App\Policies\CategoryPolicy::class,
         \App\Models\Currency::class => \App\Policies\CurrencyPolicy::class,
         \App\Models\CustomerPricingTier::class => \App\Policies\CustomerPricingTierPolicy::class,
         \App\Models\DealerApplication::class => \App\Policies\DealerApplicationPolicy::class,
         \App\Models\DiscountCoupon::class => \App\Policies\DiscountCouponPolicy::class,
+        \App\Models\Order::class => \App\Policies\OrderPolicy::class,
         \App\Models\PriceHistory::class => \App\Policies\PriceHistoryPolicy::class,
         \App\Models\PricingRule::class => \App\Policies\PricingRulePolicy::class,
         \App\Models\Product::class => \App\Policies\ProductPolicy::class,
