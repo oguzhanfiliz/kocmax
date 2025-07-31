@@ -13,7 +13,20 @@ class EditOrder extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\ViewAction::make()
+                ->label('Görüntüle'),
+            Actions\DeleteAction::make()
+                ->label('Sil'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return 'Sipariş Düzenle: ' . $this->record->order_number;
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
     }
 }

@@ -3,229 +3,431 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
-use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
+use App\Enums\OrderStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    
+    protected static ?string $navigationLabel = 'Siparişler';
+    
+    protected static ?string $modelLabel = 'Sipariş';
+    
+    protected static ?string $pluralModelLabel = 'Siparişler';
+    
+    protected static ?string $navigationGroup = 'Satış Yönetimi';
+    
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('order_number')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
-                Forms\Components\Select::make('cart_id')
-                    ->relationship('cart', 'id'),
-                Forms\Components\TextInput::make('customer_type')
-                    ->required(),
-                Forms\Components\TextInput::make('status')
-                    ->required(),
-                Forms\Components\TextInput::make('payment_status')
-                    ->required(),
-                Forms\Components\TextInput::make('payment_method')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('payment_transaction_id')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('subtotal')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('tax_amount')
-                    ->required()
-                    ->numeric()
-                    ->default(0.00),
-                Forms\Components\TextInput::make('shipping_amount')
-                    ->required()
-                    ->numeric()
-                    ->default(0.00),
-                Forms\Components\TextInput::make('discount_amount')
-                    ->required()
-                    ->numeric()
-                    ->default(0.00),
-                Forms\Components\TextInput::make('total_amount')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('currency_code')
-                    ->required()
-                    ->maxLength(3)
-                    ->default('TRY'),
-                Forms\Components\TextInput::make('coupon_code')
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('shipping_name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_email')
-                    ->email()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_phone')
-                    ->tel()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('shipping_address')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('shipping_city')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_state')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_zip')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_country')
-                    ->required()
-                    ->maxLength(255)
-                    ->default('TR'),
-                Forms\Components\TextInput::make('billing_name')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_email')
-                    ->email()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_phone')
-                    ->tel()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('billing_address')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('billing_city')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_state')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_zip')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_country')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_tax_number')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('billing_tax_office')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('tracking_number')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('shipping_carrier')
-                    ->maxLength(255),
-                Forms\Components\DateTimePicker::make('shipped_at'),
-                Forms\Components\DateTimePicker::make('delivered_at'),
+                Forms\Components\Section::make('Sipariş Bilgileri')
+                    ->schema([
+                        Forms\Components\TextInput::make('order_number')
+                            ->label('Sipariş Numarası')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255),
+                        
+                        Forms\Components\Select::make('user_id')
+                            ->label('Müşteri')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->preload(),
+                        
+                        Forms\Components\Select::make('status')
+                            ->label('Durum')
+                            ->options([
+                                'pending' => 'Beklemede',
+                                'processing' => 'İşleniyor',
+                                'shipped' => 'Kargoya Verildi',
+                                'delivered' => 'Teslim Edildi',
+                                'cancelled' => 'İptal Edildi',
+                            ])
+                            ->required()
+                            ->native(false),
+                        
+                        Forms\Components\Select::make('payment_status')
+                            ->label('Ödeme Durumu')
+                            ->options([
+                                'pending' => 'Beklemede',
+                                'paid' => 'Ödendi',
+                                'failed' => 'Başarısız',
+                                'refunded' => 'İade Edildi',
+                            ])
+                            ->required()
+                            ->native(false),
+                        
+                        Forms\Components\Select::make('payment_method')
+                            ->label('Ödeme Yöntemi')
+                            ->options([
+                                'card' => 'Kredi Kartı',
+                                'credit' => 'Kredili Satış',
+                                'bank_transfer' => 'Havale/EFT',
+                            ])
+                            ->required()
+                            ->native(false),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Tutar Bilgileri')
+                    ->schema([
+                        Forms\Components\TextInput::make('subtotal')
+                            ->label('Ara Toplam')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->required(),
+                        
+                        Forms\Components\TextInput::make('tax_amount')
+                            ->label('KDV Tutarı')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->default(0),
+                        
+                        Forms\Components\TextInput::make('shipping_amount')
+                            ->label('Kargo Ücreti')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->default(0),
+                        
+                        Forms\Components\TextInput::make('discount_amount')
+                            ->label('İndirim Tutarı')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->default(0),
+                        
+                        Forms\Components\TextInput::make('total_amount')
+                            ->label('Toplam Tutar')
+                            ->numeric()
+                            ->prefix('₺')
+                            ->required(),
+                    ])
+                    ->columns(3),
+
+                Forms\Components\Section::make('Kargo Adresi')
+                    ->schema([
+                        Forms\Components\TextInput::make('shipping_name')
+                            ->label('Ad Soyad')
+                            ->required()
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('shipping_email')
+                            ->label('E-posta')
+                            ->email()
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('shipping_phone')
+                            ->label('Telefon')
+                            ->tel()
+                            ->maxLength(255),
+                        
+                        Forms\Components\Textarea::make('shipping_address')
+                            ->label('Adres')
+                            ->required()
+                            ->rows(3),
+                        
+                        Forms\Components\TextInput::make('shipping_city')
+                            ->label('Şehir')
+                            ->required()
+                            ->maxLength(255),
+                        
+                        Forms\Components\TextInput::make('shipping_country')
+                            ->label('Ülke')
+                            ->default('TR')
+                            ->maxLength(2),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Notlar')
+                    ->schema([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Müşteri Notları')
+                            ->rows(3),
+                        
+                        Forms\Components\Textarea::make('internal_notes')
+                            ->label('Dahili Notlar')
+                            ->rows(3),
+                    ]),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['user', 'items']))
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')
-                    ->searchable(),
+                    ->label('Sipariş No')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
                 Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('cart.id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('customer_type'),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('payment_status'),
-                Tables\Columns\TextColumn::make('payment_method')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('payment_transaction_id')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('subtotal')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('tax_amount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('shipping_amount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('discount_amount')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Müşteri')
+                    ->searchable()
+                    ->sortable()
+                    ->default('Misafir Müşteri'),
+
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Durum')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Beklemede',
+                        'processing' => 'İşleniyor',
+                        'shipped' => 'Kargoya Verildi',
+                        'delivered' => 'Teslim Edildi',
+                        'cancelled' => 'İptal Edildi',
+                        default => $state,
+                    })
+                    ->colors([
+                        'warning' => 'pending',
+                        'info' => 'processing',
+                        'primary' => 'shipped',
+                        'success' => 'delivered',
+                        'danger' => 'cancelled',
+                    ]),
+
+                Tables\Columns\BadgeColumn::make('payment_status')
+                    ->label('Ödeme')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Beklemede',
+                        'paid' => 'Ödendi',
+                        'failed' => 'Başarısız',
+                        'refunded' => 'İade Edildi',
+                        default => $state,
+                    })
+                    ->colors([
+                        'warning' => 'pending',
+                        'success' => 'paid',
+                        'danger' => 'failed',
+                        'info' => 'refunded',
+                    ]),
+
                 Tables\Columns\TextColumn::make('total_amount')
-                    ->numeric()
+                    ->label('Toplam')
+                    ->money('TRY')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('currency_code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('coupon_code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_phone')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_city')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_state')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_zip')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_country')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_phone')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_city')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_state')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_zip')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_country')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_tax_number')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('billing_tax_office')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('tracking_number')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_carrier')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipped_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('delivered_at')
-                    ->dateTime()
-                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('items_count')
+                    ->label('Ürün Sayısı')
+                    ->counts('items')
+                    ->badge()
+                    ->color('gray'),
+
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Oluşturulma')
+                    ->dateTime('d.m.Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Durum')
+                    ->options([
+                        'pending' => 'Beklemede',
+                        'processing' => 'İşleniyor',
+                        'shipped' => 'Kargoya Verildi',
+                        'delivered' => 'Teslim Edildi',
+                        'cancelled' => 'İptal Edildi',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('payment_status')
+                    ->label('Ödeme Durumu')
+                    ->options([
+                        'pending' => 'Beklemede',
+                        'paid' => 'Ödendi',
+                        'failed' => 'Başarısız',
+                        'refunded' => 'İade Edildi',
+                    ]),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->label('Tarih Aralığı')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Başlangıç Tarihi'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Bitiş Tarihi'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Görüntüle'),
+                Tables\Actions\EditAction::make()
+                    ->label('Düzenle'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Sil'),
                 ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Sipariş Genel Bilgileri')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('order_number')
+                            ->label('Sipariş Numarası')
+                            ->weight('bold')
+                            ->size('lg'),
+                        
+                        Infolists\Components\TextEntry::make('user.name')
+                            ->label('Müşteri')
+                            ->default('Misafir Müşteri'),
+                        
+                        Infolists\Components\TextEntry::make('status')
+                            ->label('Sipariş Durumu')
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'pending' => 'Beklemede',
+                                'processing' => 'İşleniyor',
+                                'shipped' => 'Kargoya Verildi',
+                                'delivered' => 'Teslim Edildi',
+                                'cancelled' => 'İptal Edildi',
+                                default => $state,
+                            })
+                            ->badge()
+                            ->colors([
+                                'warning' => 'pending',
+                                'info' => 'processing',
+                                'primary' => 'shipped',
+                                'success' => 'delivered',
+                                'danger' => 'cancelled',
+                            ]),
+                        
+                        Infolists\Components\TextEntry::make('payment_status')
+                            ->label('Ödeme Durumu')
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'pending' => 'Beklemede',
+                                'paid' => 'Ödendi',
+                                'failed' => 'Başarısız',
+                                'refunded' => 'İade Edildi',
+                                default => $state,
+                            })
+                            ->badge()
+                            ->colors([
+                                'warning' => 'pending',
+                                'success' => 'paid',
+                                'danger' => 'failed',
+                                'info' => 'refunded',
+                            ]),
+                        
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Oluşturulma Tarihi')
+                            ->dateTime('d.m.Y H:i'),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Tutar Bilgileri')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('subtotal')
+                            ->label('Ara Toplam')
+                            ->money('TRY'),
+                        
+                        Infolists\Components\TextEntry::make('discount_amount')
+                            ->label('İndirim')
+                            ->money('TRY'),
+                        
+                        Infolists\Components\TextEntry::make('tax_amount')
+                            ->label('KDV')
+                            ->money('TRY'),
+                        
+                        Infolists\Components\TextEntry::make('shipping_amount')
+                            ->label('Kargo')
+                            ->money('TRY'),
+                        
+                        Infolists\Components\TextEntry::make('total_amount')
+                            ->label('Toplam')
+                            ->money('TRY')
+                            ->weight('bold')
+                            ->size('lg'),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Teslimat Bilgileri')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('shipping_name')
+                            ->label('Alıcı'),
+                        
+                        Infolists\Components\TextEntry::make('shipping_email')
+                            ->label('E-posta'),
+                        
+                        Infolists\Components\TextEntry::make('shipping_phone')
+                            ->label('Telefon'),
+                        
+                        Infolists\Components\TextEntry::make('shipping_address')
+                            ->label('Adres')
+                            ->columnSpanFull(),
+                        
+                        Infolists\Components\TextEntry::make('shipping_city')
+                            ->label('Şehir'),
+                        
+                        Infolists\Components\TextEntry::make('shipping_country')
+                            ->label('Ülke'),
+                    ])
+                    ->columns(2),
+
+                Infolists\Components\Section::make('Sipariş İçeriği')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('items')
+                            ->label('Ürünler')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('product.name')
+                                    ->label('Ürün Adı'),
+                                
+                                Infolists\Components\TextEntry::make('quantity')
+                                    ->label('Adet'),
+                                
+                                Infolists\Components\TextEntry::make('price')
+                                    ->label('Birim Fiyat')
+                                    ->money('TRY'),
+                                
+                                Infolists\Components\TextEntry::make('total')
+                                    ->label('Toplam')
+                                    ->state(fn ($record) => $record->quantity * $record->price)
+                                    ->money('TRY'),
+                            ])
+                            ->columns(4),
+                    ]),
+
+                Infolists\Components\Section::make('Notlar')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('notes')
+                            ->label('Müşteri Notları')
+                            ->default('Yok'),
+                        
+                        Infolists\Components\TextEntry::make('internal_notes')
+                            ->label('Dahili Notlar')
+                            ->default('Yok'),
+                    ])
+                    ->columns(1),
             ]);
     }
 
@@ -241,7 +443,18 @@ class OrderResource extends Resource
         return [
             'index' => Pages\ListOrders::route('/'),
             'create' => Pages\CreateOrder::route('/create'),
+            'view' => Pages\ViewOrder::route('/{record}'),
             'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::where('status', 'pending')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count() > 0 ? 'warning' : 'primary';
     }
 }

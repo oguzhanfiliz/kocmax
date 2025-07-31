@@ -4,22 +4,22 @@ namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ViewRecord;
 
-class ListOrders extends ListRecords
+class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
-                ->label('Yeni Sipariş'),
+            Actions\EditAction::make()
+                ->label('D�zenle'),
         ];
     }
 
     public function getTitle(): string
     {
-        return 'Siparişler';
+        return 'Sipari_: ' . $this->record->order_number;
     }
 }
