@@ -79,15 +79,18 @@ class OrderService implements OrderServiceInterface
         }
     }
 
-    public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): void
+    public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): bool
     {
         try {
             $currentState = $this->statusService->getOrderState($order);
             
             if (!$currentState->canTransitionTo($newStatus)) {
-                throw new InvalidStatusTransitionException(
-                    "Cannot transition from {$order->status} to {$newStatus->value}"
-                );
+                Log::warning('Invalid status transition attempted', [
+                    'order_id' => $order->id,
+                    'current_status' => $order->status->value,
+                    'attempted_status' => $newStatus->value
+                ]);
+                return false;
             }
 
             $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);
@@ -103,6 +106,8 @@ class OrderService implements OrderServiceInterface
                 'reason' => $reason
             ]);
 
+            return true;
+
         } catch (\Exception $e) {
             Log::error('Failed to update order status', [
                 'order_id' => $order->id,
@@ -113,10 +118,14 @@ class OrderService implements OrderServiceInterface
         }
     }
 
-    public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): void
+    public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): bool
     {
         if (!$order->canBeCancelled()) {
-            throw new OrderCancellationException("Order cannot be cancelled in current status: {$order->status}");
+            Log::warning('Order cancellation attempted but not allowed', [
+                'order_id' => $order->id,
+                'current_status' => $order->status->value
+            ]);
+            return false;
         }
 
         try {
@@ -141,6 +150,8 @@ class OrderService implements OrderServiceInterface
                 'cancelled_by' => $cancelledBy?->id,
                 'reason' => $reason
             ]);
+
+            return true;
 
         } catch (\Exception $e) {
             Log::error('Failed to cancel order', [
@@ -181,9 +192,14 @@ class OrderService implements OrderServiceInterface
         );
     }
 
-    public function processPayment(Order $order, array $paymentData): PaymentResult
+    public function processPayment(Order $order, string $paymentMethod, float $amount, array $paymentData): PaymentResult
     {
-        return $this->paymentService->processPayment($order, $paymentData);
+        $completePaymentData = array_merge($paymentData, [
+            'payment_method' => $paymentMethod,
+            'amount' => $amount
+        ]);
+        
+        return $this->paymentService->processPayment($order, $completePaymentData);
     }
 
     public function processRefund(Order $order, float $refundAmount, ?string $reason = null): PaymentResult
