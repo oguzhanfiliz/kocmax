@@ -18,12 +18,23 @@ class Cart extends Model
         'discounted_amount',
         'coupon_code',
         'coupon_discount',
+        'pricing_calculated_at',
+        'last_pricing_update',
+        'pricing_context',
+        'customer_type',
+        'subtotal_amount',
+        'applied_discounts',
     ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',
         'discounted_amount' => 'decimal:2',
         'coupon_discount' => 'decimal:2',
+        'subtotal_amount' => 'decimal:2',
+        'pricing_calculated_at' => 'datetime',
+        'last_pricing_update' => 'datetime',
+        'pricing_context' => 'array',
+        'applied_discounts' => 'array',
     ];
 
     public function user(): BelongsTo

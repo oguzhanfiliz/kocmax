@@ -62,8 +62,9 @@ jobs:
           
           # Database migrations çalıştır (eğer varsa)
           php artisan migrate:fresh --seed
+          php artisan shield:generate --all --panel=admin
           php artisan db:seed --class=PermissionSeederForAdminRole
-          
+          php artisan shield:super-admin --user=1 --panel=admin
           # Storage link oluştur (eğer yoksa)
           php artisan storage:link
           
