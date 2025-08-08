@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\Cart\CartService;
 use App\Services\Cart\CartStrategyFactory;
+use App\Services\MultiCurrencyPricingService;
 use App\Models\Cart;
 use App\Models\ProductVariant;
 use App\Http\Requests\Cart\AddItemRequest;
@@ -29,7 +30,8 @@ class CartController extends Controller
 {
     public function __construct(
         private CartService $cartService,
-        private CartStrategyFactory $strategyFactory
+        private CartStrategyFactory $strategyFactory,
+        private MultiCurrencyPricingService $multiCurrencyPricingService
     ) {}
 
     /**
@@ -38,7 +40,14 @@ class CartController extends Controller
      *      operationId="getCart",
      *      tags={"Cart"},
      *      summary="Get current user's cart",
-     *      description="Retrieve the current cart for authenticated or guest users",
+     *      description="Retrieve the current cart for authenticated or guest users with currency conversion",
+     *      @OA\Parameter(
+     *          name="currency",
+     *          description="Target currency code (e.g., TRY, USD, EUR)",
+     *          required=false,
+     *          in="query",
+     *          @OA\Schema(type="string", example="USD")
+     *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Cart retrieved successfully",
@@ -66,13 +75,18 @@ class CartController extends Controller
     {
         try {
             $cart = $this->getOrCreateCart($request);
-            $summary = $this->cartService->calculateSummary($cart);
+            $targetCurrency = $request->get('_currency', $request->get('currency', 'TRY'));
+            
+            // Calculate summary with currency conversion
+            $summary = $this->cartService->calculateSummary($cart, $targetCurrency);
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'cart' => new CartResource($cart),
-                    'summary' => new CartSummaryResource($summary)
+                    'cart' => new CartResource($cart->load(['items.productVariant']), $targetCurrency),
+                    'summary' => new CartSummaryResource($summary),
+                    'currency' => $targetCurrency,
+                    'available_currencies' => $this->multiCurrencyPricingService->getAvailableCurrencies()
                 ]
             ]);
 

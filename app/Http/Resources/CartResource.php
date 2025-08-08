@@ -31,6 +31,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class CartResource extends JsonResource
 {
+    private string $targetCurrency;
+
+    public function __construct($resource, string $targetCurrency = 'TRY')
+    {
+        parent::__construct($resource);
+        $this->targetCurrency = $targetCurrency;
+    }
+
     /**
      * Transform the resource into an array.
      */
@@ -51,7 +59,8 @@ class CartResource extends JsonResource
             'last_pricing_update' => $this->last_pricing_update?->toISOString(),
             'item_count' => $this->items?->sum('quantity') ?? 0,
             'unique_items' => $this->items?->count() ?? 0,
-            'items' => CartItemResource::collection($this->whenLoaded('items')),
+            'currency' => $this->targetCurrency,
+            'items' => CartItemResource::collection($this->whenLoaded('items'), $this->targetCurrency),
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
         ];
