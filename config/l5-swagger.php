@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => 'B2B/B2C E-Commerce API',
+                'title' => env('PROJECT_NAME', 'E-Ticaret API') . ' - API Documentation',
             ],
 
             'routes' => [
