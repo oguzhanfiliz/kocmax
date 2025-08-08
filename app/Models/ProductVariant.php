@@ -20,7 +20,6 @@ class ProductVariant extends Model
         'sku',
         'barcode',
         'price',
-        'currency_code',
         'cost',
         'stock',
         'min_stock_level',
@@ -51,6 +50,21 @@ class ProductVariant extends Model
         'is_default' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($variant) {
+            // Always set currency_code to TRY for new variants
+            $variant->currency_code = 'TRY';
+        });
+
+        static::updating(function ($variant) {
+            // Always keep currency_code as TRY on updates
+            $variant->currency_code = 'TRY';
+        });
+    }
 
     /**
      * Variant belongs to a product
