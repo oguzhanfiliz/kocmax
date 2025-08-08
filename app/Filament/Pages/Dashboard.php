@@ -19,6 +19,7 @@ use App\Filament\Widgets\PricingOverviewWidget;
 use App\Filament\Widgets\SalesTrendChartWidget;
 use App\Filament\Widgets\LowStockOverviewWidget;
 use App\Filament\Widgets\OrderCustomerTypeDistributionWidget;
+use App\Filament\Widgets\CampaignPerformanceWidget;
 
 class Dashboard extends BaseDashboard
 {
@@ -53,6 +54,7 @@ class Dashboard extends BaseDashboard
             SalesTrendChartWidget::class,
             LowStockOverviewWidget::class,
             OrderCustomerTypeDistributionWidget::class,
+            CampaignPerformanceWidget::class,
         ];
     }
     
