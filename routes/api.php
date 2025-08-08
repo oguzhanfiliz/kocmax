@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CurrencyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +24,16 @@ use App\Http\Controllers\Api\AuthController;
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1/auth')->group(function () {
+    // Public authentication routes
     Route::post('/login', [AuthController::class, 'login'])->name('api.auth.login');
+    Route::post('/register', [AuthController::class, 'register'])->name('api.auth.register');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('api.auth.reset-password');
+    Route::post('/verify-email', [AuthController::class, 'verifyEmail'])->name('api.auth.verify-email');
+    Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('api.auth.resend-verification');
+    Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.auth.refresh');
+    
+    // Protected authentication routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
         Route::get('/user', [AuthController::class, 'user'])->name('api.auth.user');
@@ -33,6 +43,17 @@ Route::prefix('v1/auth')->group(function () {
 // Deprecated - use /api/v1/auth/user instead
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Currency API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/currencies')->group(function () {
+    Route::get('/', [CurrencyController::class, 'index'])->name('api.currencies.index');
+    Route::get('/rates', [CurrencyController::class, 'rates'])->name('api.currencies.rates');
+    Route::post('/convert', [CurrencyController::class, 'convert'])->name('api.currencies.convert');
 });
 
 /*

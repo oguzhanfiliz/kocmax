@@ -48,6 +48,7 @@ class User extends Authenticatable implements FilamentUser
         'loyalty_points', // Loyalty program points | Sadakat programı puanları
         'last_order_at', // Last order date | Son sipariş tarihi
         'lifetime_value', // Customer lifetime value | Müşteri yaşam boyu değeri
+        'email_verification_token', // Email verification token | E-posta doğrulama token'ı
     ];
 
     /**
