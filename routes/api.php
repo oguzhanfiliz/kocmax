@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CurrencyController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AddressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -162,4 +163,23 @@ Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
     // Dealer application management
     Route::get('/dealer-status', [UserController::class, 'dealerStatus'])->name('api.users.dealer-status');
     Route::post('/dealer-application', [UserController::class, 'submitDealerApplication'])->name('api.users.dealer-application');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Address Management API Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/addresses')->middleware('auth:sanctum')->group(function () {
+    // Address CRUD operations
+    Route::get('/', [AddressController::class, 'index'])->name('api.addresses.index');
+    Route::post('/', [AddressController::class, 'store'])->name('api.addresses.store');
+    Route::get('/{address}', [AddressController::class, 'show'])->name('api.addresses.show');
+    Route::put('/{address}', [AddressController::class, 'update'])->name('api.addresses.update');
+    Route::delete('/{address}', [AddressController::class, 'destroy'])->name('api.addresses.destroy');
+    
+    // Default address management
+    Route::get('/defaults', [AddressController::class, 'getDefaults'])->name('api.addresses.defaults');
+    Route::post('/{address}/set-default-shipping', [AddressController::class, 'setDefaultShipping'])->name('api.addresses.set-default-shipping');
+    Route::post('/{address}/set-default-billing', [AddressController::class, 'setDefaultBilling'])->name('api.addresses.set-default-billing');
 });

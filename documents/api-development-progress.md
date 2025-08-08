@@ -63,12 +63,60 @@ POST   /api/v1/users/dealer-application   # Submit dealer app
 
 ---
 
-## Next Priority Tasks
+## AddressController API ✅ COMPLETED
 
-### AddressController API 🔄 NEXT
-- User address management (CRUD operations)
-- Default address handling
-- Address validation for shipping/billing
+### Status: FULLY IMPLEMENTED
+Complete user address management API with comprehensive CRUD operations and default address handling.
+
+### Features Implemented:
+1. **Address CRUD Operations**
+   - `GET /api/v1/addresses` - List user addresses with filtering
+   - `POST /api/v1/addresses` - Create new address
+   - `GET /api/v1/addresses/{id}` - Get specific address
+   - `PUT /api/v1/addresses/{id}` - Update address
+   - `DELETE /api/v1/addresses/{id}` - Delete address (soft delete)
+
+2. **Default Address Management**
+   - `GET /api/v1/addresses/defaults` - Get default shipping/billing addresses
+   - `POST /api/v1/addresses/{id}/set-default-shipping` - Set default shipping
+   - `POST /api/v1/addresses/{id}/set-default-billing` - Set default billing
+
+3. **Advanced Features**
+   - Address type filtering (shipping, billing, both)
+   - Automatic default address management
+   - User ownership validation
+   - Address formatting with accessors
+   - Soft delete functionality
+
+### Technical Implementation:
+- **Model**: Address model with relationships and scopes
+- **Migration**: Complete database schema with indexes
+- **Resource**: AddressResource for API responses
+- **Validation**: Comprehensive validation rules
+- **Security**: User-specific address access control
+- **Documentation**: Full Swagger/OpenAPI documentation
+
+### Database Schema:
+```sql
+addresses
+├── id (primary)
+├── user_id (foreign key)
+├── title (nullable, e.g., "Home", "Office")
+├── first_name, last_name
+├── company_name (nullable)
+├── phone (nullable)
+├── address_line_1, address_line_2
+├── city, state, postal_code, country
+├── is_default_shipping, is_default_billing
+├── type (enum: shipping, billing, both)
+├── notes (nullable)
+├── timestamps, soft deletes
+└── indexes on user_id combinations
+```
+
+---
+
+## Next Priority Tasks
 
 ### WishlistController API 🔄 PENDING
 - Add/remove products to wishlist

@@ -24,6 +24,644 @@
         }
     ],
     "paths": {
+        "/api/v1/addresses": {
+            "get": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Get user addresses",
+                "description": "Retrieve all addresses for the authenticated user",
+                "operationId": "getAddresses",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter addresses by type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "shipping",
+                                "billing",
+                                "both"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Addresses retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AddressResource"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Addresses retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Create new address",
+                "description": "Create a new address for the authenticated user",
+                "operationId": "createAddress",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "address_line_1",
+                                    "city",
+                                    "postal_code",
+                                    "country"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Home"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Doe"
+                                    },
+                                    "company_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "ABC Company",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+90 555 123 4567",
+                                        "nullable": true
+                                    },
+                                    "address_line_1": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "address_line_2": {
+                                        "type": "string",
+                                        "example": "Apartment 4B",
+                                        "nullable": true
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Istanbul"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Istanbul",
+                                        "nullable": true
+                                    },
+                                    "postal_code": {
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "34000"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "maxLength": 2,
+                                        "example": "TR"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "shipping",
+                                            "billing",
+                                            "both"
+                                        ],
+                                        "example": "both"
+                                    },
+                                    "is_default_shipping": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_default_billing": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Ring the doorbell",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Address created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address created successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/addresses/{id}": {
+            "get": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Get specific address",
+                "description": "Retrieve a specific address by ID",
+                "operationId": "getAddress",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Update address",
+                "description": "Update a specific address",
+                "operationId": "updateAddress",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Home"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Doe"
+                                    },
+                                    "company_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "ABC Company",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+90 555 123 4567",
+                                        "nullable": true
+                                    },
+                                    "address_line_1": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "address_line_2": {
+                                        "type": "string",
+                                        "example": "Apartment 4B",
+                                        "nullable": true
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Istanbul"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Istanbul",
+                                        "nullable": true
+                                    },
+                                    "postal_code": {
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "34000"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "maxLength": 2,
+                                        "example": "TR"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "shipping",
+                                            "billing",
+                                            "both"
+                                        ],
+                                        "example": "both"
+                                    },
+                                    "is_default_shipping": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_default_billing": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Ring the doorbell",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Delete address",
+                "description": "Delete a specific address (soft delete)",
+                "operationId": "deleteAddress",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/addresses/{id}/set-default-shipping": {
+            "post": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Set as default shipping address",
+                "description": "Set the specified address as the default shipping address",
+                "operationId": "setDefaultShipping",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default shipping address set successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Default shipping address set successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Address cannot be used for shipping",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "This address cannot be used for shipping"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/addresses/{id}/set-default-billing": {
+            "post": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Set as default billing address",
+                "description": "Set the specified address as the default billing address",
+                "operationId": "setDefaultBilling",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default billing address set successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AddressResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Default billing address set successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Address cannot be used for billing",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "This address cannot be used for billing"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/addresses/defaults": {
+            "get": {
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Get default addresses",
+                "description": "Get the user's default shipping and billing addresses",
+                "operationId": "getDefaultAddresses",
+                "responses": {
+                    "200": {
+                        "description": "Default addresses retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "shipping": {
+                                                    "oneOf": [
+                                                        {
+                                                            "$ref": "#/components/schemas/AddressResource"
+                                                        }
+                                                    ],
+                                                    "nullable": true
+                                                },
+                                                "billing": {
+                                                    "oneOf": [
+                                                        {
+                                                            "$ref": "#/components/schemas/AddressResource"
+                                                        }
+                                                    ],
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Default addresses retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "tags": [
@@ -3567,6 +4205,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Addresses",
+            "description": "User address management"
+        },
         {
             "name": "Authentication",
             "description": "User authentication endpoints"
