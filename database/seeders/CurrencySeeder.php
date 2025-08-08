@@ -13,28 +13,48 @@ class CurrencySeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('currencies')->truncate();
+        // Foreign key constraint nedeniyle truncate yerine delete kullanıyoruz
+        Currency::query()->delete();
 
-        Currency::create([
-            'name' => 'US Dollar',
-            'code' => 'USD',
-            'symbol' => '$',
-            'exchange_rate' => 40.00,
-        ]);
+        // Türk Lirası - Base Currency
+        Currency::updateOrCreate(
+            ['code' => 'TRY'],
+            [
+                'name' => 'Turkish Lira',
+                'symbol' => '₺',
+                'exchange_rate' => 1.00,
+                'is_default' => true,
+            ]
+        );
 
-        Currency::create([
-            'name' => 'Euro',
-            'code' => 'EUR',
-            'symbol' => '€',
-            'exchange_rate' => 46.00,
-        ]);
+        // Amerikan Doları
+        Currency::updateOrCreate(
+            ['code' => 'USD'],
+            [
+                'name' => 'US Dollar',
+                'symbol' => '$',
+                'exchange_rate' => 30.50,
+            ]
+        );
 
-        Currency::create([
-            'name' => 'Turkish Lira',
-            'code' => 'TRY',
-            'symbol' => '₺',
-            'exchange_rate' => 1.00,
-            'is_default' => true,
-        ]);
+        // Euro
+        Currency::updateOrCreate(
+            ['code' => 'EUR'],
+            [
+                'name' => 'Euro',
+                'symbol' => '€',
+                'exchange_rate' => 33.25,
+            ]
+        );
+
+        // İngiliz Sterlini (opsiyonel)
+        Currency::updateOrCreate(
+            ['code' => 'GBP'],
+            [
+                'name' => 'British Pound',
+                'symbol' => '£',
+                'exchange_rate' => 38.75,
+            ]
+        );
     }
 }

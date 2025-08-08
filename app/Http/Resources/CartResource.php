@@ -7,6 +7,28 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @OA\Schema(
+ *     schema="Cart",
+ *     title="Cart",
+ *     description="Shopping cart data",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="session_id", type="string", nullable=true),
+ *     @OA\Property(property="user_id", type="integer", nullable=true),
+ *     @OA\Property(property="customer_type", type="string", example="B2C"),
+ *     @OA\Property(property="total_amount", type="number", format="float", example=150.00),
+ *     @OA\Property(property="discounted_amount", type="number", format="float", example=135.00),
+ *     @OA\Property(property="subtotal_amount", type="number", format="float", example=120.00),
+ *     @OA\Property(property="coupon_code", type="string", nullable=true),
+ *     @OA\Property(property="coupon_discount", type="number", format="float", example=15.00),
+ *     @OA\Property(property="applied_discounts", type="array", @OA\Items(type="object")),
+ *     @OA\Property(property="item_count", type="integer", example=3),
+ *     @OA\Property(property="unique_items", type="integer", example=2),
+ *     @OA\Property(property="items", type="array", @OA\Items(ref="#/components/schemas/CartItem")),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class CartResource extends JsonResource
 {
     /**

@@ -7,6 +7,21 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @OA\Schema(
+ *     schema="CartItem",
+ *     title="Cart Item",
+ *     description="Cart item data",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="cart_id", type="integer", example=1),
+ *     @OA\Property(property="product_id", type="integer", example=1),
+ *     @OA\Property(property="product_variant_id", type="integer", example=1),
+ *     @OA\Property(property="quantity", type="integer", example=2),
+ *     @OA\Property(property="price", type="number", format="float", example=50.00),
+ *     @OA\Property(property="discounted_price", type="number", format="float", example=45.00),
+ *     @OA\Property(property="subtotal", type="number", format="float", example=90.00)
+ * )
+ */
 class CartItemResource extends JsonResource
 {
     /**

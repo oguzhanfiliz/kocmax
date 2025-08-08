@@ -6,6 +6,20 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @OA\Schema(
+ *     schema="OrderItem",
+ *     title="Order Item",
+ *     description="Order item data",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="quantity", type="integer", example=2),
+ *     @OA\Property(property="price", type="number", format="float", example=50.00),
+ *     @OA\Property(property="discounted_price", type="number", format="float", example=45.00),
+ *     @OA\Property(property="total_price", type="number", format="float", example=90.00),
+ *     @OA\Property(property="product", type="object"),
+ *     @OA\Property(property="product_variant", type="object")
+ * )
+ */
 class OrderItemResource extends JsonResource
 {
     public function toArray($request): array

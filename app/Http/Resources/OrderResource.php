@@ -6,6 +6,35 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @OA\Schema(
+ *     schema="Order",
+ *     title="Order",
+ *     description="Order data",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+ *     @OA\Property(property="status", type="object",
+ *         @OA\Property(property="value", type="string", example="pending"),
+ *         @OA\Property(property="label", type="string", example="Pending"),
+ *         @OA\Property(property="color", type="string", example="yellow"),
+ *         @OA\Property(property="icon", type="string", example="clock")
+ *     ),
+ *     @OA\Property(property="customer_type", type="string", example="B2C"),
+ *     @OA\Property(property="subtotal_amount", type="number", format="float", example=120.00),
+ *     @OA\Property(property="discount_amount", type="number", format="float", example=15.00),
+ *     @OA\Property(property="tax_amount", type="number", format="float", example=18.00),
+ *     @OA\Property(property="shipping_cost", type="number", format="float", example=12.00),
+ *     @OA\Property(property="total_amount", type="number", format="float", example=135.00),
+ *     @OA\Property(property="currency", type="string", example="TRY"),
+ *     @OA\Property(property="payment_status", type="string", example="pending"),
+ *     @OA\Property(property="payment_method", type="string", example="card"),
+ *     @OA\Property(property="shipping_address", type="object"),
+ *     @OA\Property(property="billing_address", type="object"),
+ *     @OA\Property(property="items", type="array", @OA\Items(ref="#/components/schemas/OrderItem")),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class OrderResource extends JsonResource
 {
     public function toArray($request): array

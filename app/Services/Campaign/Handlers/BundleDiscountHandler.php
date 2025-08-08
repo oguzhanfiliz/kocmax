@@ -10,6 +10,7 @@ use App\Models\Campaign;
 use App\ValueObjects\Campaign\CampaignResult;
 use App\ValueObjects\Campaign\CartContext;
 use App\ValueObjects\Pricing\Discount;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class BundleDiscountHandler implements CampaignHandlerInterface
@@ -19,7 +20,7 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         return $campaign->type === CampaignType::BUNDLE_DISCOUNT->value;
     }
 
-    public function apply(Campaign $campaign, CartContext $context): CampaignResult
+    public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
             // Validation chain

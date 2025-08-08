@@ -20,6 +20,7 @@ class ProductVariant extends Model
         'sku',
         'barcode',
         'price',
+        'currency_code',
         'cost',
         'stock',
         'min_stock_level',
@@ -57,6 +58,14 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Variant belongs to a currency
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
     /**
@@ -154,5 +163,69 @@ class ProductVariant extends Model
     public function isInStock()
     {
         return $this->stock > 0;
+    }
+
+    /**
+     * Get price in specified currency with real-time TCMB rates
+     */
+    public function getPriceInCurrency(string $targetCurrency = 'TRY'): float
+    {
+        if ($this->currency_code === $targetCurrency) {
+            return (float) $this->price;
+        }
+
+        // Use CurrencyConversionService for real-time TCMB rates
+        $conversionService = app(\App\Services\CurrencyConversionService::class);
+        
+        try {
+            return $conversionService->convertVariantPrice($this, $targetCurrency);
+        } catch (\Exception $e) {
+            // Fallback to direct conversion
+            $sourceCurrency = Currency::where('code', $this->currency_code)->first();
+            $targetCurrencyModel = Currency::where('code', $targetCurrency)->first();
+
+            if (!$sourceCurrency || !$targetCurrencyModel) {
+                return (float) $this->price; // Fallback to original price
+            }
+
+            return $sourceCurrency->convertTo($this->price, $targetCurrencyModel);
+        }
+    }
+
+    /**
+     * Get real-time exchange rate for this variant's currency
+     */
+    public function getCurrentExchangeRate(string $targetCurrency = 'TRY'): float
+    {
+        if ($this->currency_code === $targetCurrency) {
+            return 1.0;
+        }
+
+        $conversionService = app(\App\Services\CurrencyConversionService::class);
+        return $conversionService->getRealTimeExchangeRate($this->currency_code, $targetCurrency);
+    }
+
+    /**
+     * Get formatted price with currency symbol
+     */
+    public function getFormattedPrice(string $currency = null): string
+    {
+        $currency = $currency ?? $this->currency_code;
+        $price = $this->getPriceInCurrency($currency);
+        $currencyModel = Currency::where('code', $currency)->first();
+        
+        if (!$currencyModel) {
+            return number_format($price, 2) . ' ' . $currency;
+        }
+
+        return $currencyModel->symbol . number_format($price, 2);
+    }
+
+    /**
+     * Check if variant uses default currency
+     */
+    public function usesDefaultCurrency(): bool
+    {
+        return $this->currency_code === 'TRY';
     }
 }

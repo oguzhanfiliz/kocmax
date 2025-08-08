@@ -18,6 +18,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * @OA\Tag(
+ *     name="Orders",
+ *     description="Order management endpoints"
+ * )
+ */
 class OrderController extends Controller
 {
     public function __construct(
@@ -26,6 +32,47 @@ class OrderController extends Controller
     ) {}
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/orders",
+     *      operationId="getOrders",
+     *      tags={"Orders"},
+     *      summary="Get user orders",
+     *      description="Retrieve orders for authenticated user with optional filtering",
+     *      security={{ "sanctum": {} }},
+     *      @OA\Parameter(
+     *          name="status",
+     *          description="Filter by order status",
+     *          required=false,
+     *          in="query",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Parameter(
+     *          name="from_date",
+     *          description="Filter orders from date (YYYY-MM-DD)",
+     *          required=false,
+     *          in="query",
+     *          @OA\Schema(type="string", format="date")
+     *      ),
+     *      @OA\Parameter(
+     *          name="to_date",
+     *          description="Filter orders to date (YYYY-MM-DD)",
+     *          required=false,
+     *          in="query",
+     *          @OA\Schema(type="string", format="date")
+     *      ),
+     *      @OA\Parameter(
+     *          name="per_page",
+     *          description="Items per page (default: 15)",
+     *          required=false,
+     *          in="query",
+     *          @OA\Schema(type="integer", default=15)
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Orders retrieved successfully"
+     *      )
+     * )
+     * 
      * Display a listing of orders for the authenticated user
      */
     public function index(Request $request): JsonResponse
@@ -64,6 +111,34 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/orders/{order}",
+     *      operationId="getOrder",
+     *      tags={"Orders"},
+     *      summary="Get specific order",
+     *      description="Retrieve details of a specific order",
+     *      security={{ "sanctum": {} }},
+     *      @OA\Parameter(
+     *          name="order",
+     *          description="Order ID",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Order retrieved successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=403,
+     *          description="Not authorized to view this order"
+     *      ),
+     *      @OA\Response(
+     *          response=404,
+     *          description="Order not found"
+     *      )
+     * )
+     * 
      * Display the specified order
      */
     public function show(Order $order): JsonResponse
@@ -78,6 +153,37 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/orders",
+     *      operationId="createOrder",
+     *      tags={"Orders"},
+     *      summary="Create new order from cart",
+     *      description="Process checkout and create order from user's cart",
+     *      security={{ "sanctum": {} }},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"shipping_address", "billing_address"},
+     *              @OA\Property(property="shipping_address", type="object"),
+     *              @OA\Property(property="billing_address", type="object"),
+     *              @OA\Property(property="payment_method", type="string", enum={"card", "credit", "bank_transfer"}),
+     *              @OA\Property(property="notes", type="string")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Order created successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Cart is empty or validation failed"
+     *      ),
+     *      @OA\Response(
+     *          response=422,
+     *          description="Checkout validation failed"
+     *      )
+     * )
+     * 
      * Create a new order from cart (checkout process)
      */
     public function store(StoreOrderRequest $request): JsonResponse
@@ -123,6 +229,35 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/orders/guest-checkout",
+     *      operationId="guestCheckout",
+     *      tags={"Orders"},
+     *      summary="Process guest checkout",
+     *      description="Create order without user authentication",
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"cart_data", "shipping_address", "billing_address"},
+     *              @OA\Property(property="cart_data", type="object",
+     *                  @OA\Property(property="items", type="array", @OA\Items(type="object"))
+     *              ),
+     *              @OA\Property(property="shipping_address", type="object"),
+     *              @OA\Property(property="billing_address", type="object"),
+     *              @OA\Property(property="customer_email", type="string", format="email"),
+     *              @OA\Property(property="payment_method", type="string", enum={"card", "credit", "bank_transfer"})
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Guest order created successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Cart data is required for guest checkout"
+     *      )
+     * )
+     * 
      * Process guest checkout (no authentication required)
      */
     public function guestCheckout(StoreOrderRequest $request): JsonResponse
@@ -268,6 +403,34 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/orders/{order}/tracking",
+     *      operationId="getOrderTracking",
+     *      tags={"Orders"},
+     *      summary="Get order tracking information",
+     *      description="Retrieve tracking details for an order using order number",
+     *      @OA\Parameter(
+     *          name="order",
+     *          description="Order number",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Tracking information retrieved successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="order_number", type="string"),
+     *                  @OA\Property(property="status", type="string"),
+     *                  @OA\Property(property="tracking_number", type="string"),
+     *                  @OA\Property(property="shipping_carrier", type="string"),
+     *                  @OA\Property(property="estimated_delivery", type="string", format="date-time")
+     *              )
+     *          )
+     *      )
+     * )
+     * 
      * Get order tracking information
      */
     public function tracking(Order $order): JsonResponse
@@ -300,6 +463,27 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/orders/user/summary",
+     *      operationId="getUserOrderSummary",
+     *      tags={"Orders"},
+     *      summary="Get user order summary",
+     *      description="Retrieve order statistics and summary for authenticated user",
+     *      security={{ "sanctum": {} }},
+     *      @OA\Response(
+     *          response=200,
+     *          description="Order summary retrieved successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="total_orders", type="integer"),
+     *                  @OA\Property(property="total_spent", type="number", format="float"),
+     *                  @OA\Property(property="recent_orders", type="array", @OA\Items(type="object")),
+     *                  @OA\Property(property="status_counts", type="object")
+     *              )
+     *          )
+     *      )
+     * )
+     * 
      * Get order summary/statistics for current user
      */
     public function summary(): JsonResponse
@@ -328,6 +512,32 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/orders/estimate-checkout",
+     *      operationId="estimateCheckout",
+     *      tags={"Orders"},
+     *      summary="Estimate checkout costs",
+     *      description="Calculate checkout costs including shipping and taxes before creating order",
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"shipping_country", "shipping_city"},
+     *              @OA\Property(property="shipping_country", type="string", maxLength=2, example="TR"),
+     *              @OA\Property(property="billing_country", type="string", maxLength=2, example="TR"),
+     *              @OA\Property(property="shipping_city", type="string", example="Istanbul"),
+     *              @OA\Property(property="payment_method", type="string", enum={"card", "credit", "bank_transfer"})
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Checkout estimate calculated successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Cart is empty or not found"
+     *      )
+     * )
+     * 
      * Estimate checkout costs before creating order
      */
     public function estimateCheckout(Request $request): JsonResponse

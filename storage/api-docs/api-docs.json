@@ -1,0 +1,1168 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "B2B/B2C E-Commerce API Documentation",
+        "description": "API documentation for a hybrid B2B/B2C e-commerce platform for occupational health and safety clothing",
+        "contact": {
+            "email": "admin@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://b2bb2c.mutfakyapim.net",
+            "description": "Production API Server"
+        },
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Development API Server"
+        }
+    ],
+    "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User login",
+                "description": "Login user and get access token",
+                "operationId": "loginUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "mobile_app"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "type": "object"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abc123def456..."
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User logout",
+                "description": "Logout user and revoke access token",
+                "operationId": "logoutUser",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logout successful"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/user": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get current user",
+                "description": "Get authenticated user information",
+                "operationId": "getCurrentUser",
+                "responses": {
+                    "200": {
+                        "description": "User information retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cart": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Get current user's cart",
+                "description": "Retrieve the current cart for authenticated or guest users",
+                "operationId": "getCart",
+                "responses": {
+                    "200": {
+                        "description": "Cart retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "cart": {
+                                                    "type": "object"
+                                                },
+                                                "summary": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve cart"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Clear entire cart",
+                "description": "Remove all items from the user's cart",
+                "operationId": "clearCart",
+                "responses": {
+                    "200": {
+                        "description": "Cart cleared successfully"
+                    },
+                    "500": {
+                        "description": "Failed to clear cart"
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/items": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Add item to cart",
+                "description": "Add a product variant to the user's cart",
+                "operationId": "addItemToCart",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_variant_id"
+                                ],
+                                "properties": {
+                                    "product_variant_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item added to cart successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Item added to cart successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to add item to cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to add item to cart"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/items/{item}": {
+            "put": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Update item quantity in cart",
+                "description": "Update the quantity of an existing cart item",
+                "operationId": "updateCartItem",
+                "parameters": [
+                    {
+                        "name": "item",
+                        "in": "path",
+                        "description": "Cart item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "quantity": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cart item updated successfully"
+                    },
+                    "400": {
+                        "description": "Failed to update cart item"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove item from cart",
+                "description": "Remove an item from the user's cart",
+                "operationId": "removeCartItem",
+                "parameters": [
+                    {
+                        "name": "item",
+                        "in": "path",
+                        "description": "Cart item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item removed from cart successfully"
+                    },
+                    "400": {
+                        "description": "Failed to remove cart item"
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/summary": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Get cart summary",
+                "description": "Retrieve cart summary with pricing information",
+                "operationId": "getCartSummary",
+                "responses": {
+                    "200": {
+                        "description": "Cart summary retrieved successfully"
+                    },
+                    "500": {
+                        "description": "Failed to retrieve cart summary"
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/migrate": {
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Migrate guest cart to authenticated user",
+                "description": "Transfer items from guest cart to authenticated user cart",
+                "operationId": "migrateGuestCart",
+                "responses": {
+                    "200": {
+                        "description": "Guest cart migrated successfully"
+                    },
+                    "401": {
+                        "description": "User must be authenticated to migrate cart"
+                    },
+                    "500": {
+                        "description": "Failed to migrate guest cart"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get user orders",
+                "description": "Retrieve orders for authenticated user with optional filtering",
+                "operationId": "getOrders",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by order status",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Filter orders from date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "Filter orders to date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orders retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Create new order from cart",
+                "description": "Process checkout and create order from user's cart",
+                "operationId": "createOrder",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "shipping_address",
+                                    "billing_address"
+                                ],
+                                "properties": {
+                                    "shipping_address": {
+                                        "type": "object"
+                                    },
+                                    "billing_address": {
+                                        "type": "object"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "card",
+                                            "credit",
+                                            "bank_transfer"
+                                        ]
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Order created successfully"
+                    },
+                    "400": {
+                        "description": "Cart is empty or validation failed"
+                    },
+                    "422": {
+                        "description": "Checkout validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/{order}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get specific order",
+                "description": "Retrieve details of a specific order",
+                "operationId": "getOrder",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order retrieved successfully"
+                    },
+                    "403": {
+                        "description": "Not authorized to view this order"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/guest-checkout": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Process guest checkout",
+                "description": "Create order without user authentication",
+                "operationId": "guestCheckout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cart_data",
+                                    "shipping_address",
+                                    "billing_address"
+                                ],
+                                "properties": {
+                                    "cart_data": {
+                                        "properties": {
+                                            "items": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "shipping_address": {
+                                        "type": "object"
+                                    },
+                                    "billing_address": {
+                                        "type": "object"
+                                    },
+                                    "customer_email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "card",
+                                            "credit",
+                                            "bank_transfer"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Guest order created successfully"
+                    },
+                    "400": {
+                        "description": "Cart data is required for guest checkout"
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{order}/tracking": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get order tracking information",
+                "description": "Retrieve tracking details for an order using order number",
+                "operationId": "getOrderTracking",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "description": "Order number",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tracking information retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "order_number": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "tracking_number": {
+                                                    "type": "string"
+                                                },
+                                                "shipping_carrier": {
+                                                    "type": "string"
+                                                },
+                                                "estimated_delivery": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/user/summary": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get user order summary",
+                "description": "Retrieve order statistics and summary for authenticated user",
+                "operationId": "getUserOrderSummary",
+                "responses": {
+                    "200": {
+                        "description": "Order summary retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "total_orders": {
+                                                    "type": "integer"
+                                                },
+                                                "total_spent": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                },
+                                                "recent_orders": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "status_counts": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/estimate-checkout": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Estimate checkout costs",
+                "description": "Calculate checkout costs including shipping and taxes before creating order",
+                "operationId": "estimateCheckout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "shipping_country",
+                                    "shipping_city"
+                                ],
+                                "properties": {
+                                    "shipping_country": {
+                                        "type": "string",
+                                        "maxLength": 2,
+                                        "example": "TR"
+                                    },
+                                    "billing_country": {
+                                        "type": "string",
+                                        "maxLength": 2,
+                                        "example": "TR"
+                                    },
+                                    "shipping_city": {
+                                        "type": "string",
+                                        "example": "Istanbul"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "card",
+                                            "credit",
+                                            "bank_transfer"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Checkout estimate calculated successfully"
+                    },
+                    "400": {
+                        "description": "Cart is empty or not found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CartItem": {
+                "title": "Cart Item",
+                "description": "Cart item data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "cart_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "product_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "product_variant_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50
+                    },
+                    "discounted_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 45
+                    },
+                    "subtotal": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 90
+                    }
+                },
+                "type": "object"
+            },
+            "Cart": {
+                "title": "Cart",
+                "description": "Shopping cart data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "customer_type": {
+                        "type": "string",
+                        "example": "B2C"
+                    },
+                    "total_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    },
+                    "discounted_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 135
+                    },
+                    "subtotal_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 120
+                    },
+                    "coupon_code": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "coupon_discount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15
+                    },
+                    "applied_discounts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "item_count": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "unique_items": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CartItem"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "OrderItem": {
+                "title": "Order Item",
+                "description": "Order item data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50
+                    },
+                    "discounted_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 45
+                    },
+                    "total_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 90
+                    },
+                    "product": {
+                        "type": "object"
+                    },
+                    "product_variant": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "Order": {
+                "title": "Order",
+                "description": "Order data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "order_number": {
+                        "type": "string",
+                        "example": "ORD-2024-001"
+                    },
+                    "status": {
+                        "properties": {
+                            "value": {
+                                "type": "string",
+                                "example": "pending"
+                            },
+                            "label": {
+                                "type": "string",
+                                "example": "Pending"
+                            },
+                            "color": {
+                                "type": "string",
+                                "example": "yellow"
+                            },
+                            "icon": {
+                                "type": "string",
+                                "example": "clock"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "customer_type": {
+                        "type": "string",
+                        "example": "B2C"
+                    },
+                    "subtotal_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 120
+                    },
+                    "discount_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15
+                    },
+                    "tax_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 18
+                    },
+                    "shipping_cost": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 12
+                    },
+                    "total_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 135
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "TRY"
+                    },
+                    "payment_status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "example": "card"
+                    },
+                    "shipping_address": {
+                        "type": "object"
+                    },
+                    "billing_address": {
+                        "type": "object"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderItem"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            },
+            "0": []
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "User authentication endpoints"
+        },
+        {
+            "name": "Cart",
+            "description": "Cart management endpoints"
+        },
+        {
+            "name": "Orders",
+            "description": "Order management endpoints"
+        }
+    ]
+}

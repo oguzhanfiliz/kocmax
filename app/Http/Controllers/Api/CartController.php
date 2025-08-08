@@ -19,6 +19,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @OA\Tag(
+ *     name="Cart",
+ *     description="Cart management endpoints"
+ * )
+ */
 class CartController extends Controller
 {
     public function __construct(
@@ -27,6 +33,33 @@ class CartController extends Controller
     ) {}
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/cart",
+     *      operationId="getCart",
+     *      tags={"Cart"},
+     *      summary="Get current user's cart",
+     *      description="Retrieve the current cart for authenticated or guest users",
+     *      @OA\Response(
+     *          response=200,
+     *          description="Cart retrieved successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=true),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="cart", type="object"),
+     *                  @OA\Property(property="summary", type="object")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Failed to retrieve cart",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=false),
+     *              @OA\Property(property="message", type="string", example="Failed to retrieve cart")
+     *          )
+     *      )
+     * )
+     * 
      * Get current user's cart
      */
     public function show(Request $request): JsonResponse
@@ -55,6 +88,38 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/cart/items",
+     *      operationId="addItemToCart",
+     *      tags={"Cart"},
+     *      summary="Add item to cart",
+     *      description="Add a product variant to the user's cart",
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"product_variant_id"},
+     *              @OA\Property(property="product_variant_id", type="integer", example=1),
+     *              @OA\Property(property="quantity", type="integer", example=2, minimum=1)
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Item added to cart successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=true),
+     *              @OA\Property(property="message", type="string", example="Item added to cart successfully")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Failed to add item to cart",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=false),
+     *              @OA\Property(property="message", type="string", example="Failed to add item to cart")
+     *          )
+     *      )
+     * )
+     * 
      * Add item to cart
      */
     public function addItem(AddItemRequest $request): JsonResponse
@@ -95,6 +160,36 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Put(
+     *      path="/api/v1/cart/items/{item}",
+     *      operationId="updateCartItem",
+     *      tags={"Cart"},
+     *      summary="Update item quantity in cart",
+     *      description="Update the quantity of an existing cart item",
+     *      @OA\Parameter(
+     *          name="item",
+     *          description="Cart item ID",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"quantity"},
+     *              @OA\Property(property="quantity", type="integer", example=3, minimum=1)
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Cart item updated successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Failed to update cart item"
+     *      )
+     * )
+     * 
      * Update item quantity in cart
      */
     public function updateItem(UpdateQuantityRequest $request, int $itemId): JsonResponse
@@ -135,6 +230,29 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Delete(
+     *      path="/api/v1/cart/items/{item}",
+     *      operationId="removeCartItem",
+     *      tags={"Cart"},
+     *      summary="Remove item from cart",
+     *      description="Remove an item from the user's cart",
+     *      @OA\Parameter(
+     *          name="item",
+     *          description="Cart item ID",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Item removed from cart successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Failed to remove cart item"
+     *      )
+     * )
+     * 
      * Remove item from cart
      */
     public function removeItem(Request $request, int $itemId): JsonResponse
@@ -174,6 +292,22 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Delete(
+     *      path="/api/v1/cart",
+     *      operationId="clearCart",
+     *      tags={"Cart"},
+     *      summary="Clear entire cart",
+     *      description="Remove all items from the user's cart",
+     *      @OA\Response(
+     *          response=200,
+     *          description="Cart cleared successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Failed to clear cart"
+     *      )
+     * )
+     * 
      * Clear entire cart
      */
     public function clear(Request $request): JsonResponse
@@ -208,6 +342,22 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *      path="/api/v1/cart/summary",
+     *      operationId="getCartSummary",
+     *      tags={"Cart"},
+     *      summary="Get cart summary",
+     *      description="Retrieve cart summary with pricing information",
+     *      @OA\Response(
+     *          response=200,
+     *          description="Cart summary retrieved successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Failed to retrieve cart summary"
+     *      )
+     * )
+     * 
      * Get cart summary only
      */
     public function summary(Request $request): JsonResponse
@@ -268,6 +418,27 @@ class CartController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/cart/migrate",
+     *      operationId="migrateGuestCart",
+     *      tags={"Cart"},
+     *      summary="Migrate guest cart to authenticated user",
+     *      description="Transfer items from guest cart to authenticated user cart",
+     *      security={{ "sanctum": {} }},
+     *      @OA\Response(
+     *          response=200,
+     *          description="Guest cart migrated successfully"
+     *      ),
+     *      @OA\Response(
+     *          response=401,
+     *          description="User must be authenticated to migrate cart"
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Failed to migrate guest cart"
+     *      )
+     * )
+     * 
      * Migrate guest cart to authenticated user
      */
     public function migrate(Request $request): JsonResponse

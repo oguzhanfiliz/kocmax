@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,20 @@ use App\Http\Controllers\Api\OrderController;
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| Authentication API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/auth')->group(function () {
+    Route::post('/login', [AuthController::class, 'login'])->name('api.auth.login');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
+        Route::get('/user', [AuthController::class, 'user'])->name('api.auth.user');
+    });
+});
+
+// Deprecated - use /api/v1/auth/user instead
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

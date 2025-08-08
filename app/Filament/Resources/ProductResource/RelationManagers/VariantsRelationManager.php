@@ -120,21 +120,82 @@ class VariantsRelationManager extends RelationManager
                                 ->slideOver(),
                         ])
                         ->alignEnd(),
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(5)
                             ->schema([
                                 Forms\Components\TextInput::make('price')
                                     ->label('Satış Fiyatı')
                                     ->required()
                                     ->numeric()
-                                    ->prefix('₺')
                                     ->step(0.01)
                                     ->placeholder('299.99')
                                     ->helperText('Müşteriye satış fiyatı (KDV dahil)')
-                                    ->hint('KDV dahil fiyat yazın'),
+                                    ->hint('KDV dahil fiyat yazın')
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($set, $get, $state) {
+                                        $currency = $get('currency_code');
+                                        if ($currency && $state) {
+                                            $set('price_display', $this->formatPriceWithCurrency($state, $currency));
+                                        }
+                                    }),
+                                Forms\Components\Select::make('currency_code')
+                                    ->label('Para Birimi')
+                                    ->options([
+                                        'TRY' => '₺ Türk Lirası (TRY)',
+                                        'USD' => '$ Amerikan Doları (USD)',
+                                        'EUR' => '€ Euro (EUR)',
+                                    ])
+                                    ->default('TRY')
+                                    ->required()
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($set, $get, $state) {
+                                        $price = $get('price');
+                                        if ($price && $state) {
+                                            $set('price_display', $this->formatPriceWithCurrency($price, $state));
+                                        }
+                                    })
+                                    ->helperText('Fiyatın hangi para biriminde girildiği')
+                                    ->hint('Otomatik kur dönüşümü yapılır'),
+                                Forms\Components\TextInput::make('price_display')
+                                    ->label('Fiyat Önizleme (Güncel Kur)')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->helperText('TCMB güncel kuru ile TRY karşılığı')
+                                    ->hint('Otomatik hesaplanır - TCMB\'den alınır')
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('refresh_rates')
+                                            ->icon('heroicon-m-arrow-path')
+                                            ->color('gray')
+                                            ->tooltip('Kurları TCMB\'den güncelle')
+                                            ->action(function () {
+                                                try {
+                                                    $tcmbService = app(\App\Services\TcmbExchangeRateService::class);
+                                                    $result = $tcmbService->updateRates();
+                                                    
+                                                    if ($result['success']) {
+                                                        \Filament\Notifications\Notification::make()
+                                                            ->title('Kurlar Güncellendi')
+                                                            ->body('TCMB\'den güncel kurlar alındı.')
+                                                            ->success()
+                                                            ->send();
+                                                    } else {
+                                                        \Filament\Notifications\Notification::make()
+                                                            ->title('Kur Güncellenemedi')
+                                                            ->body($result['message'])
+                                                            ->warning()
+                                                            ->send();
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    \Filament\Notifications\Notification::make()
+                                                        ->title('Hata')
+                                                        ->body('Kur güncellenirken hata oluştu: ' . $e->getMessage())
+                                                        ->danger()
+                                                        ->send();
+                                                }
+                                            })
+                                    ),
                                 Forms\Components\TextInput::make('cost')
                                     ->label('Maliyet Fiyatı')
                                     ->numeric()
-                                    ->prefix('₺')
                                     ->step(0.01)
                                     ->placeholder('150.00')
                                     ->helperText('Ürünün size maliyeti (isteğe bağlı)')
@@ -691,5 +752,58 @@ class VariantsRelationManager extends RelationManager
                 ->warning()
                 ->send();
         }
+    }
+
+    /**
+     * Format price with currency symbol and real-time TCMB conversion
+     */
+    protected function formatPriceWithCurrency($price, $currencyCode): string
+    {
+        if (!$price || !$currencyCode) {
+            return '';
+        }
+
+        $currencySymbols = [
+            'TRY' => '₺',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+        ];
+
+        $symbol = $currencySymbols[$currencyCode] ?? $currencyCode;
+        
+        // Try to get real-time TCMB exchange rate for conversion preview
+        try {
+            if ($currencyCode !== 'TRY') {
+                $conversionService = app(\App\Services\CurrencyConversionService::class);
+                $tryAmount = $conversionService->convertVariantPrice(
+                    (new \App\Models\ProductVariant())->forceFill([
+                        'price' => $price,
+                        'currency_code' => $currencyCode
+                    ]), 
+                    'TRY'
+                );
+                
+                $lastUpdate = \App\Models\Currency::where('code', $currencyCode)
+                    ->value('updated_at');
+                
+                $updateInfo = $lastUpdate ? ' (Güncelleme: ' . $lastUpdate->format('H:i') . ')' : '';
+                
+                return "{$symbol}" . number_format($price, 2) . " ≈ ₺" . number_format($tryAmount, 2) . $updateInfo;
+            }
+        } catch (\Exception $e) {
+            // Fallback to cached rates
+            try {
+                $currency = \App\Models\Currency::where('code', $currencyCode)->first();
+                if ($currency && $currencyCode !== 'TRY') {
+                    $tryAmount = $currency->convertTo($price, \App\Models\Currency::getDefault());
+                    return "{$symbol}{$price} ≈ ₺" . number_format($tryAmount, 2) . " (Cache)";
+                }
+            } catch (\Exception $e2) {
+                // Final fallback
+            }
+        }
+
+        return "{$symbol}" . number_format($price, 2);
     }
 }
