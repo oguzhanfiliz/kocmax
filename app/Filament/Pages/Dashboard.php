@@ -16,6 +16,7 @@ use App\Filament\Widgets\CacheManagementWidget;
 use App\Filament\Widgets\CartOverviewWidget;
 use App\Filament\Widgets\OrderOverviewWidget;
 use App\Filament\Widgets\PricingOverviewWidget;
+use App\Filament\Widgets\SalesTrendChartWidget;
 
 class Dashboard extends BaseDashboard
 {
@@ -47,6 +48,7 @@ class Dashboard extends BaseDashboard
             CartOverviewWidget::class,
             OrderOverviewWidget::class,
             PricingOverviewWidget::class,
+            SalesTrendChartWidget::class,
         ];
     }
     
