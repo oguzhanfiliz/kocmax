@@ -287,4 +287,20 @@ class User extends Authenticatable implements FilamentUser
             })
             ->first();
     }
+
+    /**
+     * Get the user's wishlist items
+     */
+    public function wishlistItems(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Get the user's favorite wishlist items
+     */
+    public function favoriteWishlistItems(): HasMany
+    {
+        return $this->wishlistItems()->where('is_favorite', true);
+    }
 }
