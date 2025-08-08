@@ -45,6 +45,10 @@ class ProductVariant extends Model
     'color', 'size', 'weight', 'dimensions'
     'length', 'width', 'height'
     'is_active', 'is_default', 'sort_order', 'image_url'
+    
+    // Currency Management (2025-08-08 Updated)
+    // currency_code: Always 'TRY' (auto-set via boot method)
+    // Prices stored in TRY, API layer handles conversion
 }
 ```
 

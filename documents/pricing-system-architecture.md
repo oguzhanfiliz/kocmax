@@ -498,6 +498,268 @@ GET admin/pricing-rules/create
 GET admin/pricing-rules/{record}/edit
 ```
 
+## 🌍 Multi-Currency System (Güncel Durum: Ocak 2025)
+
+### Genel Yaklaşım
+
+Sistem **Hybrid Currency Management** prensibini benimser:
+- **Admin Panel**: Sadece TRY (Türk Lirası) girişi - basitlik ve tutarlılık
+- **API Layer**: Her para birimi için real-time dönüşüm - maksimum esneklik
+
+### Currency Management Architecture
+
+```
+Currency Management
+├── Admin Layer (TRY Only)
+│   ├── ProductResource (base_price: TRY)
+│   ├── VariantsRelationManager (price: TRY)
+│   └── CurrencyResource (Flexible default currency)
+├── API Layer (Multi-Currency)
+│   ├── MultiCurrencyPricingService
+│   ├── CurrencyMiddleware
+│   └── CurrencyController
+└── Database Layer
+    ├── currencies (TRY, USD, EUR with exchange rates)
+    ├── products (base_price: decimal)
+    └── product_variants (price: decimal, currency_code: 'TRY')
+```
+
+### 1. Admin Panel Kısıtlamaları
+
+#### Product & Variant Entry
+```php
+// ProductResource - Temel Fiyat
+Forms\Components\TextInput::make('base_price')
+    ->label('Temel Fiyat')
+    ->prefix('₺')  // Sadece TRY
+    ->helperText('Varyantlar için başlangıç fiyatı')
+
+// VariantsRelationManager - Variant Fiyatları
+Forms\Components\TextInput::make('price')
+    ->label('Satış Fiyatı (₺)')
+    ->prefix('₺')  // Sadece TRY
+    ->helperText('Müşteriye satış fiyatı (KDV dahil, Türk Lirası)')
+```
+
+#### Currency Resource (Esnek Varsayılan)
+```php
+// Varsayılan para birimi değiştirilebilir
+Forms\Components\Toggle::make('is_default')
+    ->afterStateUpdated(function ($state, $set) {
+        if ($state) {
+            $set('exchange_rate', 1.0); // Varsayılan her zaman 1.0
+        }
+    })
+
+// Exchange rate varsayılan olmayan için düzenlenebilir
+Forms\Components\TextInput::make('exchange_rate')
+    ->disabled(fn ($get) => $get('is_default')) // Varsayılan ise disabled
+```
+
+### 2. API Multi-Currency Support
+
+#### CurrencyMiddleware
+```php
+// Otomatik para birimi tespiti
+class CurrencyMiddleware
+{
+    public function handle($request, Closure $next)
+    {
+        $currency = $request->query('currency') 
+                 ?? $request->header('X-Currency')
+                 ?? auth()->user()?->preferred_currency 
+                 ?? 'TRY';
+        
+        app()->instance('current_currency', $currency);
+        return $next($request);
+    }
+}
+```
+
+#### MultiCurrencyPricingService
+```php
+// Ana fiyat hesaplama servisi
+public function calculatePrice(
+    ProductVariant $variant,
+    int $quantity = 1,
+    ?User $customer = null,
+    string $targetCurrency = 'TRY'
+): PriceResult {
+    // 1. Temel fiyat hesaplama (her zaman TRY)
+    $basePriceResult = $this->priceEngine->calculatePrice($variant, $quantity, $customer);
+    
+    // 2. Hedef para birimine dönüştür
+    if ($targetCurrency !== 'TRY') {
+        $exchangeRate = $this->currencyService->getRealTimeExchangeRate('TRY', $targetCurrency);
+        return $this->convertPriceResult($basePriceResult, $exchangeRate, $targetCurrency);
+    }
+    
+    return $basePriceResult;
+}
+```
+
+### 3. Database Schema
+
+#### ProductVariant Model Enhancement
+```php
+class ProductVariant extends Model
+{
+    // currency_code fillable'dan kaldırıldı - otomatik TRY
+    protected $fillable = [
+        'product_id', 'name', 'sku', 'price', 'cost', 'stock', // ...
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($variant) {
+            $variant->currency_code = 'TRY'; // Her zaman TRY
+        });
+        
+        static::updating(function ($variant) {
+            $variant->currency_code = 'TRY'; // Değişiklik koruması
+        });
+    }
+}
+```
+
+#### Currency Model
+```php
+class Currency extends Model
+{
+    // Model Events - Varsayılan para birimi mantığı
+    protected static function boot()
+    {
+        static::updating(function ($currency) {
+            if ($currency->is_default && $currency->isDirty('is_default')) {
+                // Diğerlerini varsayılan olmaktan çıkar
+                self::where('id', '!=', $currency->id)->update(['is_default' => false]);
+                $currency->exchange_rate = 1.0; // Varsayılan her zaman 1.0
+            }
+        });
+    }
+}
+```
+
+### 4. API Usage Examples
+
+#### Request Examples
+```bash
+# TRY fiyatı (varsayılan)
+GET /api/products/1/variants/5?quantity=2
+Response: { "price": {"amount": 299.99, "currency": "TRY"} }
+
+# USD fiyatı
+GET /api/products/1/variants/5?quantity=2&currency=USD
+Response: { "price": {"amount": 9.83, "currency": "USD"} }
+
+# EUR fiyatı
+GET /api/products/1/variants/5?quantity=2&currency=EUR
+Response: { "price": {"amount": 9.23, "currency": "EUR"} }
+
+# Header ile para birimi
+GET /api/cart
+Headers: X-Currency: USD
+Response: { "items": [...], "total": {"amount": 125.50, "currency": "USD"} }
+```
+
+### 5. Performance Optimizations
+
+#### Caching Strategy
+```php
+// MultiCurrencyPricingService cache
+private const CACHE_TTL = 3600; // 1 hour
+private const CACHE_PREFIX = 'multi_currency_pricing';
+
+public function calculatePrice(...) {
+    $cacheKey = $this->getCacheKey($variant->id, $quantity, $customer?->id, $targetCurrency);
+    
+    return Cache::remember($cacheKey, self::CACHE_TTL, function () {
+        return $this->performPriceCalculation(...);
+    });
+}
+```
+
+#### Bulk Operations
+```php
+// Sepet için toplu fiyat hesaplama
+public function calculateBulkPrices(array $items, ?User $customer = null, string $targetCurrency = 'TRY'): array
+{
+    // Para birimine göre grupla (performans için)
+    $currencyGroups = $this->groupItemsByCurrency($items);
+    
+    foreach ($currencyGroups as $sourceCurrency => $currencyItems) {
+        $exchangeRate = $this->currencyService->getExchangeRate($sourceCurrency, $targetCurrency);
+        // Batch conversion
+    }
+}
+```
+
+### 6. Implemented Files (2025-08-08)
+
+#### Core Services
+- ✅ `app/Services/MultiCurrencyPricingService.php` - Multi-currency hesaplama
+- ✅ `app/Http/Middleware/CurrencyMiddleware.php` - Otomatik currency detection
+- ✅ `app/Http/Controllers/Api/CurrencyController.php` - Currency API endpoints
+
+#### Model Updates  
+- ✅ `app/Models/Currency.php` - Enhanced with flexible default currency
+- ✅ `app/Models/ProductVariant.php` - TRY-only enforcement via boot method
+- ✅ `database/migrations/2025_08_08_164924_add_is_active_to_currencies_table.php`
+
+#### Admin Resources
+- ✅ `app/Filament/Resources/CurrencyResource.php` - Simplified to TRY focus with USD/EUR rates display
+- ✅ `app/Filament/Resources/ProductResource/RelationManagers/VariantsRelationManager.php` - TRY-only forms
+
+#### API Integration
+- ✅ `routes/api.php` - Currency endpoints
+- ✅ `app/Http/Kernel.php` - CurrencyMiddleware registration
+- ✅ `app/Http/Resources/CartResource.php` - Currency support
+
+### 7. Key Design Decisions
+
+#### Why TRY-Only Admin?
+1. **User Experience**: Admins odaklanır, karışıklık azalır
+2. **Data Consistency**: Tek kaynak doğrusu (TRY), otomatik dönüşüm
+3. **Error Reduction**: Manuel kur girme hataları ortadan kalkar
+4. **Business Logic**: Türk şirketi için TRY ana para birimi
+
+#### Why Multi-Currency API?
+1. **Global Customers**: Farklı ülkelerden müşteriler kendi para biriminde görür
+2. **Real-Time Rates**: TCMB entegrasyonu ile güncel kurlar
+3. **Performance**: Caching ile hızlı dönüşüm
+4. **Flexibility**: İstek bazında currency selection
+
+### 8. Testing Strategy
+
+```php
+// Unit Tests
+class MultiCurrencyPricingServiceTest extends TestCase
+{
+    public function test_converts_try_to_usd_correctly(): void
+    {
+        $variant = ProductVariant::factory()->create(['price' => 100, 'currency_code' => 'TRY']);
+        $result = $this->pricingService->calculatePrice($variant, 1, null, 'USD');
+        
+        $this->assertEquals('USD', $result->getFinalPrice()->getCurrency());
+        $this->assertGreaterThan(0, $result->getFinalPrice()->getAmount());
+    }
+}
+
+// Feature Tests  
+class CurrencyApiTest extends TestCase
+{
+    public function test_cart_respects_currency_header(): void
+    {
+        $response = $this->withHeaders(['X-Currency' => 'EUR'])
+                        ->getJson('/api/cart');
+                        
+        $response->assertJsonPath('total.currency', 'EUR');
+    }
+}
+```
+
 ---
 
-**Bu mimari, sürdürülebilir, ölçeklenebilir ve bakımı kolay bir fiyatlandırma sistemi sağlayacaktır.**
+**Bu hibrit currency yaklaşımı, admin kolaylığı ile API esnekliğini optimal şekilde birleştirir.**
