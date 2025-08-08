@@ -133,29 +133,33 @@ addresses
 ## API Authentication Security Summary
 
 ### Public Endpoints (No Auth Required):
+- Authentication endpoints only (`/api/v1/auth/login`, `/api/v1/auth/register`, etc.)
+- API documentation (`/api/documentation`)
+
+### Protected Endpoints (Require Auth Token):
+- **ALL API ENDPOINTS** except authentication and documentation
 - Products catalog (`/api/v1/products/*`)
 - Categories (`/api/v1/categories/*`)
 - Currency operations (`/api/v1/currencies/*`)
-- Authentication endpoints (`/api/v1/auth/login`, etc.)
-
-### Protected Endpoints (Require Auth Token):
 - User profile management (`/api/v1/users/*`)
-- Shopping cart operations (`/api/v1/cart/*` - authenticated)
-- Order management (`/api/v1/orders/*` - authenticated)
+- Address management (`/api/v1/addresses/*`)
+- Shopping cart operations (`/api/v1/cart/*`)
+- Order management (`/api/v1/orders/*`)
 - Reviews and wishlist (upcoming)
 
 ### Testing Commands:
 ```bash
-# Test public endpoint
-curl -X GET "http://127.0.0.1:8000/api/v1/products"
-
-# Test protected endpoint (should return 401)
-curl -X GET "http://127.0.0.1:8000/api/v1/users/profile"
-
-# Test with authentication (get token from login first)
+# Test public authentication endpoint
 curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com", "password": "password"}'
+
+# Test protected endpoint (should return 401 without token)
+curl -X GET "http://127.0.0.1:8000/api/v1/products"
+
+# Test with authentication token (should work)
+curl -X GET "http://127.0.0.1:8000/api/v1/products" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 ---

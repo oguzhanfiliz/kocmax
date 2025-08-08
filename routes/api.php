@@ -51,10 +51,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
-| Currency API Routes
+| Currency API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/currencies')->group(function () {
+Route::prefix('v1/currencies')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [CurrencyController::class, 'index'])->name('api.currencies.index');
     Route::get('/rates', [CurrencyController::class, 'rates'])->name('api.currencies.rates');
     Route::post('/convert', [CurrencyController::class, 'convert'])->name('api.currencies.convert');
@@ -62,10 +62,10 @@ Route::prefix('v1/currencies')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Cart API Routes
+| Cart API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/cart')->group(function () {
+Route::prefix('v1/cart')->middleware('auth:sanctum')->group(function () {
     // Cart management routes
     Route::get('/', [CartController::class, 'show'])->name('api.cart.show');
     Route::post('/items', [CartController::class, 'addItem'])->name('api.cart.add-item');
@@ -77,10 +77,8 @@ Route::prefix('v1/cart')->group(function () {
     Route::get('/summary', [CartController::class, 'summary'])->name('api.cart.summary');
     Route::post('/refresh-pricing', [CartController::class, 'refreshPricing'])->name('api.cart.refresh-pricing');
     
-    // Cart migration for guest to authenticated user
-    Route::post('/migrate', [CartController::class, 'migrate'])
-        ->middleware('auth:sanctum')
-        ->name('api.cart.migrate');
+    // Cart migration from guest to authenticated user
+    Route::post('/migrate', [CartController::class, 'migrate'])->name('api.cart.migrate');
 });
 
 /*
@@ -117,11 +115,11 @@ Route::prefix('v1/orders')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Product API Routes
+| Product API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/products')->group(function () {
-    // Public product routes
+Route::prefix('v1/products')->middleware('auth:sanctum')->group(function () {
+    // Product catalog routes
     Route::get('/', [ProductController::class, 'index'])->name('api.products.index');
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
@@ -130,11 +128,11 @@ Route::prefix('v1/products')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Category API Routes
+| Category API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/categories')->group(function () {
-    // Public category routes
+Route::prefix('v1/categories')->middleware('auth:sanctum')->group(function () {
+    // Category navigation routes
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::get('/tree', [CategoryController::class, 'tree'])->name('api.categories.tree');
     Route::get('/breadcrumb/{id}', [CategoryController::class, 'breadcrumb'])->name('api.categories.breadcrumb')
