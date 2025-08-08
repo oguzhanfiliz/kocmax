@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CurrencyController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,4 +125,41 @@ Route::prefix('v1/products')->group(function () {
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
     Route::get('/{product}', [ProductController::class, 'show'])->name('api.products.show');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Category API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/categories')->group(function () {
+    // Public category routes
+    Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
+    Route::get('/tree', [CategoryController::class, 'tree'])->name('api.categories.tree');
+    Route::get('/breadcrumb/{id}', [CategoryController::class, 'breadcrumb'])->name('api.categories.breadcrumb')
+          ->where('id', '[0-9]+');
+    Route::get('/{id}', [CategoryController::class, 'show'])->name('api.categories.show')
+          ->where('id', '[0-9]+');
+    Route::get('/{id}/products', [CategoryController::class, 'products'])->name('api.categories.products')
+          ->where('id', '[0-9]+');
+});
+
+/*
+|--------------------------------------------------------------------------
+| User Profile API Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
+    // User profile management
+    Route::get('/profile', [UserController::class, 'profile'])->name('api.users.profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('api.users.update-profile');
+    Route::post('/change-password', [UserController::class, 'changePassword'])->name('api.users.change-password');
+    
+    // Avatar management
+    Route::post('/upload-avatar', [UserController::class, 'uploadAvatar'])->name('api.users.upload-avatar');
+    Route::delete('/avatar', [UserController::class, 'deleteAvatar'])->name('api.users.delete-avatar');
+    
+    // Dealer application management
+    Route::get('/dealer-status', [UserController::class, 'dealerStatus'])->name('api.users.dealer-status');
+    Route::post('/dealer-application', [UserController::class, 'submitDealerApplication'])->name('api.users.dealer-application');
 });

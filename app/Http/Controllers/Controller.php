@@ -69,6 +69,38 @@ use Illuminate\Routing\Controller as BaseController;
  *     @OA\Property(property="message", type="string", example="Operation completed successfully."),
  *     @OA\Property(property="data", type="object")
  * )
+ * 
+ * @OA\Response(
+ *     response="Unauthenticated",
+ *     description="Authentication required",
+ *     @OA\JsonContent(
+ *         @OA\Property(property="message", type="string", example="Unauthenticated"),
+ *         @OA\Property(property="error", type="string", example="Authentication required to access this resource")
+ *     )
+ * )
+ * 
+ * @OA\Response(
+ *     response="ValidationError",
+ *     description="Validation error",
+ *     @OA\JsonContent(ref="#/components/schemas/ValidationError")
+ * )
+ * 
+ * @OA\Response(
+ *     response="NotFound",
+ *     description="Resource not found",
+ *     @OA\JsonContent(
+ *         @OA\Property(property="message", type="string", example="Resource not found")
+ *     )
+ * )
+ * 
+ * @OA\Response(
+ *     response="ServerError",
+ *     description="Internal server error",
+ *     @OA\JsonContent(
+ *         @OA\Property(property="message", type="string", example="Internal server error"),
+ *         @OA\Property(property="error", type="string", example="An unexpected error occurred")
+ *     )
+ * )
  */
 class Controller extends BaseController
 {

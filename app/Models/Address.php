@@ -1,0 +1,143 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Address extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'title',
+        'first_name',
+        'last_name',
+        'company_name',
+        'phone',
+        'address_line_1',
+        'address_line_2',
+        'city',
+        'state',
+        'postal_code',
+        'country',
+        'is_default_shipping',
+        'is_default_billing',
+        'type',
+        'notes',
+    ];
+
+    protected $casts = [
+        'is_default_shipping' => 'boolean',
+        'is_default_billing' => 'boolean',
+    ];
+
+    /**
+     * Address types
+     */
+    public const TYPE_SHIPPING = 'shipping';
+    public const TYPE_BILLING = 'billing';
+    public const TYPE_BOTH = 'both';
+
+    public static function getTypes(): array
+    {
+        return [
+            self::TYPE_SHIPPING => 'Shipping Only',
+            self::TYPE_BILLING => 'Billing Only',
+            self::TYPE_BOTH => 'Shipping & Billing',
+        ];
+    }
+
+    /**
+     * Get the user that owns the address
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get full name
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get formatted address
+     */
+    public function getFormattedAddressAttribute(): string
+    {
+        $address = $this->address_line_1;
+        
+        if ($this->address_line_2) {
+            $address .= ', ' . $this->address_line_2;
+        }
+        
+        $address .= ', ' . $this->city;
+        
+        if ($this->state) {
+            $address .= ', ' . $this->state;
+        }
+        
+        $address .= ' ' . $this->postal_code;
+        $address .= ', ' . $this->country;
+        
+        return $address;
+    }
+
+    /**
+     * Set as default shipping address
+     */
+    public function setAsDefaultShipping(): void
+    {
+        // Remove default from other user addresses
+        $this->user->addresses()
+            ->where('id', '!=', $this->id)
+            ->update(['is_default_shipping' => false]);
+
+        $this->update(['is_default_shipping' => true]);
+    }
+
+    /**
+     * Set as default billing address
+     */
+    public function setAsDefaultBilling(): void
+    {
+        // Remove default from other user addresses
+        $this->user->addresses()
+            ->where('id', '!=', $this->id)
+            ->update(['is_default_billing' => false]);
+
+        $this->update(['is_default_billing' => true]);
+    }
+
+    /**
+     * Scope for shipping addresses
+     */
+    public function scopeShipping($query)
+    {
+        return $query->whereIn('type', [self::TYPE_SHIPPING, self::TYPE_BOTH]);
+    }
+
+    /**
+     * Scope for billing addresses
+     */
+    public function scopeBilling($query)
+    {
+        return $query->whereIn('type', [self::TYPE_BILLING, self::TYPE_BOTH]);
+    }
+
+    /**
+     * Scope for user addresses
+     */
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+}
