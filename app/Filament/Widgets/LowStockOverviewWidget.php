@@ -28,7 +28,7 @@ class LowStockOverviewWidget extends BaseWidget
 
         $nearLowStock = ProductVariant::query()
             ->active()
-            ->whereColumn('stock', '<=', 'min_stock_level + 3')
+            ->whereRaw('stock <= min_stock_level + 3')
             ->whereColumn('stock', '>', 'min_stock_level')
             ->count();
 
