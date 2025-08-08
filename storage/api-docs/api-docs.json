@@ -2702,6 +2702,104 @@
                 },
                 "type": "object"
             },
+            "AddressResource": {
+                "title": "Address Resource",
+                "description": "Address resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Home",
+                        "nullable": true
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "full_name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "company_name": {
+                        "type": "string",
+                        "example": "ABC Company",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+90 555 123 4567",
+                        "nullable": true
+                    },
+                    "address_line_1": {
+                        "type": "string",
+                        "example": "123 Main Street"
+                    },
+                    "address_line_2": {
+                        "type": "string",
+                        "example": "Apartment 4B",
+                        "nullable": true
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Istanbul"
+                    },
+                    "state": {
+                        "type": "string",
+                        "example": "Istanbul",
+                        "nullable": true
+                    },
+                    "postal_code": {
+                        "type": "string",
+                        "example": "34000"
+                    },
+                    "country": {
+                        "type": "string",
+                        "example": "TR"
+                    },
+                    "is_default_shipping": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_default_billing": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "shipping",
+                            "billing",
+                            "both"
+                        ],
+                        "example": "both"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Ring the doorbell",
+                        "nullable": true
+                    },
+                    "formatted_address": {
+                        "type": "string",
+                        "example": "123 Main Street, Apartment 4B, Istanbul, Istanbul 34000, TR"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    }
+                },
+                "type": "object"
+            },
             "CartItem": {
                 "title": "Cart Item",
                 "description": "Cart item data",

@@ -251,4 +251,40 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(DealerApplication::class);
     }
+
+    /**
+     * Get the user's addresses
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /**
+     * Get the default shipping address
+     */
+    public function defaultShippingAddress()
+    {
+        return $this->addresses()
+            ->where('is_default_shipping', true)
+            ->where(function ($query) {
+                $query->where('type', 'shipping')
+                      ->orWhere('type', 'both');
+            })
+            ->first();
+    }
+
+    /**
+     * Get the default billing address
+     */
+    public function defaultBillingAddress()
+    {
+        return $this->addresses()
+            ->where('is_default_billing', true)
+            ->where(function ($query) {
+                $query->where('type', 'billing')
+                      ->orWhere('type', 'both');
+            })
+            ->first();
+    }
 }
