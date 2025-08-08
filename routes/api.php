@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CurrencyController;
+use App\Http\Controllers\Api\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -109,4 +110,17 @@ Route::prefix('v1/orders')->group(function () {
         // Order summary and analytics
         Route::get('/user/summary', [OrderController::class, 'summary'])->name('api.orders.summary');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Product API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/products')->group(function () {
+    // Public product routes
+    Route::get('/', [ProductController::class, 'index'])->name('api.products.index');
+    Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
+    Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
+    Route::get('/{product}', [ProductController::class, 'show'])->name('api.products.show');
 });

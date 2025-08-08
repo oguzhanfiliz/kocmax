@@ -138,6 +138,19 @@ class MultiCurrencyPricingService
     }
 
     /**
+     * Simple currency conversion method for API resources
+     */
+    public function convertPrice(float $amount, string $fromCurrency, string $toCurrency): float
+    {
+        if ($fromCurrency === $toCurrency) {
+            return $amount;
+        }
+        
+        $exchangeRate = $this->currencyService->getExchangeRate($fromCurrency, $toCurrency);
+        return $amount * $exchangeRate;
+    }
+
+    /**
      * Clear pricing cache for specific variant
      */
     public function clearVariantCache(int $variantId): void

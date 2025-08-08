@@ -12,32 +12,62 @@ use Illuminate\Routing\Controller as BaseController;
  * @OA\Info(
  *      version="1.0.0",
  *      title="B2B/B2C E-Commerce API Documentation",
- *      description="API documentation for a hybrid B2B/B2C e-commerce platform for occupational health and safety clothing",
+ *      description="Comprehensive API for B2B and B2C e-commerce platform with multi-currency support, dealer management, and advanced product catalog.",
  *      @OA\Contact(
- *          email="admin@example.com"
+ *          email="support@mutfakyapim.net",
+ *          name="API Support Team"
  *      ),
  *      @OA\License(
- *          name="Apache 2.0",
- *          url="http://www.apache.org/licenses/LICENSE-2.0.html"
+ *          name="MIT",
+ *          url="https://opensource.org/licenses/MIT"
  *      )
  * )
- *
+ * 
  * @OA\Server(
  *      url="https://b2bb2c.mutfakyapim.net",
  *      description="Production API Server"
  * )
- *
+ * 
  * @OA\Server(
  *      url="http://127.0.0.1:8000",
  *      description="Development API Server"
  * )
- *
+ * 
  * @OA\SecurityScheme(
- *      securityScheme="sanctum",
- *      type="apiKey",
- *      in="header",
- *      name="Authorization",
- *      description="Enter token in format (Bearer <token>)"
+ *     securityScheme="sanctum",
+ *     type="apiKey",
+ *     in="header",
+ *     name="Authorization",
+ *     description="Enter token in format (Bearer {token})"
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="Error",
+ *     type="object",
+ *     title="Error Response",
+ *     @OA\Property(property="message", type="string", example="The given data was invalid."),
+ *     @OA\Property(property="errors", type="object", 
+ *         example={"field": {"This field is required."}}
+ *     )
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="ValidationError",
+ *     type="object",
+ *     title="Validation Error Response",
+ *     @OA\Property(property="message", type="string", example="The given data was invalid."),
+ *     @OA\Property(property="errors", type="object",
+ *         @OA\Property(property="field_name", type="array", @OA\Items(type="string", example="This field is required."))
+ *     )
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="SuccessResponse",
+ *     type="object",
+ *     title="Success Response",
+ *     @OA\Property(property="success", type="boolean", example=true),
+ *     @OA\Property(property="message", type="string", example="Operation completed successfully."),
+ *     @OA\Property(property="data", type="object")
  * )
  */
 class Controller extends BaseController

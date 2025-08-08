@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -11,6 +13,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Infolist;
 use App\Filament\Widgets\CacheManagementWidget;
+use App\Filament\Widgets\CartOverviewWidget;
+use App\Filament\Widgets\OrderOverviewWidget;
+use App\Filament\Widgets\PricingOverviewWidget;
 
 class Dashboard extends BaseDashboard
 {
@@ -39,6 +44,9 @@ class Dashboard extends BaseDashboard
     {
         return [
             CacheManagementWidget::class,
+            CartOverviewWidget::class,
+            OrderOverviewWidget::class,
+            PricingOverviewWidget::class,
         ];
     }
     
