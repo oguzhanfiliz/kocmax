@@ -16,11 +16,13 @@ class Currency extends Model
         'symbol',
         'exchange_rate',
         'is_default',
+        'is_active',
     ];
 
     protected $casts = [
         'exchange_rate' => 'decimal:8',
         'is_default' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     protected static function boot()
@@ -30,6 +32,7 @@ class Currency extends Model
         static::creating(function ($currency) {
             if ($currency->is_default) {
                 self::where('is_default', true)->update(['is_default' => false]);
+                $currency->exchange_rate = 1.0;
             }
         });
 
@@ -38,6 +41,7 @@ class Currency extends Model
                 self::where('id', '!=', $currency->id)
                     ->where('is_default', true)
                     ->update(['is_default' => false]);
+                $currency->exchange_rate = 1.0;
             }
         });
     }
