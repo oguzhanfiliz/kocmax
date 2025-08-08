@@ -2119,3 +2119,246 @@ Bu product catalog system architecture, modern Laravel uygulamaları için enter
 - ✅ Comprehensive testing coverage ile güvenilir sistem
 
 Bu mimari sayesinde, küçük ölçekli kataloglardan büyük enterprise kataloglara kadar ölçeklenebilir, maintainable ve feature-rich bir ürün yönetim sistemi elde edilmiştir.
+
+## 💰 Currency Management Integration (2025-08-08 Update)
+
+### Product-Currency Relationship
+
+Product catalog sistemimiz, **hybrid currency management** yaklaşımı benimser:
+
+#### Admin Panel: TRY-Only Entry
+```php
+// ProductResource - Base Price
+Forms\Components\TextInput::make('base_price')
+    ->label('Temel Fiyat')
+    ->prefix('₺')  // Sadece TRY
+    ->helperText('Varyantlar için başlangıç fiyatı')
+
+// VariantsRelationManager - Variant Prices  
+Forms\Components\TextInput::make('price')
+    ->label('Satış Fiyatı (₺)')
+    ->prefix('₺')  // Sadece TRY
+    ->helperText('Müşteriye satış fiyatı (KDV dahil, Türk Lirası)')
+```
+
+#### Model Layer: Automatic TRY Enforcement
+```php
+class ProductVariant extends Model
+{
+    // currency_code removed from fillable - auto-managed
+    protected $fillable = [
+        'product_id', 'name', 'sku', 'price', 'cost', 'stock', // ...
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Always set currency_code to TRY
+        static::creating(fn($variant) => $variant->currency_code = 'TRY');
+        static::updating(fn($variant) => $variant->currency_code = 'TRY');
+    }
+    
+    // Pricing system integration with currency support
+    public function calculatePrice(?User $customer = null, int $quantity = 1, string $currency = 'TRY'): PriceResult
+    {
+        $service = app(MultiCurrencyPricingService::class);
+        return $service->calculatePrice($this, $quantity, $customer, $currency);
+    }
+}
+```
+
+### API Layer: Multi-Currency Support
+
+#### Real-Time Currency Conversion
+```php
+class MultiCurrencyPricingService
+{
+    public function calculatePrice(
+        ProductVariant $variant,
+        int $quantity = 1,
+        ?User $customer = null,
+        string $targetCurrency = 'TRY'
+    ): PriceResult {
+        // 1. Base price calculation (always TRY)
+        $basePriceResult = $this->priceEngine->calculatePrice($variant, $quantity, $customer);
+        
+        // 2. Convert to target currency if needed
+        if ($targetCurrency !== 'TRY') {
+            $exchangeRate = $this->currencyService->getRealTimeExchangeRate('TRY', $targetCurrency);
+            return $this->convertPriceResult($basePriceResult, $exchangeRate, $targetCurrency);
+        }
+        
+        return $basePriceResult;
+    }
+}
+```
+
+#### API Usage Examples
+```bash
+# Turkish Lira (default)
+GET /api/products/1/variants
+Response: {"price": {"amount": 299.99, "currency": "TRY"}}
+
+# US Dollar conversion
+GET /api/products/1/variants?currency=USD  
+Response: {"price": {"amount": 9.83, "currency": "USD"}}
+
+# Euro conversion with headers
+GET /api/products/1/variants
+Headers: X-Currency: EUR
+Response: {"price": {"amount": 9.23, "currency": "EUR"}}
+```
+
+### Currency-Aware Factory Pattern
+
+#### Enhanced Product Factory with Currency Context
+```php
+class ProductFactory extends Factory
+{
+    public function definition(): array
+    {
+        return [
+            'name' => $this->faker->randomElement($safetyProducts),
+            'base_price' => $this->faker->randomFloat(2, 25, 850), // Always TRY
+            // ... other fields
+        ];
+    }
+    
+    public function withVariants(int $count = null): self
+    {
+        return $this->afterCreating(function (Product $product) use ($count) {
+            // All variants automatically get currency_code = 'TRY'
+            ProductVariant::factory($count ?? 5)->create([
+                'product_id' => $product->id,
+                'price' => $product->base_price + $this->faker->randomFloat(2, -10, 25),
+                // currency_code automatically set to 'TRY' via boot method
+            ]);
+        });
+    }
+}
+```
+
+### Testing Multi-Currency Features
+
+#### Unit Tests for Currency Integration
+```php
+class ProductCurrencyTest extends TestCase
+{
+    use RefreshDatabase;
+    
+    public function test_variant_automatically_gets_try_currency(): void
+    {
+        $product = Product::factory()->create();
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'name' => 'Test Variant',
+            'price' => 100.00,
+            'stock' => 10,
+        ]);
+        
+        $this->assertEquals('TRY', $variant->currency_code);
+    }
+    
+    public function test_variant_price_can_be_converted_to_usd(): void
+    {
+        $variant = ProductVariant::factory()->create(['price' => 100]);
+        
+        $result = $variant->calculatePrice(null, 1, 'USD');
+        
+        $this->assertEquals('USD', $result->getFinalPrice()->getCurrency());
+        $this->assertGreaterThan(0, $result->getFinalPrice()->getAmount());
+    }
+    
+    public function test_currency_code_cannot_be_manually_changed(): void
+    {
+        $variant = ProductVariant::factory()->create();
+        
+        // Try to change currency_code manually
+        $variant->update(['currency_code' => 'USD']);
+        
+        // Should still be TRY due to boot method
+        $this->assertEquals('TRY', $variant->fresh()->currency_code);
+    }
+}
+```
+
+#### Feature Tests for API Currency Endpoints
+```php
+class ProductApiCurrencyTest extends TestCase
+{
+    use RefreshDatabase;
+    
+    public function test_product_api_respects_currency_parameter(): void
+    {
+        $product = Product::factory()->withVariants(1)->create();
+        
+        $response = $this->getJson("/api/products/{$product->id}?currency=EUR");
+        
+        $response->assertJsonPath('data.variants.0.price.currency', 'EUR');
+    }
+    
+    public function test_product_search_supports_currency_conversion(): void
+    {
+        Product::factory(5)->withVariants(2)->create();
+        
+        $response = $this->getJson('/api/products?currency=USD&price_max=50');
+        
+        foreach ($response->json('data') as $product) {
+            foreach ($product['variants'] as $variant) {
+                $this->assertEquals('USD', $variant['price']['currency']);
+                $this->assertLessThanOrEqual(50, $variant['price']['amount']);
+            }
+        }
+    }
+}
+```
+
+### Performance Considerations
+
+#### Currency Conversion Caching
+```php
+class ProductService
+{
+    public function getProductWithCachedPrices(int $productId, string $currency = 'TRY'): Product
+    {
+        $cacheKey = "product_{$productId}_currency_{$currency}";
+        
+        return Cache::remember($cacheKey, 3600, function () use ($productId, $currency) {
+            $product = Product::with(['variants', 'categories'])->findOrFail($productId);
+            
+            // Pre-calculate variant prices in requested currency
+            $product->variants->each(function ($variant) use ($currency) {
+                $variant->calculated_price = $variant->calculatePrice(null, 1, $currency);
+            });
+            
+            return $product;
+        });
+    }
+}
+```
+
+### Migration Notes
+
+#### Database Changes Made
+1. ✅ **ProductVariant.currency_code**: Removed from fillable, auto-set to 'TRY'
+2. ✅ **Admin Forms**: Simplified to TRY-only with proper labeling
+3. ✅ **API Resources**: Enhanced with currency conversion support
+4. ✅ **Middleware Integration**: CurrencyMiddleware for automatic currency detection
+
+#### Backward Compatibility
+- All existing variants automatically use TRY currency
+- API endpoints maintain backward compatibility
+- Admin forms simplified but retain full functionality
+- Performance improved through caching and optimized queries
+
+### Key Benefits
+
+1. **Admin Simplicity**: No currency confusion in admin panels
+2. **Data Consistency**: Single source of truth (TRY) for all products
+3. **API Flexibility**: Real-time conversion for global customers
+4. **Performance**: Efficient caching and bulk operations
+5. **Developer Experience**: Clear separation of concerns
+6. **Business Logic**: Reflects Turkish company's natural currency flow
+
+Bu currency integration sayesinde, product catalog sistem hem admin kullanıcıları için basit hem de API müşterileri için esnek bir para birimi deneyimi sunar.
