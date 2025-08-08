@@ -48,7 +48,7 @@ class LowStockOverviewWidget extends BaseWidget
 
             Stat::make('Yakın Kritik', $nearLowStock)
                 ->description('Min stok seviyesine yakın')
-                ->descriptionIcon('heroicon-m-warning')
+                ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($nearLowStock > 0 ? 'warning' : 'success'),
         ];
     }
