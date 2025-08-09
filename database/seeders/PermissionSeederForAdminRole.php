@@ -16,9 +16,18 @@ class PermissionSeederForAdminRole extends Seeder
         // Admin rolü oluştur
         $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
+        // Önce mevcut izinleri kontrol et
+        $allPermissions = Permission::all();
+        
+        // Eğer hiç permission yoksa önce PermissionSeeder'ı çalıştır
+        if ($allPermissions->isEmpty()) {
+            $this->command->info('ℹ️ Henüz permission tanımlanmamış, temel izinler oluşturuluyor...');
+            $this->call(PermissionSeeder::class);
+            $allPermissions = Permission::all();
+        }
+
         // SÜPER OTOMATİK YAKLAŞIM: Admin rolüne sistemdeki TÜM mevcut izinleri ver
         // Bu sayede yeni kaynak eklendiğinde o kaynağın shield:generate çalıştırılması yeterli
-        $allPermissions = Permission::all();
         $role->syncPermissions($allPermissions);
 
         $this->command->info('🚀 Admin rolü TAMAMEN OTOMATİK olarak ' . $allPermissions->count() . ' izin ile güncellendi!');
