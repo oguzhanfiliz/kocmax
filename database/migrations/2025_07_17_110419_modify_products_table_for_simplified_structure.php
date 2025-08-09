@@ -30,27 +30,9 @@ return new class extends Migration
             }
         });
         
-        // Remove columns that are no longer needed
-        Schema::table('products', function (Blueprint $table) {
-            if (Schema::hasColumn('products', 'cost')) {
-                $table->dropColumn('cost');
-            }
-            if (Schema::hasColumn('products', 'stock')) {
-                $table->dropColumn('stock');
-            }
-            if (Schema::hasColumn('products', 'min_stock_level')) {
-                $table->dropColumn('min_stock_level');
-            }
-            if (Schema::hasColumn('products', 'discounted_price')) {
-                $table->dropColumn('discounted_price');
-            }
-            if (Schema::hasColumn('products', 'views')) {
-                $table->dropColumn('views');
-            }
-            if (Schema::hasColumn('products', 'dimensions')) {
-                $table->dropColumn('dimensions');
-            }
-        });
+        // NOTE: İstediğiniz üzere ürün tablosundaki mevcut kolonları (cost, stock, min_stock_level,
+        // discounted_price, views, dimensions) şu an için KORUYORUZ. Gelecekte kaldırma kararı alınırsa,
+        // ayrı bir temizlik migrasyonunda ele alınacaktır.
 
         // Update product_variants table structure
         Schema::table('product_variants', function (Blueprint $table) {
