@@ -255,4 +255,68 @@ class ProductVariant extends Model
     {
         return $this->currency_code === 'TRY';
     }
+
+    /**
+     * Get the source currency model
+     */
+    public function sourceCurrency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'source_currency', 'code');
+    }
+
+    /**
+     * Get price in source currency
+     */
+    public function getSourcePrice(): float
+    {
+        return (float) ($this->source_price ?? $this->price);
+    }
+
+    /**
+     * Get source currency code
+     */
+    public function getSourceCurrency(): string
+    {
+        return $this->source_currency ?? 'TRY';
+    }
+
+    /**
+     * Get formatted source price with currency symbol
+     */
+    public function getFormattedSourcePrice(): string
+    {
+        $price = $this->getSourcePrice();
+        $currencyCode = $this->getSourceCurrency();
+        $currency = Currency::where('code', $currencyCode)->first();
+        
+        if (!$currency) {
+            return number_format($price, 2) . ' ' . $currencyCode;
+        }
+
+        return $currency->symbol . number_format($price, 2);
+    }
+
+    /**
+     * Convert source price to target currency
+     */
+    public function convertSourcePriceTo(string $targetCurrency): float
+    {
+        $sourceCurrency = $this->getSourceCurrency();
+        $sourcePrice = $this->getSourcePrice();
+        
+        if ($sourceCurrency === $targetCurrency) {
+            return $sourcePrice;
+        }
+
+        $conversionService = app(\App\Services\CurrencyConversionService::class);
+        return $conversionService->convertPrice($sourcePrice, $sourceCurrency, $targetCurrency);
+    }
+
+    /**
+     * Check if source currency is different from display currency
+     */
+    public function hasMultiCurrencyPricing(): bool
+    {
+        return $this->getSourceCurrency() !== 'TRY';
+    }
 }

@@ -59,7 +59,7 @@ class CurrencySeeder extends Seeder
             $eur->restore();
         }
 
-        // İngiliz Sterlini (opsiyonel)
+        // İngiliz Sterlini
         $gbp = Currency::withTrashed()->updateOrCreate(
             ['code' => 'GBP'],
             [
@@ -72,5 +72,6 @@ class CurrencySeeder extends Seeder
         if ($gbp->trashed()) {
             $gbp->restore();
         }
+
     }
 }

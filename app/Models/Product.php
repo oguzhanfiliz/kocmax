@@ -23,6 +23,7 @@ class Product extends Model
         'sku',
         'barcode',
         'base_price',
+        'base_currency',
         'weight',
         'is_active',
         'is_featured',

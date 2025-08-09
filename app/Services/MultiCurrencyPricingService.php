@@ -69,11 +69,13 @@ class MultiCurrencyPricingService
                 $variant = $item['variant'];
                 $quantity = $item['quantity'];
                 
-                // Calculate base price in original currency
+                // Calculate base price using source currency price
                 $basePriceResult = $this->priceEngine->calculatePrice($variant, $quantity, $customer, $context);
                 
-                // Convert to target currency
-                $convertedResult = $this->performPriceResultConversion($basePriceResult, $exchangeRate, $targetCurrency);
+                // Convert to target currency if needed
+                $convertedResult = ($sourceCurrency === $targetCurrency) 
+                    ? $basePriceResult 
+                    : $this->performPriceResultConversion($basePriceResult, $exchangeRate, $targetCurrency);
                 
                 $results[] = [
                     'variant_id' => $variant->id,
@@ -175,8 +177,8 @@ class MultiCurrencyPricingService
             // Get base price calculation
             $basePriceResult = $this->priceEngine->calculatePrice($variant, $quantity, $customer, $context);
             
-            // Get source currency (from variant or default)
-            $sourceCurrency = $variant->currency_code ?? 'TRY';
+            // Get source currency (from variant's source_currency field)
+            $sourceCurrency = $variant->getSourceCurrency();
             
             // Convert if different currency
             if ($sourceCurrency !== $targetCurrency) {
@@ -246,7 +248,7 @@ class MultiCurrencyPricingService
         
         foreach ($items as $item) {
             $variant = $item['variant'];
-            $sourceCurrency = $variant->currency_code ?? 'TRY';
+            $sourceCurrency = $variant->getSourceCurrency();
             
             if (!isset($groups[$sourceCurrency])) {
                 $groups[$sourceCurrency] = [];

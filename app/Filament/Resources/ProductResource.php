@@ -175,11 +175,25 @@ class ProductResource extends Resource
                 
                 Section::make('Fiyat ve Fiziksel Özellikler')
                     ->schema([
+                        Forms\Components\Select::make('base_currency')
+                            ->label('Temel Fiyat Para Birimi')
+                            ->options(fn() => \App\Helpers\CurrencyHelper::getActiveCurrencyOptions())
+                            ->default('TRY')
+                            ->live()
+                            ->helperText('Ürün temel fiyatının para birimi'),
+                            
                         Forms\Components\TextInput::make('base_price')
-                            ->label('Temel Fiyat')
+                            ->label(function (Get $get): string {
+                                $currencyCode = $get('base_currency') ?? 'TRY';
+                                $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                return 'Temel Fiyat (' . $symbol . ')';
+                            })
                             ->required()
                             ->numeric()
-                            ->prefix('₺')
+                            ->prefix(function (Get $get): string {
+                                $currencyCode = $get('base_currency') ?? 'TRY';
+                                return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                            })
                             ->helperText('Varyantlar için başlangıç fiyatı'),
                         Forms\Components\TextInput::make('weight')
                             ->label('Ağırlık (kg)')

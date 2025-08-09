@@ -80,6 +80,13 @@ class Handler extends ExceptionHandler
             ], 401);
         }
 
+        // Filament Admin paneli için özel yönlendirme
+        // Admin panel path: /admin, login route adı: filament.admin.auth.login
+        if ($request->routeIs('filament.admin.*') || $request->is('admin') || $request->is('admin/*')) {
+            // intended URL korunarak Filament login sayfasına yönlendir
+            return redirect()->guest(route('filament.admin.auth.login'));
+        }
+
         // For web requests, redirect to login info page
         return redirect()->to('/login-required');
     }

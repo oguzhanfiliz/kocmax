@@ -22,11 +22,14 @@ class CurrencyConversionService
         ProductVariant $variant, 
         string $targetCurrency = 'TRY'
     ): float {
-        if ($variant->currency_code === $targetCurrency) {
-            return (float) $variant->price;
+        $sourceCurrency = $variant->getSourceCurrency();
+        $sourcePrice = $variant->getSourcePrice();
+        
+        if ($sourceCurrency === $targetCurrency) {
+            return $sourcePrice;
         }
 
-        $cacheKey = $this->getCacheKey($variant->currency_code, $targetCurrency);
+        $cacheKey = $this->getCacheKey($sourceCurrency, $targetCurrency);
         
         return Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($variant, $targetCurrency) {
             return $this->performConversion($variant, $targetCurrency);
@@ -174,26 +177,29 @@ class CurrencyConversionService
     private function performConversion(ProductVariant $variant, string $targetCurrency): float
     {
         try {
-            $sourceCurrency = Currency::where('code', $variant->currency_code)->first();
+            $sourceCurrencyCode = $variant->getSourceCurrency();
+            $sourcePrice = $variant->getSourcePrice();
+            
+            $sourceCurrency = Currency::where('code', $sourceCurrencyCode)->first();
             $targetCurrencyModel = Currency::where('code', $targetCurrency)->first();
             
             if (!$sourceCurrency || !$targetCurrencyModel) {
                 Log::warning('Currency conversion failed - currency not found', [
                     'variant_id' => $variant->id,
-                    'source_currency' => $variant->currency_code,
+                    'source_currency' => $sourceCurrencyCode,
                     'target_currency' => $targetCurrency
                 ]);
-                return (float) $variant->price;
+                return $sourcePrice;
             }
             
-            return $sourceCurrency->convertTo($variant->price, $targetCurrencyModel);
+            return $sourceCurrency->convertTo($sourcePrice, $targetCurrencyModel);
             
         } catch (\Exception $e) {
             Log::error('Currency conversion error', [
                 'variant_id' => $variant->id,
                 'error' => $e->getMessage()
             ]);
-            return (float) $variant->price; // Fallback to original price
+            return $variant->getSourcePrice(); // Fallback to source price
         }
     }
 
@@ -205,13 +211,16 @@ class CurrencyConversionService
         string $targetCurrency, 
         array $exchangeRates
     ): float {
-        $rateKey = $variant->currency_code . '_' . $targetCurrency;
+        $sourceCurrency = $variant->getSourceCurrency();
+        $sourcePrice = $variant->getSourcePrice();
+        
+        $rateKey = $sourceCurrency . '_' . $targetCurrency;
         
         if (!isset($exchangeRates[$rateKey])) {
-            return (float) $variant->price;
+            return $sourcePrice;
         }
         
-        return (float) $variant->price * $exchangeRates[$rateKey];
+        return $sourcePrice * $exchangeRates[$rateKey];
     }
 
     /**
@@ -219,7 +228,10 @@ class CurrencyConversionService
      */
     private function getUniqueCurrencies(array $variants): array
     {
-        $currencies = collect($variants)->pluck('currency_code')->unique()->toArray();
+        $currencies = collect($variants)->map(function ($variant) {
+            return $variant->getSourceCurrency();
+        })->unique()->toArray();
+        
         $currencies[] = 'TRY'; // Always include base currency
         return array_unique($currencies);
     }
