@@ -17,3 +17,12 @@ Route::get('/', function () {
     return 'Yeni projeniz hazır!';
 });
 
+// Simple login info page for web requests (API-only application)
+Route::get('/login-required', function () {
+    return response()->json([
+        'message' => 'Authentication required. This is an API-only application.',
+        'api_docs' => '/docs/api',
+        'login_endpoint' => '/api/v1/auth/login'
+    ], 401);
+})->name('login.required');
+

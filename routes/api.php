@@ -30,8 +30,8 @@ use App\Http\Controllers\Api\CouponController;
 | Authentication API Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/auth')->group(function () {
-    // Public authentication routes
+Route::prefix('v1/auth')->middleware('throttle:auth')->group(function () {
+    // Public authentication routes with stricter rate limiting
     Route::post('/login', [AuthController::class, 'login'])->name('api.auth.login');
     Route::post('/register', [AuthController::class, 'register'])->name('api.auth.register');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
@@ -86,34 +86,30 @@ Route::prefix('v1/cart')->middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Order API Routes
+| Order API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/orders')->group(function () {
-    // Guest checkout (no authentication required)
-    Route::post('/guest-checkout', [OrderController::class, 'guestCheckout'])->name('api.orders.guest-checkout');
-    
-    // Checkout estimation (can be used by guests or authenticated users)
-    Route::post('/estimate-checkout', [OrderController::class, 'estimateCheckout'])->name('api.orders.estimate-checkout');
-    
-    // Public order tracking (no authentication required, but requires order access validation)
+Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
+    // All order routes now require authentication (guest checkout removed for security)
+    // Order CRUD operations
+    Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
+    Route::post('/', [OrderController::class, 'store'])->name('api.orders.store');
+    Route::get('/{order}', [OrderController::class, 'show'])->name('api.orders.show');
     Route::get('/{order:order_number}/tracking', [OrderController::class, 'tracking'])->name('api.orders.tracking');
     
-    // Authenticated user routes
-    Route::middleware('auth:sanctum')->group(function () {
-        // Order CRUD operations
-        Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
-        Route::post('/', [OrderController::class, 'store'])->name('api.orders.store');
-        Route::get('/{order}', [OrderController::class, 'show'])->name('api.orders.show');
-        
-        // Order actions
-        Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])->name('api.orders.update-status');
-        Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
-        Route::post('/{order}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
-        
-        // Order summary and analytics
-        Route::get('/user/summary', [OrderController::class, 'summary'])->name('api.orders.summary');
-    });
+    // Checkout operations (now require authentication with strict rate limiting)
+    Route::post('/checkout', [OrderController::class, 'guestCheckout'])->name('api.orders.checkout')
+          ->middleware('throttle:checkout'); // Renamed from guest-checkout
+    Route::post('/estimate-checkout', [OrderController::class, 'estimateCheckout'])->name('api.orders.estimate-checkout')
+          ->middleware('throttle:checkout');
+    
+    // Order actions
+    Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])->name('api.orders.update-status');
+    Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
+    Route::post('/{order}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
+    
+    // Order summary and analytics
+    Route::get('/user/summary', [OrderController::class, 'summary'])->name('api.orders.summary');
 });
 
 /*
@@ -208,35 +204,27 @@ Route::prefix('v1/wishlist')->middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Campaign API Routes
+| Campaign API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/campaigns')->group(function () {
-    // Public campaign routes (no authentication required)
+Route::prefix('v1/campaigns')->middleware(['auth:sanctum', 'throttle:campaigns'])->group(function () {
+    // All campaign routes now require authentication with specific rate limiting
     Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
     Route::get('/{campaign}', [CampaignController::class, 'show'])->name('api.campaigns.show')
           ->where('campaign', '[A-Za-z0-9\-_]+'); // ID or slug
-    
-    // Protected campaign routes (authentication required)
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/{campaign}/validate', [CampaignController::class, 'validateCampaign'])->name('api.campaigns.validate')
-              ->where('campaign', '[0-9]+'); // Only numeric IDs for validation
-    });
+    Route::post('/{campaign}/validate', [CampaignController::class, 'validateCampaign'])->name('api.campaigns.validate')
+          ->where('campaign', '[0-9]+'); // Only numeric IDs for validation
 });
 
 /*
 |--------------------------------------------------------------------------
-| Coupon API Routes
+| Coupon API Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/coupons')->group(function () {
-    // Public coupon routes (no authentication required)
+Route::prefix('v1/coupons')->middleware('auth:sanctum')->group(function () {
+    // All coupon routes now require authentication
     Route::post('/validate', [CouponController::class, 'validateCoupon'])->name('api.coupons.validate');
     Route::get('/public', [CouponController::class, 'publicCoupons'])->name('api.coupons.public');
-    
-    // Protected coupon routes (authentication required)
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/apply', [CouponController::class, 'apply'])->name('api.coupons.apply');
-        Route::get('/my-coupons', [CouponController::class, 'myCoupons'])->name('api.coupons.my-coupons');
-    });
+    Route::post('/apply', [CouponController::class, 'apply'])->name('api.coupons.apply');
+    Route::get('/my-coupons', [CouponController::class, 'myCoupons'])->name('api.coupons.my-coupons');
 });
