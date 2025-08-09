@@ -13,6 +13,12 @@ return [
                  * Route for accessing api documentation interface
                  */
                 'api' => 'api/documentation',
+                /*
+                 * Route for serving the generated docs (JSON/YAML)
+                 * This is required so that Swagger UI can fetch
+                 * e.g. /docs?api-docs.json
+                 */
+                'docs' => 'docs',
             ],
             'paths' => [
                 /*
