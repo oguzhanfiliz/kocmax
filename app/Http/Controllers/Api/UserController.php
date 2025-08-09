@@ -14,15 +14,15 @@ use Illuminate\Validation\Rules\Password;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Users", description="User profile and account management")
+ * @OA\Tag(name="Kullanıcılar", description="Kullanıcı profili ve hesap yönetimi")
  */
 class UserController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/v1/users/profile",
-     *     summary="Get current user profile",
-     *     description="Retrieve the authenticated user's profile information",
+     *     summary="Mevcut kullanıcı profilini al",
+     *     description="Kimliği doğrulanmış kullanıcının profil bilgilerini alın",
      *     operationId="getUserProfile",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -50,8 +50,8 @@ class UserController extends Controller
     /**
      * @OA\Put(
      *     path="/api/v1/users/profile",
-     *     summary="Update user profile",
-     *     description="Update the authenticated user's profile information",
+     *     summary="Kullanıcı profilini güncelle",
+     *     description="Kimliği doğrulanmış kullanıcının profil bilgilerini güncelleyin",
      *     operationId="updateUserProfile",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -121,8 +121,8 @@ class UserController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/users/change-password",
-     *     summary="Change user password",
-     *     description="Change the authenticated user's password",
+     *     summary="Kullanıcı şifresini değiştir",
+     *     description="Kimliği doğrulanmış kullanıcının şifresini değiştirin",
      *     operationId="changePassword",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -178,8 +178,8 @@ class UserController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/users/upload-avatar",
-     *     summary="Upload user avatar",
-     *     description="Upload a new profile picture for the authenticated user",
+     *     summary="Kullanıcı avatarı yükle",
+     *     description="Kimliği doğrulanmış kullanıcı için yeni bir profil resmi yükleyin",
      *     operationId="uploadAvatar",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -240,8 +240,8 @@ class UserController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/v1/users/avatar",
-     *     summary="Delete user avatar",
-     *     description="Delete the authenticated user's profile picture",
+     *     summary="Kullanıcı avatarını sil",
+     *     description="Kimliği doğrulanmış kullanıcının profil resmini silin",
      *     operationId="deleteAvatar",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -280,8 +280,8 @@ class UserController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/users/dealer-status",
-     *     summary="Get dealer application status",
-     *     description="Get the current status of the authenticated user's dealer application",
+     *     summary="Bayi başvuru durumunu al",
+     *     description="Kimliği doğrulanmış kullanıcının bayi başvurusunun mevcut durumunu alın",
      *     operationId="getDealerStatus",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
@@ -331,8 +331,8 @@ class UserController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/users/dealer-application",
-     *     summary="Submit dealer application",
-     *     description="Submit an application to become a B2B dealer",
+     *     summary="Bayi başvurusunda bulunun",
+     *     description="B2B bayisi olmak için başvuruda bulunun",
      *     operationId="submitDealerApplication",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},

@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * @OA\Tag(
- *     name="Orders",
- *     description="Order management endpoints"
+ *     name="Siparişler",
+ *     description="Sipariş yönetimi endpointleri"
  * )
  */
 class OrderController extends Controller
@@ -36,8 +36,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders",
      *      operationId="getOrders",
      *      tags={"Orders"},
-     *      summary="Get user orders",
-     *      description="Retrieve orders for authenticated user with optional filtering",
+     *      summary="Kullanıcı siparişlerini al",
+     *      description="Kimliği doğrulanmış kullanıcı için isteğe bağlı filtreleme ile siparişleri alın",
      *      security={{ "sanctum": {} }},
      *      @OA\Parameter(
      *          name="status",
@@ -115,8 +115,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders/{order}",
      *      operationId="getOrder",
      *      tags={"Orders"},
-     *      summary="Get specific order",
-     *      description="Retrieve details of a specific order",
+     *      summary="Belirli siparişi al",
+     *      description="Belirli bir siparişin ayrıntılarını alın",
      *      security={{ "sanctum": {} }},
      *      @OA\Parameter(
      *          name="order",
@@ -157,8 +157,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders",
      *      operationId="createOrder",
      *      tags={"Orders"},
-     *      summary="Create new order from cart",
-     *      description="Process checkout and create order from user's cart",
+     *      summary="Sepetten yeni sipariş oluştur",
+     *      description="Ödemeyi işleyin ve kullanıcının sepetinden sipariş oluşturun",
      *      security={{ "sanctum": {} }},
      *      @OA\RequestBody(
      *          required=true,
@@ -233,8 +233,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders/guest-checkout",
      *      operationId="guestCheckout",
      *      tags={"Orders"},
-     *      summary="Process guest checkout",
-     *      description="Create order without user authentication",
+     *      summary="Misafir ödemesini işle",
+     *      description="Kullanıcı kimlik doğrulaması olmadan sipariş oluşturun",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -407,8 +407,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders/{order}/tracking",
      *      operationId="getOrderTracking",
      *      tags={"Orders"},
-     *      summary="Get order tracking information",
-     *      description="Retrieve tracking details for an order using order number",
+     *      summary="Sipariş takip bilgilerini al",
+     *      description="Sipariş numarasını kullanarak bir siparişin takip ayrıntılarını alın",
      *      @OA\Parameter(
      *          name="order",
      *          description="Order number",
@@ -467,8 +467,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders/user/summary",
      *      operationId="getUserOrderSummary",
      *      tags={"Orders"},
-     *      summary="Get user order summary",
-     *      description="Retrieve order statistics and summary for authenticated user",
+     *      summary="Kullanıcı sipariş özetini al",
+     *      description="Kimliği doğrulanmış kullanıcı için sipariş istatistiklerini ve özetini alın",
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,
@@ -516,8 +516,8 @@ class OrderController extends Controller
      *      path="/api/v1/orders/estimate-checkout",
      *      operationId="estimateCheckout",
      *      tags={"Orders"},
-     *      summary="Estimate checkout costs",
-     *      description="Calculate checkout costs including shipping and taxes before creating order",
+     *      summary="Ödeme maliyetlerini tahmin et",
+     *      description="Sipariş oluşturmadan önce gönderim ve vergiler dahil ödeme maliyetlerini hesaplayın",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(

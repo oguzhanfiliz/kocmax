@@ -14,15 +14,15 @@ use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Wishlist", description="User wishlist management")
+ * @OA\Tag(name="İstek Listesi", description="Kullanıcı istek listesi yönetimi")
  */
 class WishlistController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/v1/wishlist",
-     *     summary="Get user's wishlist",
-     *     description="Retrieve all items in the authenticated user's wishlist",
+     *     summary="Kullanıcının istek listesini al",
+     *     description="Kimliği doğrulanmış kullanıcının istek listesindeki tüm öğeleri alın",
      *     operationId="getWishlist",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -110,8 +110,8 @@ class WishlistController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/wishlist",
-     *     summary="Add item to wishlist",
-     *     description="Add a product or product variant to the user's wishlist",
+     *     summary="İstek listesine öğe ekle",
+     *     description="Kullanıcının istek listesine bir ürün veya ürün çeşidi ekleyin",
      *     operationId="addToWishlist",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -199,8 +199,8 @@ class WishlistController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/wishlist/{id}",
-     *     summary="Get specific wishlist item",
-     *     description="Retrieve a specific item from the user's wishlist",
+     *     summary="Belirli istek listesi öğesini al",
+     *     description="Kullanıcının istek listesinden belirli bir öğeyi alın",
      *     operationId="getWishlistItem",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -243,8 +243,8 @@ class WishlistController extends Controller
     /**
      * @OA\Put(
      *     path="/api/v1/wishlist/{id}",
-     *     summary="Update wishlist item",
-     *     description="Update a specific item in the user's wishlist",
+     *     summary="İstek listesi öğesini güncelle",
+     *     description="Kullanıcının istek listesindeki belirli bir öğeyi güncelleyin",
      *     operationId="updateWishlistItem",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -303,8 +303,8 @@ class WishlistController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/v1/wishlist/{id}",
-     *     summary="Remove item from wishlist",
-     *     description="Remove a specific item from the user's wishlist",
+     *     summary="Öğeyi istek listesinden kaldır",
+     *     description="Kullanıcının istek listesinden belirli bir öğeyi kaldırın",
      *     operationId="removeFromWishlist",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -345,8 +345,8 @@ class WishlistController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/wishlist/{id}/toggle-favorite",
-     *     summary="Toggle favorite status",
-     *     description="Toggle the favorite status of a wishlist item",
+     *     summary="Favori durumunu değiştir",
+     *     description="Bir istek listesi öğesinin favori durumunu değiştirin",
      *     operationId="toggleWishlistFavorite",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -390,8 +390,8 @@ class WishlistController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/v1/wishlist/clear",
-     *     summary="Clear entire wishlist",
-     *     description="Remove all items from the user's wishlist",
+     *     summary="Tüm istek listesini temizle",
+     *     description="Kullanıcının istek listesindeki tüm öğeleri kaldırın",
      *     operationId="clearWishlist",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},
@@ -421,8 +421,8 @@ class WishlistController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/wishlist/stats",
-     *     summary="Get wishlist statistics",
-     *     description="Get statistics about the user's wishlist",
+     *     summary="İstek listesi istatistiklerini al",
+     *     description="Kullanıcının istek listesi hakkında istatistikleri alın",
      *     operationId="getWishlistStats",
      *     tags={"Wishlist"},
      *     security={{"sanctum":{}}},

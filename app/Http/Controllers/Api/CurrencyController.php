@@ -12,8 +12,8 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * @OA\Tag(
- *     name="Currency",
- *     description="Currency and exchange rate endpoints"
+ *     name="Para Birimi",
+ *     description="Para birimi ve döviz kuru endpointleri"
  * )
  */
 class CurrencyController extends Controller
@@ -28,8 +28,8 @@ class CurrencyController extends Controller
      *      path="/api/v1/currencies",
      *      operationId="getCurrencies",
      *      tags={"Currency"},
-     *      summary="Get available currencies",
-     *      description="Retrieve list of available currencies with current exchange rates",
+     *      summary="Mevcut para birimlerini al",
+     *      description="Mevcut döviz kurları ile mevcut para birimlerinin listesini alın",
      *      @OA\Response(
      *          response=200,
      *          description="Currencies retrieved successfully",
@@ -80,8 +80,8 @@ class CurrencyController extends Controller
      *      path="/api/v1/currencies/rates",
      *      operationId="getExchangeRates",
      *      tags={"Currency"},
-     *      summary="Get exchange rates",
-     *      description="Get current exchange rates for specified currencies",
+     *      summary="Döviz kurlarını al",
+     *      description="Belirtilen para birimleri için mevcut döviz kurlarını alın",
      *      @OA\Parameter(
      *          name="base",
      *          description="Base currency code",
@@ -150,8 +150,8 @@ class CurrencyController extends Controller
      *      path="/api/v1/currencies/convert",
      *      operationId="convertCurrency",
      *      tags={"Currency"},
-     *      summary="Convert currency amount",
-     *      description="Convert an amount from one currency to another",
+     *      summary="Para birimi tutarını dönüştür",
+     *      description="Bir tutarı bir para biriminden diğerine dönüştürün",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(

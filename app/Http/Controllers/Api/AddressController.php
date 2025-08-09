@@ -12,15 +12,15 @@ use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Addresses", description="User address management")
+ * @OA\Tag(name="Adresler", description="Kullanıcı adres yönetimi")
  */
 class AddressController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/v1/addresses",
-     *     summary="Get user addresses",
-     *     description="Retrieve all addresses for the authenticated user",
+     *     summary="Kullanıcı adreslerini al",
+     *     description="Kimliği doğrulanmış kullanıcı için tüm adresleri al",
      *     operationId="getAddresses",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -72,8 +72,8 @@ class AddressController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/addresses",
-     *     summary="Create new address",
-     *     description="Create a new address for the authenticated user",
+     *     summary="Yeni adres oluştur",
+     *     description="Kimliği doğrulanmış kullanıcı için yeni bir adres oluştur",
      *     operationId="createAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -152,8 +152,8 @@ class AddressController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/addresses/{id}",
-     *     summary="Get specific address",
-     *     description="Retrieve a specific address by ID",
+     *     summary="Belirli adresi al",
+     *     description="ID'ye göre belirli bir adresi al",
      *     operationId="getAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -194,8 +194,8 @@ class AddressController extends Controller
     /**
      * @OA\Put(
      *     path="/api/v1/addresses/{id}",
-     *     summary="Update address",
-     *     description="Update a specific address",
+     *     summary="Adresi güncelle",
+     *     description="Belirli bir adresi güncelle",
      *     operationId="updateAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -290,8 +290,8 @@ class AddressController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/v1/addresses/{id}",
-     *     summary="Delete address",
-     *     description="Delete a specific address (soft delete)",
+     *     summary="Adresi sil",
+     *     description="Belirli bir adresi sil (geçici silme)",
      *     operationId="deleteAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -332,8 +332,8 @@ class AddressController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/addresses/{id}/set-default-shipping",
-     *     summary="Set as default shipping address",
-     *     description="Set the specified address as the default shipping address",
+     *     summary="Varsayılan gönderim adresi olarak ayarla",
+     *     description="Belirtilen adresi varsayılan gönderim adresi olarak ayarla",
      *     operationId="setDefaultShipping",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -390,8 +390,8 @@ class AddressController extends Controller
     /**
      * @OA\Post(
      *     path="/api/v1/addresses/{id}/set-default-billing",
-     *     summary="Set as default billing address",
-     *     description="Set the specified address as the default billing address",
+     *     summary="Varsayılan fatura adresi olarak ayarla",
+     *     description="Belirtilen adresi varsayılan fatura adresi olarak ayarla",
      *     operationId="setDefaultBilling",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
@@ -448,8 +448,8 @@ class AddressController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/addresses/defaults",
-     *     summary="Get default addresses",
-     *     description="Get the user's default shipping and billing addresses",
+     *     summary="Varsayılan adresleri al",
+     *     description="Kullanıcının varsayılan gönderim ve fatura adreslerini al",
      *     operationId="getDefaultAddresses",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},

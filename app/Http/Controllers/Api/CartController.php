@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
- *     name="Cart",
- *     description="Cart management endpoints"
+ *     name="Sepet",
+ *     description="Sepet yönetimi endpointleri"
  * )
  */
 class CartController extends Controller
@@ -39,8 +39,8 @@ class CartController extends Controller
      *      path="/api/v1/cart",
      *      operationId="getCart",
      *      tags={"Cart"},
-     *      summary="Get current user's cart",
-     *      description="Retrieve the current cart for authenticated or guest users with currency conversion",
+     *      summary="Mevcut kullanıcının sepetini al",
+     *      description="Kimliği doğrulanmış veya misafir kullanıcılar için para birimi dönüştürme ile mevcut sepeti alın",
      *      @OA\Parameter(
      *          name="currency",
      *          description="Target currency code (e.g., TRY, USD, EUR)",
@@ -106,8 +106,8 @@ class CartController extends Controller
      *      path="/api/v1/cart/items",
      *      operationId="addItemToCart",
      *      tags={"Cart"},
-     *      summary="Add item to cart",
-     *      description="Add a product variant to the user's cart",
+     *      summary="Sepete ürün ekle",
+     *      description="Kullanıcının sepetine bir ürün varyantı ekleyin",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -178,8 +178,8 @@ class CartController extends Controller
      *      path="/api/v1/cart/items/{item}",
      *      operationId="updateCartItem",
      *      tags={"Cart"},
-     *      summary="Update item quantity in cart",
-     *      description="Update the quantity of an existing cart item",
+     *      summary="Sepetteki ürün miktarını güncelle",
+     *      description="Mevcut bir sepet öğesinin miktarını güncelleyin",
      *      @OA\Parameter(
      *          name="item",
      *          description="Cart item ID",
@@ -248,8 +248,8 @@ class CartController extends Controller
      *      path="/api/v1/cart/items/{item}",
      *      operationId="removeCartItem",
      *      tags={"Cart"},
-     *      summary="Remove item from cart",
-     *      description="Remove an item from the user's cart",
+     *      summary="Ürünü sepetten kaldır",
+     *      description="Kullanıcının sepetinden bir ürünü kaldırın",
      *      @OA\Parameter(
      *          name="item",
      *          description="Cart item ID",
@@ -310,8 +310,8 @@ class CartController extends Controller
      *      path="/api/v1/cart",
      *      operationId="clearCart",
      *      tags={"Cart"},
-     *      summary="Clear entire cart",
-     *      description="Remove all items from the user's cart",
+     *      summary="Tüm sepeti temizle",
+     *      description="Kullanıcının sepetindeki tüm ürünleri kaldırın",
      *      @OA\Response(
      *          response=200,
      *          description="Cart cleared successfully"
@@ -360,8 +360,8 @@ class CartController extends Controller
      *      path="/api/v1/cart/summary",
      *      operationId="getCartSummary",
      *      tags={"Cart"},
-     *      summary="Get cart summary",
-     *      description="Retrieve cart summary with pricing information",
+     *      summary="Sepet özetini al",
+     *      description="Fiyatlandırma bilgileriyle sepet özetini alın",
      *      @OA\Response(
      *          response=200,
      *          description="Cart summary retrieved successfully"
@@ -436,8 +436,8 @@ class CartController extends Controller
      *      path="/api/v1/cart/migrate",
      *      operationId="migrateGuestCart",
      *      tags={"Cart"},
-     *      summary="Migrate guest cart to authenticated user",
-     *      description="Transfer items from guest cart to authenticated user cart",
+     *      summary="Misafir sepetini kimliği doğrulanmış kullanıcıya taşı",
+     *      description="Ürünleri misafir sepetinden kimliği doğrulanmış kullanıcı sepetine aktarın",
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,

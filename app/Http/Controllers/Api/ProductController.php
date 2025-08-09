@@ -16,8 +16,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @OA\Tag(
- *     name="Products",
- *     description="Product catalog and search operations"
+ *     name="Ürünler",
+ *     description="Ürün kataloğu ve arama işlemleri"
  * )
  */
 class ProductController extends Controller
@@ -34,8 +34,8 @@ class ProductController extends Controller
      *     path="/api/v1/products",
      *     operationId="getProducts",
      *     tags={"Products"},
-     *     summary="Get product list with filtering and search",
-     *     description="Returns paginated list of products with advanced filtering options",
+     *     summary="Filtreleme ve arama ile ürün listesini al",
+     *     description="Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür",
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
@@ -271,8 +271,8 @@ class ProductController extends Controller
      *     path="/api/v1/products/{id}",
      *     operationId="getProduct",
      *     tags={"Products"},
-     *     summary="Get single product details",
-     *     description="Returns detailed information about a specific product",
+     *     summary="Tek ürün ayrıntılarını al",
+     *     description="Belirli bir ürün hakkında ayrıntılı bilgi döndürür",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -326,8 +326,8 @@ class ProductController extends Controller
      *     path="/api/v1/products/search-suggestions",
      *     operationId="getProductSuggestions",
      *     tags={"Products"},
-     *     summary="Get search suggestions",
-     *     description="Returns search suggestions based on partial input",
+     *     summary="Arama önerilerini al",
+     *     description="Kısmi girdiye göre arama önerilerini döndürür",
      *     @OA\Parameter(
      *         name="q",
      *         in="query",
@@ -425,8 +425,8 @@ class ProductController extends Controller
      *     path="/api/v1/products/filters",
      *     operationId="getProductFilters",
      *     tags={"Products"},
-     *     summary="Get available filters",
-     *     description="Returns all available filter options for products",
+     *     summary="Mevcut filtreleri al",
+     *     description="Ürünler için mevcut tüm filtre seçeneklerini döndürür",
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
