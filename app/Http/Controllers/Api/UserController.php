@@ -14,24 +14,24 @@ use Illuminate\Validation\Rules\Password;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Kullanıcılar", description="Kullanıcı profili ve hesap yönetimi API uç noktaları")
+ * @OA\Tag(name="Users", description="Kullanıcı profili ve hesap yönetimi API uç noktaları")
  */
 class UserController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/v1/users/profile",
-     *     summary="Mevcut kullanıcı profilini al",
+     *     summary="Kullanıcı profilini al",
      *     description="Kimliği doğrulanmış kullanıcının profil bilgilerini alın",
      *     operationId="getUserProfile",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
-     *         description="User profile retrieved successfully",
+     *         description="Profil başarıyla alındı",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/UserResource"),
-     *             @OA\Property(property="message", type="string", example="Profile retrieved successfully")
+     *             @OA\Property(property="message", type="string", example="Profil başarıyla alındı")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated")
@@ -43,7 +43,7 @@ class UserController extends Controller
         
         return response()->json([
             'data' => new UserResource($user),
-            'message' => 'Profile retrieved successfully'
+            'message' => 'Profil başarıyla alındı'
         ]);
     }
 

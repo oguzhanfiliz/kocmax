@@ -120,17 +120,90 @@ class VariantsRelationManager extends RelationManager
                                 ->slideOver(),
                         ])
                         ->alignEnd(),
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(5)
                             ->schema([
+                                Forms\Components\Select::make('input_currency')
+                                    ->label('Fiyat Para Birimi')
+                                    ->options([
+                                        'TRY' => '🇹🇷 Türk Lirası',
+                                        'USD' => '🇺🇸 ABD Doları', 
+                                        'EUR' => '🇪🇺 Euro'
+                                    ])
+                                    ->default('TRY')
+                                    ->live()
+                                    ->helperText('Fiyatı hangi para biriminde gireceksiniz?'),
+                                    
+                                Forms\Components\TextInput::make('input_price')
+                                    ->label(function (Forms\Get $get): string {
+                                        $currency = $get('input_currency') ?? 'TRY';
+                                        $symbols = ['TRY' => '₺', 'USD' => '$', 'EUR' => '€'];
+                                        return 'Fiyat (' . $symbols[$currency] . ')';
+                                    })
+                                    ->required()
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->prefix(function (Forms\Get $get): string {
+                                        $currency = $get('input_currency') ?? 'TRY';
+                                        $symbols = ['TRY' => '₺', 'USD' => '$', 'EUR' => '€'];
+                                        return $symbols[$currency];
+                                    })
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Forms\Set $set, ?float $state, Forms\Get $get) {
+                                        if (!$state) return;
+                                        
+                                        $inputCurrency = $get('input_currency') ?? 'TRY';
+                                        
+                                        if ($inputCurrency === 'TRY') {
+                                            // Direkt TRY fiyatı ayarla
+                                            $set('price', $state);
+                                        } else {
+                                            // Döviz kurunu al ve TRY'ye çevir
+                                            try {
+                                                $conversionService = app(\App\Services\CurrencyConversionService::class);
+                                                $tryPrice = $conversionService->convertPrice($state, $inputCurrency, 'TRY');
+                                                $set('price', round($tryPrice, 2));
+                                            } catch (\Exception $e) {
+                                                // Hata durumunda fallback kurlar kullan
+                                                $fallbackRates = ['USD' => 30.0, 'EUR' => 33.0];
+                                                $rate = $fallbackRates[$inputCurrency] ?? 1.0;
+                                                $set('price', round($state * $rate, 2));
+                                            }
+                                        }
+                                    })
+                                    ->placeholder('299.99')
+                                    ->helperText('Seçtiğiniz para biriminde fiyat girin'),
+                                    
                                 Forms\Components\TextInput::make('price')
-                                    ->label('Satış Fiyatı (₺)')
+                                    ->label('TL Fiyat (₺)')
                                     ->required()
                                     ->numeric()
                                     ->step(0.01)
                                     ->prefix('₺')
-                                    ->placeholder('299.99')
-                                    ->helperText('Müşteriye satış fiyatı (KDV dahil, Türk Lirası)')
-                                    ->hint('Sadece TL olarak girilir'),
+                                    ->disabled()
+                                    ->helperText('Otomatik hesaplanır (Sistemde saklanan fiyat)')
+                                    ->hint('Database\'e kaydedilen değer'),
+                                    
+                                Forms\Components\Placeholder::make('price_preview')
+                                    ->label('💰 Diğer Para Birimlerinde')
+                                    ->content(function (Forms\Get $get): string {
+                                        $tryPrice = $get('price');
+                                        if (!$tryPrice) return 'Fiyat henüz hesaplanmadı...';
+                                        
+                                        try {
+                                            $conversionService = app(\App\Services\CurrencyConversionService::class);
+                                            $usdPrice = $conversionService->convertPrice((float)$tryPrice, 'TRY', 'USD');
+                                            $eurPrice = $conversionService->convertPrice((float)$tryPrice, 'TRY', 'EUR');
+                                            
+                                            return sprintf(
+                                                "💵 $%.2f • 💶 €%.2f", 
+                                                $usdPrice, 
+                                                $eurPrice
+                                            );
+                                        } catch (\Exception $e) {
+                                            return 'Döviz kuru bilgisi alınamadı';
+                                        }
+                                    })
+                                    ->columnSpan(2),
                                 Forms\Components\TextInput::make('cost')
                                     ->label('Maliyet Fiyatı (₺)')
                                     ->numeric()
@@ -348,7 +421,8 @@ class VariantsRelationManager extends RelationManager
                         $data['product_id'] = $this->getOwnerRecord()->getKey();
                         
                         // Remove variant_options and variant_images from data as they're not direct fields
-                        unset($data['variant_options'], $data['variant_images']);
+                        // Also remove input_currency and input_price as they're only for UI
+                        unset($data['variant_options'], $data['variant_images'], $data['input_currency'], $data['input_price']);
                         
                         return $data;
                     })
@@ -416,13 +490,30 @@ class VariantsRelationManager extends RelationManager
                             ]),
                         Forms\Components\Section::make('Varsayılan Değerler')
                             ->schema([
+                                Forms\Components\Select::make('bulk_input_currency')
+                                    ->label('Fiyat Para Birimi')
+                                    ->options([
+                                        'TRY' => '🇹🇷 Türk Lirası',
+                                        'USD' => '🇺🇸 ABD Doları', 
+                                        'EUR' => '🇪🇺 Euro'
+                                    ])
+                                    ->default('TRY')
+                                    ->live(),
                                 Forms\Components\TextInput::make('default_price')
-                                    ->label('Varsayılan Fiyat (₺)')
+                                    ->label(function (Forms\Get $get): string {
+                                        $currency = $get('bulk_input_currency') ?? 'TRY';
+                                        $symbols = ['TRY' => '₺', 'USD' => '$', 'EUR' => '€'];
+                                        return 'Varsayılan Fiyat (' . $symbols[$currency] . ')';
+                                    })
                                     ->required()
                                     ->numeric()
-                                    ->prefix('₺')
+                                    ->prefix(function (Forms\Get $get): string {
+                                        $currency = $get('bulk_input_currency') ?? 'TRY';
+                                        $symbols = ['TRY' => '₺', 'USD' => '$', 'EUR' => '€'];
+                                        return $symbols[$currency];
+                                    })
                                     ->step(0.01)
-                                    ->helperText('Tüm varyantlar için varsayılan fiyat (Türk Lirası)'),
+                                    ->helperText('Tüm varyantlar için varsayılan fiyat'),
                                 Forms\Components\TextInput::make('default_stock')
                                     ->label('Varsayılan Stok')
                                     ->required()
@@ -466,6 +557,10 @@ class VariantsRelationManager extends RelationManager
                         // Load existing variant images
                         $data['variant_images'] = $record->images()->ordered()->pluck('image_url')->toArray();
                         
+                        // Set input fields based on current price (always TRY)
+                        $data['input_currency'] = 'TRY';
+                        $data['input_price'] = $record->price;
+                        
                         return $data;
                     })
                     ->mutateFormDataUsing(function (array $data): array {
@@ -508,7 +603,8 @@ class VariantsRelationManager extends RelationManager
                         }
                         
                         // Remove variant_options and variant_images from data as they're not direct fields
-                        unset($data['variant_options'], $data['variant_images']);
+                        // Also remove input_currency and input_price as they're only for UI
+                        unset($data['variant_options'], $data['variant_images'], $data['input_currency'], $data['input_price']);
                         
                         return $data;
                     })
@@ -640,9 +736,24 @@ class VariantsRelationManager extends RelationManager
     {
         $colors = $data['colors'] ?? [];
         $sizes = $data['sizes'] ?? [];
-        $defaultPrice = $data['default_price'];
+        $inputCurrency = $data['bulk_input_currency'] ?? 'TRY';
+        $inputPrice = $data['default_price'];
         $defaultStock = $data['default_stock'];
         $defaultMinStock = $data['default_min_stock'];
+        
+        // Convert price to TRY if needed
+        if ($inputCurrency === 'TRY') {
+            $defaultPrice = $inputPrice;
+        } else {
+            try {
+                $conversionService = app(\App\Services\CurrencyConversionService::class);
+                $defaultPrice = $conversionService->convertPrice($inputPrice, $inputCurrency, 'TRY');
+            } catch (\Exception $e) {
+                // Fallback rates
+                $fallbackRates = ['USD' => 30.0, 'EUR' => 33.0];
+                $defaultPrice = $inputPrice * ($fallbackRates[$inputCurrency] ?? 1.0);
+            }
+        }
 
         $product = $this->getOwnerRecord();
         $createdCount = 0;

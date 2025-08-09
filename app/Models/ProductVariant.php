@@ -21,6 +21,8 @@ class ProductVariant extends Model
         'barcode',
         'price',
         'cost',
+        'source_currency',
+        'source_price',
         'stock',
         'min_stock_level',
         'color',
@@ -39,6 +41,7 @@ class ProductVariant extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'cost' => 'decimal:2',
+        'source_price' => 'decimal:2',
         'weight' => 'decimal:3',
         'dimensions' => 'array',
         'length' => 'decimal:1',
@@ -56,12 +59,22 @@ class ProductVariant extends Model
         parent::boot();
 
         static::creating(function ($variant) {
-            // Always set currency_code to TRY for new variants
+            // Set default source currency if not provided
+            if (empty($variant->source_currency)) {
+                $variant->source_currency = 'TRY';
+            }
+            
+            // If source_price not set, use price
+            if (empty($variant->source_price) && !empty($variant->price)) {
+                $variant->source_price = $variant->price;
+            }
+            
+            // Always set currency_code to TRY for new variants (for backwards compatibility)
             $variant->currency_code = 'TRY';
         });
 
         static::updating(function ($variant) {
-            // Always keep currency_code as TRY on updates
+            // Always keep currency_code as TRY on updates (for backwards compatibility)
             $variant->currency_code = 'TRY';
         });
     }

@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="İstek Listesi", description="Kullanıcı istek listesi yönetimi API uç noktaları")
+ * @OA\Tag(name="Wishlist", description="Kullanıcı istek listesi yönetimi API uç noktaları")
  */
 class WishlistController extends Controller
 {
@@ -49,7 +49,7 @@ class WishlistController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Wishlist retrieved successfully",
+     *         description="İstek listesi başarıyla alındı",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/WishlistResource")),
      *             @OA\Property(property="meta", type="object",
@@ -57,7 +57,7 @@ class WishlistController extends Controller
      *                 @OA\Property(property="favorite_items", type="integer", example=5),
      *                 @OA\Property(property="high_priority_items", type="integer", example=3)
      *             ),
-     *             @OA\Property(property="message", type="string", example="Wishlist retrieved successfully")
+     *             @OA\Property(property="message", type="string", example="İstek listesi başarıyla alındı")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated")
@@ -103,7 +103,7 @@ class WishlistController extends Controller
                 'favorite_items' => $favoriteItems,
                 'high_priority_items' => $highPriorityItems,
             ],
-            'message' => 'Wishlist retrieved successfully'
+            'message' => 'İstek listesi başarıyla alındı'
         ]);
     }
 
@@ -128,10 +128,10 @@ class WishlistController extends Controller
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Item added to wishlist successfully",
+     *         description="Öğe istek listesine başarıyla eklendi",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/WishlistResource"),
-     *             @OA\Property(property="message", type="string", example="Item added to wishlist successfully")
+     *             @OA\Property(property="message", type="string", example="Öğe istek listesine başarıyla eklendi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -140,7 +140,7 @@ class WishlistController extends Controller
      *         response=409,
      *         description="Item already exists in wishlist",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="This item is already in your wishlist")
+     *             @OA\Property(property="message", type="string", example="Bu öğe zaten istek listenizde bulunuyor")
      *         )
      *     )
      * )
@@ -164,7 +164,7 @@ class WishlistController extends Controller
             $validated['product_variant_id'] ?? null
         )) {
             return response()->json([
-                'message' => 'This item is already in your wishlist'
+                'message' => 'Bu öğe zaten istek listenizde bulunuyor'
             ], 409);
         }
 
@@ -173,7 +173,7 @@ class WishlistController extends Controller
             $variant = ProductVariant::find($validated['product_variant_id']);
             if ($variant->product_id !== $validated['product_id']) {
                 return response()->json([
-                    'message' => 'Product variant does not belong to the specified product'
+                    'message' => 'Ürün çeşidi belirtilen ürüne ait değil'
                 ], 422);
             }
         }
@@ -192,7 +192,7 @@ class WishlistController extends Controller
 
         return response()->json([
             'data' => new WishlistResource($wishlistItem),
-            'message' => 'Item added to wishlist successfully'
+            'message' => 'Öğe istek listesine başarıyla eklendi'
         ], 201);
     }
 

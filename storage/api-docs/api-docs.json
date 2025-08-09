@@ -4351,12 +4351,12 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Mevcut kullanıcı profilini al",
+                "summary": "Kullanıcı profilini al",
                 "description": "Kimliği doğrulanmış kullanıcının profil bilgilerini alın",
                 "operationId": "getUserProfile",
                 "responses": {
                     "200": {
-                        "description": "User profile retrieved successfully",
+                        "description": "Profil başarıyla alındı",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4366,7 +4366,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Profile retrieved successfully"
+                                            "example": "Profil başarıyla alındı"
                                         }
                                     },
                                     "type": "object"
@@ -4917,7 +4917,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Wishlist retrieved successfully",
+                        "description": "İstek listesi başarıyla alındı",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4947,7 +4947,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Wishlist retrieved successfully"
+                                            "example": "İstek listesi başarıyla alındı"
                                         }
                                     },
                                     "type": "object"
@@ -5019,7 +5019,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Item added to wishlist successfully",
+                        "description": "Öğe istek listesine başarıyla eklendi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5029,7 +5029,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Item added to wishlist successfully"
+                                            "example": "Öğe istek listesine başarıyla eklendi"
                                         }
                                     },
                                     "type": "object"
@@ -5051,7 +5051,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "This item is already in your wishlist"
+                                            "example": "Bu öğe zaten istek listenizde bulunuyor"
                                         }
                                     },
                                     "type": "object"
@@ -6715,11 +6715,11 @@
         },
         {
             "name": "Users",
-            "description": "Users"
+            "description": "Kullanıcı profili ve hesap yönetimi API uç noktaları"
         },
         {
             "name": "Wishlist",
-            "description": "Wishlist"
+            "description": "Kullanıcı istek listesi yönetimi API uç noktaları"
         }
     ]
 }
