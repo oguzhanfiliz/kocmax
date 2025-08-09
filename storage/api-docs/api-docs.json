@@ -1080,6 +1080,7 @@
                                 ],
                                 "properties": {
                                     "email": {
+                                        "description": "E-posta adresi",
                                         "type": "string",
                                         "format": "email",
                                         "example": "user@example.com"
@@ -1092,18 +1093,20 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Password reset email sent",
+                        "description": "Şifre sıfırlama e-postası gönderildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Password reset link sent to your email"
+                                            "example": "Şifre sıfırlama bağlantısı e-postanıza gönderildi"
                                         }
                                     },
                                     "type": "object"
@@ -1112,20 +1115,23 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error",
+                        "description": "Doğrulama hatası",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Validation failed"
+                                            "example": "Doğrulama başarısız"
                                         },
                                         "errors": {
+                                            "description": "Doğrulama hataları",
                                             "type": "object"
                                         }
                                     },
@@ -1158,19 +1164,23 @@
                                 ],
                                 "properties": {
                                     "token": {
+                                        "description": "Sıfırlama belirteci",
                                         "type": "string",
                                         "example": "reset-token-here"
                                     },
                                     "email": {
+                                        "description": "E-posta adresi",
                                         "type": "string",
                                         "format": "email",
                                         "example": "user@example.com"
                                     },
                                     "password": {
+                                        "description": "Yeni şifre",
                                         "type": "string",
                                         "example": "newpassword123"
                                     },
                                     "password_confirmation": {
+                                        "description": "Yeni şifre onayı",
                                         "type": "string",
                                         "example": "newpassword123"
                                     }
@@ -1182,18 +1192,20 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Password reset successful",
+                        "description": "Şifre sıfırlama başarılı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Password reset successful"
+                                            "example": "Şifre sıfırlama başarılı"
                                         }
                                     },
                                     "type": "object"
@@ -1245,6 +1257,7 @@
                                 ],
                                 "properties": {
                                     "token": {
+                                        "description": "Doğrulama belirteci",
                                         "type": "string",
                                         "example": "verification-token-here"
                                     }
@@ -1256,18 +1269,20 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Email verified successfully",
+                        "description": "E-posta başarıyla doğrulandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Email verified successfully"
+                                            "example": "E-posta başarıyla doğrulandı"
                                         }
                                     },
                                     "type": "object"
@@ -1328,18 +1343,20 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Verification email sent",
+                        "description": "Doğrulama e-postası gönderildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Verification email sent"
+                                            "example": "Doğrulama e-postası gönderildi"
                                         }
                                     },
                                     "type": "object"
@@ -1383,18 +1400,20 @@
                 "operationId": "logoutUser",
                 "responses": {
                     "200": {
-                        "description": "Logout successful",
+                        "description": "Çıkış başarılı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Logout successful"
+                                            "example": "Çıkış başarılı"
                                         }
                                     },
                                     "type": "object"
@@ -1403,14 +1422,15 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated",
+                        "description": "Kimlik doğrulaması yapılmamış",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Unauthenticated"
+                                            "example": "Kimlik doğrulaması gerekli"
                                         }
                                     },
                                     "type": "object"
@@ -1436,16 +1456,18 @@
                 "operationId": "getCurrentUser",
                 "responses": {
                     "200": {
-                        "description": "User information retrieved",
+                        "description": "Kullanıcı bilgileri alındı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "data": {
+                                            "description": "Kullanıcı verileri",
                                             "type": "object"
                                         }
                                     },
@@ -1455,7 +1477,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated"
+                        "description": "Kimlik doğrulaması yapılmamış"
                     }
                 },
                 "security": [
@@ -3435,14 +3457,14 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Kullanıcı siparişlerini al",
-                "description": "Kimliği doğrulanmış kullanıcı için isteğe bağlı filtreleme ile siparişleri alın",
+                "summary": "Siparişleri listele",
+                "description": "Kimliği doğrulanmış kullanıcı için isteğe bağlı filtreleme ile siparişleri listeler",
                 "operationId": "getOrders",
                 "parameters": [
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter by order status",
+                        "description": "Sipariş durumuna göre filtrele",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3451,7 +3473,7 @@
                     {
                         "name": "from_date",
                         "in": "query",
-                        "description": "Filter orders from date (YYYY-MM-DD)",
+                        "description": "Başlangıç tarihinden itibaren siparişleri filtrele (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3461,7 +3483,7 @@
                     {
                         "name": "to_date",
                         "in": "query",
-                        "description": "Filter orders to date (YYYY-MM-DD)",
+                        "description": "Bitiş tarihine kadar siparişleri filtrele (YYYY-MM-DD)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3471,7 +3493,7 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Items per page (default: 15)",
+                        "description": "Sayfa başına sipariş sayısı (varsayılan: 15)",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -3481,7 +3503,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Orders retrieved successfully"
+                        "description": "Siparişler başarıyla getirildi"
                     }
                 },
                 "security": [
@@ -3494,8 +3516,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Sepetten yeni sipariş oluştur",
-                "description": "Ödemeyi işleyin ve kullanıcının sepetinden sipariş oluşturun",
+                "summary": "Sipariş oluştur",
+                "description": "Kullanıcının sepetinden ödeme işlemi ile birlikte yeni sipariş oluşturur",
                 "operationId": "createOrder",
                 "requestBody": {
                     "required": true,
@@ -3508,12 +3530,15 @@
                                 ],
                                 "properties": {
                                     "shipping_address": {
+                                        "description": "Teslimat adresi",
                                         "type": "object"
                                     },
                                     "billing_address": {
+                                        "description": "Fatura adresi",
                                         "type": "object"
                                     },
                                     "payment_method": {
+                                        "description": "Ödeme yöntemi",
                                         "type": "string",
                                         "enum": [
                                             "card",
@@ -3522,6 +3547,7 @@
                                         ]
                                     },
                                     "notes": {
+                                        "description": "Sipariş notları",
                                         "type": "string"
                                     }
                                 },
@@ -3532,13 +3558,13 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Order created successfully"
+                        "description": "Sipariş başarıyla oluşturuldu"
                     },
                     "400": {
-                        "description": "Cart is empty or validation failed"
+                        "description": "Sepet boş veya doğrulama başarısız"
                     },
                     "422": {
-                        "description": "Checkout validation failed"
+                        "description": "Ödeme doğrulaması başarısız"
                     }
                 },
                 "security": [
@@ -3553,14 +3579,14 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Belirli siparişi al",
-                "description": "Belirli bir siparişin ayrıntılarını alın",
+                "summary": "Sipariş detaylarını getir",
+                "description": "Belirli bir siparişin detaylı bilgilerini getirir",
                 "operationId": "getOrder",
                 "parameters": [
                     {
                         "name": "order",
                         "in": "path",
-                        "description": "Order ID",
+                        "description": "Sipariş kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -3569,13 +3595,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Order retrieved successfully"
+                        "description": "Sipariş detayları başarıyla getirildi"
                     },
                     "403": {
-                        "description": "Not authorized to view this order"
+                        "description": "Bu siparişi görüntüleme yetkiniz yok"
                     },
                     "404": {
-                        "description": "Order not found"
+                        "description": "Sipariş bulunamadı"
                     }
                 },
                 "security": [
@@ -3590,8 +3616,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Misafir ödemesini işle",
-                "description": "Kullanıcı kimlik doğrulaması olmadan sipariş oluşturun",
+                "summary": "Misafir alışveriş",
+                "description": "Kullanıcı girişi yapmadan misafir olarak sipariş oluşturur",
                 "operationId": "guestCheckout",
                 "requestBody": {
                     "required": true,
@@ -3605,8 +3631,10 @@
                                 ],
                                 "properties": {
                                     "cart_data": {
+                                        "description": "Sepet verileri",
                                         "properties": {
                                             "items": {
+                                                "description": "Sepet kalemleri",
                                                 "type": "array",
                                                 "items": {
                                                     "type": "object"
@@ -3616,16 +3644,20 @@
                                         "type": "object"
                                     },
                                     "shipping_address": {
+                                        "description": "Teslimat adresi",
                                         "type": "object"
                                     },
                                     "billing_address": {
+                                        "description": "Fatura adresi",
                                         "type": "object"
                                     },
                                     "customer_email": {
+                                        "description": "Müşteri e-posta adresi",
                                         "type": "string",
                                         "format": "email"
                                     },
                                     "payment_method": {
+                                        "description": "Ödeme yöntemi",
                                         "type": "string",
                                         "enum": [
                                             "card",
@@ -3641,10 +3673,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Guest order created successfully"
+                        "description": "Misafir siparişi başarıyla oluşturuldu"
                     },
                     "400": {
-                        "description": "Cart data is required for guest checkout"
+                        "description": "Misafir alışveriş için sepet verisi gerekli"
                     }
                 }
             }
@@ -3654,14 +3686,14 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Sipariş takip bilgilerini al",
-                "description": "Sipariş numarasını kullanarak bir siparişin takip ayrıntılarını alın",
+                "summary": "Sipariş takibi",
+                "description": "Sipariş numarasını kullanarak siparişin takip detaylarını ve durumunu getirir",
                 "operationId": "getOrderTracking",
                 "parameters": [
                     {
                         "name": "order",
                         "in": "path",
-                        "description": "Order number",
+                        "description": "Sipariş numarası",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -3670,7 +3702,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Tracking information retrieved successfully",
+                        "description": "Takip bilgileri başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3678,18 +3710,23 @@
                                         "data": {
                                             "properties": {
                                                 "order_number": {
+                                                    "description": "Sipariş numarası",
                                                     "type": "string"
                                                 },
                                                 "status": {
+                                                    "description": "Sipariş durumu",
                                                     "type": "string"
                                                 },
                                                 "tracking_number": {
+                                                    "description": "Kargo takip numarası",
                                                     "type": "string"
                                                 },
                                                 "shipping_carrier": {
+                                                    "description": "Kargo firması",
                                                     "type": "string"
                                                 },
                                                 "estimated_delivery": {
+                                                    "description": "Tahmini teslimat tarihi",
                                                     "type": "string",
                                                     "format": "date-time"
                                                 }
@@ -3710,12 +3747,12 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Kullanıcı sipariş özetini al",
-                "description": "Kimliği doğrulanmış kullanıcı için sipariş istatistiklerini ve özetini alın",
+                "summary": "Sipariş özeti",
+                "description": "Kimliği doğrulanmış kullanıcının sipariş istatistikleri ve özetini getirir",
                 "operationId": "getUserOrderSummary",
                 "responses": {
                     "200": {
-                        "description": "Order summary retrieved successfully",
+                        "description": "Sipariş özeti başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3723,19 +3760,23 @@
                                         "data": {
                                             "properties": {
                                                 "total_orders": {
+                                                    "description": "Toplam sipariş sayısı",
                                                     "type": "integer"
                                                 },
                                                 "total_spent": {
+                                                    "description": "Toplam harcama tutarı",
                                                     "type": "number",
                                                     "format": "float"
                                                 },
                                                 "recent_orders": {
+                                                    "description": "Son siparişler",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "object"
                                                     }
                                                 },
                                                 "status_counts": {
+                                                    "description": "Duruma göre sipariş sayıları",
                                                     "type": "object"
                                                 }
                                             },
@@ -3760,8 +3801,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Ödeme maliyetlerini tahmin et",
-                "description": "Sipariş oluşturmadan önce gönderim ve vergiler dahil ödeme maliyetlerini hesaplayın",
+                "summary": "Alışveriş tahmini",
+                "description": "Sipariş oluşturmadan önce kargo ve vergiler dahil toplam maliyeti hesaplar",
                 "operationId": "estimateCheckout",
                 "requestBody": {
                     "required": true,
@@ -3774,20 +3815,24 @@
                                 ],
                                 "properties": {
                                     "shipping_country": {
+                                        "description": "Teslimat ülkesi kodu",
                                         "type": "string",
                                         "maxLength": 2,
                                         "example": "TR"
                                     },
                                     "billing_country": {
+                                        "description": "Fatura ülkesi kodu",
                                         "type": "string",
                                         "maxLength": 2,
                                         "example": "TR"
                                     },
                                     "shipping_city": {
+                                        "description": "Teslimat şehri",
                                         "type": "string",
                                         "example": "Istanbul"
                                     },
                                     "payment_method": {
+                                        "description": "Ödeme yöntemi",
                                         "type": "string",
                                         "enum": [
                                             "card",
@@ -3803,10 +3848,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Checkout estimate calculated successfully"
+                        "description": "Alışveriş tahmini başarıyla hesaplandı"
                     },
                     "400": {
-                        "description": "Cart is empty or not found"
+                        "description": "Sepet boş veya bulunamadı"
                     }
                 }
             }
@@ -6661,12 +6706,12 @@
             "description": "Para birimi ve döviz kuru API uç noktaları"
         },
         {
-            "name": "Products",
-            "description": "Ürün kataloğu ve arama API uç noktaları"
+            "name": "Orders",
+            "description": "Sipariş yönetimi API uç noktaları"
         },
         {
-            "name": "Orders",
-            "description": "Orders"
+            "name": "Products",
+            "description": "Ürün kataloğu ve arama API uç noktaları"
         },
         {
             "name": "Users",
