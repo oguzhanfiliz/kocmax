@@ -29,8 +29,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get user addresses",
-                "description": "Retrieve all addresses for the authenticated user",
+                "summary": "Kullanıcı adreslerini al",
+                "description": "Kimliği doğrulanmış kullanıcı için tüm adresleri al",
                 "operationId": "getAddresses",
                 "parameters": [
                     {
@@ -85,8 +85,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Create new address",
-                "description": "Create a new address for the authenticated user",
+                "summary": "Yeni adres oluştur",
+                "description": "Kimliği doğrulanmış kullanıcı için yeni bir adres oluştur",
                 "operationId": "createAddress",
                 "requestBody": {
                     "required": true,
@@ -226,8 +226,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get specific address",
-                "description": "Retrieve a specific address by ID",
+                "summary": "Belirli adresi al",
+                "description": "ID'ye göre belirli bir adresi al",
                 "operationId": "getAddress",
                 "parameters": [
                     {
@@ -277,8 +277,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Update address",
-                "description": "Update a specific address",
+                "summary": "Adresi güncelle",
+                "description": "Belirli bir adresi güncelle",
                 "operationId": "updateAddress",
                 "parameters": [
                     {
@@ -422,8 +422,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Delete address",
-                "description": "Delete a specific address (soft delete)",
+                "summary": "Adresi sil",
+                "description": "Belirli bir adresi sil (geçici silme)",
                 "operationId": "deleteAddress",
                 "parameters": [
                     {
@@ -472,8 +472,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Set as default shipping address",
-                "description": "Set the specified address as the default shipping address",
+                "summary": "Varsayılan gönderim adresi olarak ayarla",
+                "description": "Belirtilen adresi varsayılan gönderim adresi olarak ayarla",
                 "operationId": "setDefaultShipping",
                 "parameters": [
                     {
@@ -541,8 +541,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Set as default billing address",
-                "description": "Set the specified address as the default billing address",
+                "summary": "Varsayılan fatura adresi olarak ayarla",
+                "description": "Belirtilen adresi varsayılan fatura adresi olarak ayarla",
                 "operationId": "setDefaultBilling",
                 "parameters": [
                     {
@@ -610,8 +610,8 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get default addresses",
-                "description": "Get the user's default shipping and billing addresses",
+                "summary": "Varsayılan adresleri al",
+                "description": "Kullanıcının varsayılan gönderim ve fatura adreslerini al",
                 "operationId": "getDefaultAddresses",
                 "responses": {
                     "200": {
@@ -1398,7 +1398,7 @@
         "/api/v1/campaigns": {
             "get": {
                 "tags": [
-                    "Kampanyalar"
+                    "Campaigns"
                 ],
                 "summary": "Aktif kampanyaları listele",
                 "description": "Müşteri tipine göre geçerli kampanyaları getirir",
@@ -1580,7 +1580,7 @@
         "/api/v1/campaigns/{campaign}": {
             "get": {
                 "tags": [
-                    "Kampanyalar"
+                    "Campaigns"
                 ],
                 "summary": "Kampanya detaylarını getir",
                 "description": "Belirli bir kampanyanın tüm detaylarını ve kurallarını getirir",
@@ -1754,7 +1754,7 @@
         "/api/v1/campaigns/{campaign}/validate": {
             "post": {
                 "tags": [
-                    "Kampanyalar"
+                    "Campaigns"
                 ],
                 "summary": "Kampanya geçerliliğini kontrol et",
                 "description": "Mevcut sepet içeriğine göre kampanyanın uygulanabilir olup olmadığını kontrol eder ve indirim miktarını hesaplar",
@@ -1943,8 +1943,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Get current user's cart",
-                "description": "Retrieve the current cart for authenticated or guest users with currency conversion",
+                "summary": "Mevcut kullanıcının sepetini al",
+                "description": "Kimliği doğrulanmış veya misafir kullanıcılar için para birimi dönüştürme ile mevcut sepeti alın",
                 "operationId": "getCart",
                 "parameters": [
                     {
@@ -2012,8 +2012,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Clear entire cart",
-                "description": "Remove all items from the user's cart",
+                "summary": "Tüm sepeti temizle",
+                "description": "Kullanıcının sepetindeki tüm ürünleri kaldırın",
                 "operationId": "clearCart",
                 "responses": {
                     "200": {
@@ -2030,8 +2030,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Add item to cart",
-                "description": "Add a product variant to the user's cart",
+                "summary": "Sepete ürün ekle",
+                "description": "Kullanıcının sepetine bir ürün varyantı ekleyin",
                 "operationId": "addItemToCart",
                 "requestBody": {
                     "required": true,
@@ -2106,8 +2106,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Update item quantity in cart",
-                "description": "Update the quantity of an existing cart item",
+                "summary": "Sepetteki ürün miktarını güncelle",
+                "description": "Mevcut bir sepet öğesinin miktarını güncelleyin",
                 "operationId": "updateCartItem",
                 "parameters": [
                     {
@@ -2153,8 +2153,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Remove item from cart",
-                "description": "Remove an item from the user's cart",
+                "summary": "Ürünü sepetten kaldır",
+                "description": "Kullanıcının sepetinden bir ürünü kaldırın",
                 "operationId": "removeCartItem",
                 "parameters": [
                     {
@@ -2182,8 +2182,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Get cart summary",
-                "description": "Retrieve cart summary with pricing information",
+                "summary": "Sepet özetini al",
+                "description": "Fiyatlandırma bilgileriyle sepet özetini alın",
                 "operationId": "getCartSummary",
                 "responses": {
                     "200": {
@@ -2200,8 +2200,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Migrate guest cart to authenticated user",
-                "description": "Transfer items from guest cart to authenticated user cart",
+                "summary": "Misafir sepetini kimliği doğrulanmış kullanıcıya taşı",
+                "description": "Ürünleri misafir sepetinden kimliği doğrulanmış kullanıcı sepetine aktarın",
                 "operationId": "migrateGuestCart",
                 "responses": {
                     "200": {
@@ -2254,30 +2254,36 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Başarılı",
+                        "description": "Kupon geçerlilik kontrolü başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "İşlem açıklaması",
                                             "type": "string",
                                             "example": "Kupon geçerliliği kontrol edildi"
                                         },
                                         "data": {
+                                            "description": "Kupon geçerlilik sonuçları",
                                             "properties": {
                                                 "is_valid": {
+                                                    "description": "Kupon geçerli mi",
                                                     "type": "boolean",
                                                     "example": true
                                                 },
                                                 "coupon_code": {
+                                                    "description": "Kupon kodu",
                                                     "type": "string",
                                                     "example": "SUMMER25"
                                                 },
                                                 "coupon_type": {
+                                                    "description": "Kupon türü (percentage: yüzde, fixed: sabit tutar)",
                                                     "type": "string",
                                                     "enum": [
                                                         "percentage",
@@ -2286,32 +2292,37 @@
                                                     "example": "percentage"
                                                 },
                                                 "coupon_value": {
+                                                    "description": "Kupon değeri",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 25
                                                 },
                                                 "discount_amount": {
+                                                    "description": "Uygulanabilir indirim miktarı (TL)",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 187.5
                                                 },
                                                 "min_order_amount": {
+                                                    "description": "Minimum sipariş tutarı (TL)",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 200
                                                 },
                                                 "remaining_usage": {
+                                                    "description": "Kalan kullanım hakkı",
                                                     "type": "integer",
                                                     "example": 45
                                                 },
                                                 "expires_at": {
+                                                    "description": "Son kullanma tarihi",
                                                     "type": "string",
                                                     "format": "date-time",
                                                     "example": "2025-12-31T23:59:59.000000Z",
                                                     "nullable": true
                                                 },
                                                 "reasons": {
-                                                    "description": "Geçersizlik sebepleri",
+                                                    "description": "Geçersizlik sebepleri (kupon geçersizse)",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -2333,20 +2344,25 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Kupon bulunamadı"
+                                            "example": "Belirtilen kupon bulunamadı"
                                         },
                                         "data": {
+                                            "description": "Hata detayları",
                                             "properties": {
                                                 "is_valid": {
+                                                    "description": "Kupon geçersiz",
                                                     "type": "boolean",
                                                     "example": false
                                                 },
                                                 "reasons": {
+                                                    "description": "Hata sebepleri",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -2365,20 +2381,23 @@
                         }
                     },
                     "422": {
-                        "description": "Validasyon hatası",
+                        "description": "Giriş verilerinde hata",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Validasyon hatası"
+                                            "example": "Giriş verileri doğrulanamadı"
                                         },
                                         "errors": {
+                                            "description": "Alan bazlı doğrulama hataları",
                                             "type": "object"
                                         }
                                     },
@@ -2429,45 +2448,54 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Kupon başarıyla uygulandı",
+                        "description": "Kupon başarıyla sepete uygulandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
                                             "example": "Kupon başarıyla uygulandı"
                                         },
                                         "data": {
+                                            "description": "Kupon uygulama sonuç verileri",
                                             "properties": {
                                                 "coupon_code": {
+                                                    "description": "Uygulanan kupon kodu",
                                                     "type": "string",
                                                     "example": "SUMMER25"
                                                 },
                                                 "discount_amount": {
+                                                    "description": "İndirim tutarı (TL)",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 187.5
                                                 },
                                                 "original_total": {
+                                                    "description": "Orijinal sepet tutarı (TL)",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 750
                                                 },
                                                 "new_total": {
+                                                    "description": "İndirimli sepet tutarı (TL)",
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 562.5
                                                 },
                                                 "used_count": {
+                                                    "description": "Kuponun toplam kullanım sayısı",
                                                     "type": "integer",
                                                     "example": 51
                                                 },
                                                 "remaining_usage": {
+                                                    "description": "Kalan kullanım hakkı",
                                                     "type": "integer",
                                                     "example": 49,
                                                     "nullable": true
@@ -2520,8 +2548,8 @@
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Kullanıcı kuponlarını listele",
-                "description": "Kullanıcının sahip olduğu aktif kuponları listeler (admin tarafından atanmış)",
+                "summary": "Kullanıcıya özel kuponları listele",
+                "description": "Giriş yapmış kullanıcının sahip olduğu kuponları duruma göre listeler",
                 "operationId": "4517738b3751845adb146422f43a143d",
                 "parameters": [
                     {
@@ -2640,8 +2668,8 @@
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Genel kuponları listele",
-                "description": "Herkese açık aktif kuponları listeler",
+                "summary": "Herkese açık kuponları listele",
+                "description": "Tüm müşterilerin kullanabileceği aktif kuponları listeler",
                 "operationId": "2788c719327545fa3959bcab5f855cb4",
                 "parameters": [
                     {
@@ -2731,8 +2759,8 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Get available currencies",
-                "description": "Retrieve list of available currencies with current exchange rates",
+                "summary": "Mevcut para birimlerini al",
+                "description": "Mevcut döviz kurları ile mevcut para birimlerinin listesini alın",
                 "operationId": "getCurrencies",
                 "responses": {
                     "200": {
@@ -2796,8 +2824,8 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Get exchange rates",
-                "description": "Get current exchange rates for specified currencies",
+                "summary": "Döviz kurlarını al",
+                "description": "Belirtilen para birimleri için mevcut döviz kurlarını alın",
                 "operationId": "getExchangeRates",
                 "parameters": [
                     {
@@ -2873,8 +2901,8 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Convert currency amount",
-                "description": "Convert an amount from one currency to another",
+                "summary": "Para birimi tutarını dönüştür",
+                "description": "Bir tutarı bir para biriminden diğerine dönüştürün",
                 "operationId": "convertCurrency",
                 "requestBody": {
                     "required": true,
@@ -2966,8 +2994,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Get user orders",
-                "description": "Retrieve orders for authenticated user with optional filtering",
+                "summary": "Kullanıcı siparişlerini al",
+                "description": "Kimliği doğrulanmış kullanıcı için isteğe bağlı filtreleme ile siparişleri alın",
                 "operationId": "getOrders",
                 "parameters": [
                     {
@@ -3025,8 +3053,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Create new order from cart",
-                "description": "Process checkout and create order from user's cart",
+                "summary": "Sepetten yeni sipariş oluştur",
+                "description": "Ödemeyi işleyin ve kullanıcının sepetinden sipariş oluşturun",
                 "operationId": "createOrder",
                 "requestBody": {
                     "required": true,
@@ -3084,8 +3112,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Get specific order",
-                "description": "Retrieve details of a specific order",
+                "summary": "Belirli siparişi al",
+                "description": "Belirli bir siparişin ayrıntılarını alın",
                 "operationId": "getOrder",
                 "parameters": [
                     {
@@ -3121,8 +3149,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Process guest checkout",
-                "description": "Create order without user authentication",
+                "summary": "Misafir ödemesini işle",
+                "description": "Kullanıcı kimlik doğrulaması olmadan sipariş oluşturun",
                 "operationId": "guestCheckout",
                 "requestBody": {
                     "required": true,
@@ -3185,8 +3213,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Get order tracking information",
-                "description": "Retrieve tracking details for an order using order number",
+                "summary": "Sipariş takip bilgilerini al",
+                "description": "Sipariş numarasını kullanarak bir siparişin takip ayrıntılarını alın",
                 "operationId": "getOrderTracking",
                 "parameters": [
                     {
@@ -3241,8 +3269,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Get user order summary",
-                "description": "Retrieve order statistics and summary for authenticated user",
+                "summary": "Kullanıcı sipariş özetini al",
+                "description": "Kimliği doğrulanmış kullanıcı için sipariş istatistiklerini ve özetini alın",
                 "operationId": "getUserOrderSummary",
                 "responses": {
                     "200": {
@@ -3291,8 +3319,8 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Estimate checkout costs",
-                "description": "Calculate checkout costs including shipping and taxes before creating order",
+                "summary": "Ödeme maliyetlerini tahmin et",
+                "description": "Sipariş oluşturmadan önce gönderim ve vergiler dahil ödeme maliyetlerini hesaplayın",
                 "operationId": "estimateCheckout",
                 "requestBody": {
                     "required": true,
@@ -3347,8 +3375,8 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get product list with filtering and search",
-                "description": "Returns paginated list of products with advanced filtering options",
+                "summary": "Filtreleme ve arama ile ürün listesini al",
+                "description": "Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür",
                 "operationId": "getProducts",
                 "parameters": [
                     {
@@ -3575,8 +3603,8 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get single product details",
-                "description": "Returns detailed information about a specific product",
+                "summary": "Tek ürün ayrıntılarını al",
+                "description": "Belirli bir ürün hakkında ayrıntılı bilgi döndürür",
                 "operationId": "getProduct",
                 "parameters": [
                     {
@@ -3639,8 +3667,8 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get search suggestions",
-                "description": "Returns search suggestions based on partial input",
+                "summary": "Arama önerilerini al",
+                "description": "Kısmi girdiye göre arama önerilerini döndürür",
                 "operationId": "getProductSuggestions",
                 "parameters": [
                     {
@@ -3730,8 +3758,8 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get available filters",
-                "description": "Returns all available filter options for products",
+                "summary": "Mevcut filtreleri al",
+                "description": "Ürünler için mevcut tüm filtre seçeneklerini döndürür",
                 "operationId": "getProductFilters",
                 "responses": {
                     "200": {
@@ -3807,8 +3835,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get current user profile",
-                "description": "Retrieve the authenticated user's profile information",
+                "summary": "Mevcut kullanıcı profilini al",
+                "description": "Kimliği doğrulanmış kullanıcının profil bilgilerini alın",
                 "operationId": "getUserProfile",
                 "responses": {
                     "200": {
@@ -3844,8 +3872,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Update user profile",
-                "description": "Update the authenticated user's profile information",
+                "summary": "Kullanıcı profilini güncelle",
+                "description": "Kimliği doğrulanmış kullanıcının profil bilgilerini güncelleyin",
                 "operationId": "updateUserProfile",
                 "requestBody": {
                     "required": true,
@@ -3959,8 +3987,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Change user password",
-                "description": "Change the authenticated user's password",
+                "summary": "Kullanıcı şifresini değiştir",
+                "description": "Kimliği doğrulanmış kullanıcının şifresini değiştirin",
                 "operationId": "changePassword",
                 "requestBody": {
                     "required": true,
@@ -4030,8 +4058,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Upload user avatar",
-                "description": "Upload a new profile picture for the authenticated user",
+                "summary": "Kullanıcı avatarı yükle",
+                "description": "Kimliği doğrulanmış kullanıcı için yeni bir profil resmi yükleyin",
                 "operationId": "uploadAvatar",
                 "requestBody": {
                     "required": true,
@@ -4095,8 +4123,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Delete user avatar",
-                "description": "Delete the authenticated user's profile picture",
+                "summary": "Kullanıcı avatarını sil",
+                "description": "Kimliği doğrulanmış kullanıcının profil resmini silin",
                 "operationId": "deleteAvatar",
                 "responses": {
                     "200": {
@@ -4134,8 +4162,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get dealer application status",
-                "description": "Get the current status of the authenticated user's dealer application",
+                "summary": "Bayi başvuru durumunu al",
+                "description": "Kimliği doğrulanmış kullanıcının bayi başvurusunun mevcut durumunu alın",
                 "operationId": "getDealerStatus",
                 "responses": {
                     "200": {
@@ -4219,8 +4247,8 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Submit dealer application",
-                "description": "Submit an application to become a B2B dealer",
+                "summary": "Bayi başvurusunda bulunun",
+                "description": "B2B bayisi olmak için başvuruda bulunun",
                 "operationId": "submitDealerApplication",
                 "requestBody": {
                     "required": true,
@@ -4333,8 +4361,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Get user's wishlist",
-                "description": "Retrieve all items in the authenticated user's wishlist",
+                "summary": "Kullanıcının istek listesini al",
+                "description": "Kimliği doğrulanmış kullanıcının istek listesindeki tüm öğeleri alın",
                 "operationId": "getWishlist",
                 "parameters": [
                     {
@@ -4425,8 +4453,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Add item to wishlist",
-                "description": "Add a product or product variant to the user's wishlist",
+                "summary": "İstek listesine öğe ekle",
+                "description": "Kullanıcının istek listesine bir ürün veya ürün çeşidi ekleyin",
                 "operationId": "addToWishlist",
                 "requestBody": {
                     "required": true,
@@ -4528,8 +4556,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Get specific wishlist item",
-                "description": "Retrieve a specific item from the user's wishlist",
+                "summary": "Belirli istek listesi öğesini al",
+                "description": "Kullanıcının istek listesinden belirli bir öğeyi alın",
                 "operationId": "getWishlistItem",
                 "parameters": [
                     {
@@ -4579,8 +4607,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Update wishlist item",
-                "description": "Update a specific item in the user's wishlist",
+                "summary": "İstek listesi öğesini güncelle",
+                "description": "Kullanıcının istek listesindeki belirli bir öğeyi güncelleyin",
                 "operationId": "updateWishlistItem",
                 "parameters": [
                     {
@@ -4665,8 +4693,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Remove item from wishlist",
-                "description": "Remove a specific item from the user's wishlist",
+                "summary": "Öğeyi istek listesinden kaldır",
+                "description": "Kullanıcının istek listesinden belirli bir öğeyi kaldırın",
                 "operationId": "removeFromWishlist",
                 "parameters": [
                     {
@@ -4715,8 +4743,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Toggle favorite status",
-                "description": "Toggle the favorite status of a wishlist item",
+                "summary": "Favori durumunu değiştir",
+                "description": "Bir istek listesi öğesinin favori durumunu değiştirin",
                 "operationId": "toggleWishlistFavorite",
                 "parameters": [
                     {
@@ -4768,8 +4796,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Clear entire wishlist",
-                "description": "Remove all items from the user's wishlist",
+                "summary": "Tüm istek listesini temizle",
+                "description": "Kullanıcının istek listesindeki tüm öğeleri kaldırın",
                 "operationId": "clearWishlist",
                 "responses": {
                     "200": {
@@ -4808,8 +4836,8 @@
                 "tags": [
                     "Wishlist"
                 ],
-                "summary": "Get wishlist statistics",
-                "description": "Get statistics about the user's wishlist",
+                "summary": "İstek listesi istatistiklerini al",
+                "description": "Kullanıcının istek listesi hakkında istatistikleri alın",
                 "operationId": "getWishlistStats",
                 "responses": {
                     "200": {
@@ -5959,44 +5987,44 @@
     },
     "tags": [
         {
-            "name": "Addresses",
-            "description": "User address management"
-        },
-        {
             "name": "Authentication",
             "description": "User authentication endpoints"
         },
         {
-            "name": "Kampanyalar",
+            "name": "Campaigns",
             "description": "E-ticaret kampanya yönetimi API uç noktaları"
         },
         {
-            "name": "Cart",
-            "description": "Cart management endpoints"
+            "name": "Coupons",
+            "description": "İndirim kuponları yönetimi API uç noktaları"
         },
         {
-            "name": "Coupons",
-            "description": "İndirim kuponları yönetimi API endpoints"
+            "name": "Addresses",
+            "description": "Addresses"
+        },
+        {
+            "name": "Cart",
+            "description": "Cart"
         },
         {
             "name": "Currency",
-            "description": "Currency and exchange rate endpoints"
+            "description": "Currency"
         },
         {
             "name": "Orders",
-            "description": "Order management endpoints"
+            "description": "Orders"
         },
         {
             "name": "Products",
-            "description": "Product catalog and search operations"
+            "description": "Products"
         },
         {
             "name": "Users",
-            "description": "User profile and account management"
+            "description": "Users"
         },
         {
             "name": "Wishlist",
-            "description": "User wishlist management"
+            "description": "Wishlist"
         }
     ]
 }
