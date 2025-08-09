@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('allow_backorders')->default(false)->after('custom_discount_percentage');
             $table->integer('payment_terms_days')->nullable()->after('allow_backorders'); // B2B payment terms
             $table->decimal('credit_limit', 12, 2)->nullable()->after('payment_terms_days'); // B2B credit limit
+            $table->decimal('current_balance', 12, 2)->default(0)->after('credit_limit');
             
             // Loyalty program
             $table->integer('loyalty_points')->default(0)->after('credit_limit');
@@ -54,6 +55,7 @@ return new class extends Migration
                 'allow_backorders',
                 'payment_terms_days',
                 'credit_limit',
+                'current_balance',
                 'loyalty_points',
                 'last_order_at',
                 'lifetime_value'

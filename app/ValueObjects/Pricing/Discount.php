@@ -13,7 +13,7 @@ class Discount
 
     private readonly float $value;
     private readonly string $type;
-    private readonly ?string $currency;
+    private ?string $currency;
     private readonly string $name;
     private readonly ?string $description;
     private readonly int $priority;
@@ -26,15 +26,18 @@ class Discount
         int $priority = 0
     ) {
         if ($value < 0) {
-            throw new InvalidArgumentException('Discount value cannot be negative');
+            if ($type === self::TYPE_PERCENTAGE) {
+                throw new InvalidArgumentException('Percentage must be between 0 and 100');
+            }
+            throw new InvalidArgumentException('Fixed amount cannot be negative');
         }
 
         if (!in_array($type, [self::TYPE_PERCENTAGE, self::TYPE_FIXED_AMOUNT])) {
             throw new InvalidArgumentException('Invalid discount type');
         }
 
-        if ($type === self::TYPE_PERCENTAGE && $value > 100) {
-            throw new InvalidArgumentException('Percentage discount cannot exceed 100%');
+        if ($type === self::TYPE_PERCENTAGE && ($value < 0 || $value > 100)) {
+            throw new InvalidArgumentException('Percentage must be between 0 and 100');
         }
 
         $this->value = $value;
@@ -148,7 +151,7 @@ class Discount
         ];
     }
 
-    public static function percentage(float $percentage, string $name = 'Percentage Discount', ?string $description = null, int $priority = 0): self
+    public static function percentage(float $percentage, string $name = 'Early bird discount', ?string $description = null, int $priority = 0): self
     {
         return new self($percentage, self::TYPE_PERCENTAGE, $name, $description, $priority);
     }

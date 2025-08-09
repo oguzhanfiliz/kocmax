@@ -31,13 +31,14 @@ jobs:
       run: chmod -R 777 storage bootstrap/cache
     - name: Run Migrations & Tests
       env:
+        APP_ENV: testing
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
+        DB_FOREIGN_KEYS: true
         CACHE_DRIVER: array
         SESSION_DRIVER: array
         QUEUE_CONNECTION: sync
         BROADCAST_DRIVER: log
       run: |
-        php artisan migrate --force
-        php artisan db:seed --force
+        php artisan migrate:fresh --seed --force
         php artisan test

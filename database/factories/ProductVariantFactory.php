@@ -30,7 +30,8 @@ class ProductVariantFactory extends Factory
             'width' => $this->faker->numberBetween(10, 50), 
             'height' => $this->faker->numberBetween(5, 20),
             'size' => $this->faker->randomElement(['XS', 'S', 'M', 'L', 'XL']),
-            'color' => $this->faker->colorName()
+            'color' => $this->faker->colorName(),
+            'currency_code' => 'TRY'
         ];
     }
 

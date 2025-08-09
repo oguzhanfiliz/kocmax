@@ -18,6 +18,9 @@ return new class extends Migration
             $table->decimal('discount_percentage', 5, 2)->default(0);
             $table->decimal('min_order_amount', 10, 2)->default(0);
             $table->integer('min_quantity')->default(1);
+            $table->decimal('credit_limit', 12, 2)->default(0);
+            $table->integer('payment_terms_days')->default(0);
+            $table->integer('sort_order')->default(0);
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->integer('priority')->default(0);
