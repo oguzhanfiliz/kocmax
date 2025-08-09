@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
- *     name="Kampanyalar",
+ *     name="Campaigns",
  *     description="E-ticaret kampanya yönetimi API uç noktaları"
  * )
  */
@@ -24,7 +24,7 @@ class CampaignController extends Controller
      *     path="/api/v1/campaigns",
      *     summary="Aktif kampanyaları listele",
      *     description="Müşteri tipine göre geçerli kampanyaları getirir",
-     *     tags={"Kampanyalar"},
+     *     tags={"Campaigns"},
      *     @OA\Parameter(
      *         name="type",
      *         in="query",
@@ -177,7 +177,7 @@ class CampaignController extends Controller
      *     path="/api/v1/campaigns/{campaign}",
      *     summary="Kampanya detaylarını getir",
      *     description="Belirli bir kampanyanın tüm detaylarını ve kurallarını getirir",
-     *     tags={"Kampanyalar"},
+     *     tags={"Campaigns"},
      *     @OA\Parameter(
      *         name="campaign",
      *         in="path",
@@ -332,7 +332,7 @@ class CampaignController extends Controller
      *     path="/api/v1/campaigns/{campaign}/validate",
      *     summary="Kampanya geçerliliğini kontrol et",
      *     description="Mevcut sepet içeriğine göre kampanyanın uygulanabilir olup olmadığını kontrol eder ve indirim miktarını hesaplar",
-     *     tags={"Kampanyalar"},
+     *     tags={"Campaigns"},
      *     security={{"sanctum": {}}},
      *     @OA\Parameter(
      *         name="campaign",

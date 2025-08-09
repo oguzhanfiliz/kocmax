@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
 /**
  * @OA\Tag(
  *     name="Coupons",
- *     description="İndirim kuponları yönetimi API endpoints"
+ *     description="İndirim kuponları yönetimi API uç noktaları"
  * )
  */
 class CouponController extends Controller
@@ -34,22 +34,34 @@ class CouponController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Başarılı",
+     *         description="Kupon geçerlilik kontrolü başarıyla tamamlandı",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Kupon geçerliliği kontrol edildi"),
+     *             @OA\Property(property="success", type="boolean", example=true,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Kupon geçerliliği kontrol edildi",
+     *                         description="İşlem açıklaması"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="is_valid", type="boolean", example=true),
-     *                 @OA\Property(property="coupon_code", type="string", example="SUMMER25"),
-     *                 @OA\Property(property="coupon_type", type="string", enum={"percentage", "fixed"}, example="percentage"),
-     *                 @OA\Property(property="coupon_value", type="number", format="float", example=25.00),
-     *                 @OA\Property(property="discount_amount", type="number", format="float", example=187.50),
-     *                 @OA\Property(property="min_order_amount", type="number", format="float", example=200.00),
-     *                 @OA\Property(property="remaining_usage", type="integer", example=45),
-     *                 @OA\Property(property="expires_at", type="string", format="date-time", nullable=true, example="2025-12-31T23:59:59.000000Z"),
-     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"), description="Geçersizlik sebepleri")
+     *                 description="Kupon geçerlilik sonuçları",
+     *                 @OA\Property(property="is_valid", type="boolean", example=true,
+     *                             description="Kupon geçerli mi"),
+     *                 @OA\Property(property="coupon_code", type="string", example="SUMMER25",
+     *                             description="Kupon kodu"),
+     *                 @OA\Property(property="coupon_type", type="string", enum={"percentage", "fixed"}, example="percentage",
+     *                             description="Kupon türü (percentage: yüzde, fixed: sabit tutar)"),
+     *                 @OA\Property(property="coupon_value", type="number", format="float", example=25.00,
+     *                             description="Kupon değeri"),
+     *                 @OA\Property(property="discount_amount", type="number", format="float", example=187.50,
+     *                             description="Uygulanabilir indirim miktarı (TL)"),
+     *                 @OA\Property(property="min_order_amount", type="number", format="float", example=200.00,
+     *                             description="Minimum sipariş tutarı (TL)"),
+     *                 @OA\Property(property="remaining_usage", type="integer", example=45,
+     *                             description="Kalan kullanım hakkı"),
+     *                 @OA\Property(property="expires_at", type="string", format="date-time", nullable=true, 
+     *                             example="2025-12-31T23:59:59.000000Z", description="Son kullanma tarihi"),
+     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"), 
+     *                             description="Geçersizlik sebepleri (kupon geçersizse)")
      *             )
      *         )
      *     ),
@@ -57,23 +69,31 @@ class CouponController extends Controller
      *         response=404,
      *         description="Kupon bulunamadı",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Kupon bulunamadı"),
+     *             @OA\Property(property="success", type="boolean", example=false,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Belirtilen kupon bulunamadı",
+     *                         description="Hata mesajı"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="is_valid", type="boolean", example=false),
-     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"), example={"Kupon kodu geçersiz"})
+     *                 description="Hata detayları",
+     *                 @OA\Property(property="is_valid", type="boolean", example=false,
+     *                             description="Kupon geçersiz"),
+     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"), 
+     *                             example={"Kupon kodu geçersiz"}, description="Hata sebepleri")
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Validasyon hatası",
+     *         description="Giriş verilerinde hata",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Validasyon hatası"),
-     *             @OA\Property(property="errors", type="object")
+     *             @OA\Property(property="success", type="boolean", example=false,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Giriş verileri doğrulanamadı",
+     *                         description="Hata mesajı"),
+     *             @OA\Property(property="errors", type="object",
+     *                         description="Alan bazlı doğrulama hataları")
      *         )
      *     )
      * )
@@ -189,19 +209,28 @@ class CouponController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Kupon başarıyla uygulandı",
+     *         description="Kupon başarıyla sepete uygulandı",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Kupon başarıyla uygulandı"),
+     *             @OA\Property(property="success", type="boolean", example=true, 
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Kupon başarıyla uygulandı",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="coupon_code", type="string", example="SUMMER25"),
-     *                 @OA\Property(property="discount_amount", type="number", format="float", example=187.50),
-     *                 @OA\Property(property="original_total", type="number", format="float", example=750.00),
-     *                 @OA\Property(property="new_total", type="number", format="float", example=562.50),
-     *                 @OA\Property(property="used_count", type="integer", example=51),
-     *                 @OA\Property(property="remaining_usage", type="integer", nullable=true, example=49)
+     *                 description="Kupon uygulama sonuç verileri",
+     *                 @OA\Property(property="coupon_code", type="string", example="SUMMER25",
+     *                             description="Uygulanan kupon kodu"),
+     *                 @OA\Property(property="discount_amount", type="number", format="float", example=187.50,
+     *                             description="İndirim tutarı (TL)"),
+     *                 @OA\Property(property="original_total", type="number", format="float", example=750.00,
+     *                             description="Orijinal sepet tutarı (TL)"),
+     *                 @OA\Property(property="new_total", type="number", format="float", example=562.50,
+     *                             description="İndirimli sepet tutarı (TL)"),
+     *                 @OA\Property(property="used_count", type="integer", example=51,
+     *                             description="Kuponun toplam kullanım sayısı"),
+     *                 @OA\Property(property="remaining_usage", type="integer", nullable=true, example=49,
+     *                             description="Kalan kullanım hakkı")
      *             )
      *         )
      *     ),
@@ -306,8 +335,8 @@ class CouponController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/coupons/my-coupons",
-     *     summary="Kullanıcı kuponlarını listele",
-     *     description="Kullanıcının sahip olduğu aktif kuponları listeler (admin tarafından atanmış)",
+     *     summary="Kullanıcıya özel kuponları listele",
+     *     description="Giriş yapmış kullanıcının sahip olduğu kuponları duruma göre listeler",
      *     tags={"Coupons"},
      *     security={{"sanctum": {}}},
      *     @OA\Parameter(
@@ -412,8 +441,8 @@ class CouponController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/coupons/public",
-     *     summary="Genel kuponları listele",
-     *     description="Herkese açık aktif kuponları listeler",
+     *     summary="Herkese açık kuponları listele",
+     *     description="Tüm müşterilerin kullanabileceği aktif kuponları listeler",
      *     tags={"Coupons"},
      *     @OA\Parameter(
      *         name="min_amount",
