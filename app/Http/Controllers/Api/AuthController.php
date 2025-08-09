@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * @OA\Tag(
- *     name="Kimlik Doğrulama",
+ *     name="Authentication",
  *     description="Kullanıcı kimlik doğrulama API uç noktaları"
  * )
  */
@@ -40,48 +40,48 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"email","password"},
-     *              @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *              @OA\Property(property="password", type="string", example="password123"),
-     *              @OA\Property(property="device_name", type="string", example="mobile_app")
+     *              @OA\Property(property="email", type="string", format="email", example="user@example.com", description="E-posta adresi"),
+     *              @OA\Property(property="password", type="string", example="password123", description="Şifre"),
+     *              @OA\Property(property="device_name", type="string", example="mobile_app", description="Cihaz adı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Login successful",
+     *          description="Giriş başarılı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Login successful"),
-     *              @OA\Property(property="data", type="object",
-     *                  @OA\Property(property="user", type="object"),
-     *                  @OA\Property(property="token", type="string", example="1|abc123def456..."),
-     *                  @OA\Property(property="refresh_token", type="string", example="2|xyz789abc123..."),
-     *                  @OA\Property(property="expires_at", type="string", format="date-time")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Giriş başarılı", description="Başarı mesajı"),
+     *              @OA\Property(property="data", type="object", description="Giriş verileri",
+     *                  @OA\Property(property="user", type="object", description="Kullanıcı bilgileri"),
+     *                  @OA\Property(property="token", type="string", example="1|abc123def456...", description="Erişim belirteci"),
+     *                  @OA\Property(property="refresh_token", type="string", example="2|xyz789abc123...", description="Yenileme belirteci"),
+     *                  @OA\Property(property="expires_at", type="string", format="date-time", description="Belirteç bitiş tarihi")
      *              )
      *          )
      *      ),
      *      @OA\Response(
      *          response=401,
-     *          description="Invalid credentials",
+     *          description="Geçersiz giriş bilgileri",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Invalid credentials")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Geçersiz giriş bilgileri", description="Hata mesajı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=422,
-     *          description="Validation error",
+     *          description="Doğrulama hatası",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Validation failed"),
-     *              @OA\Property(property="errors", type="object")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Doğrulama başarısız", description="Hata mesajı"),
+     *              @OA\Property(property="errors", type="object", description="Doğrulama hataları")
      *          )
      *      ),
      *      @OA\Response(
      *          response=429,
-     *          description="Too many login attempts",
+     *          description="Çok fazla giriş denemesi",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Too many login attempts. Please try again later.")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Çok fazla giriş denemesi. Lütfen daha sonra tekrar deneyin.", description="Hata mesajı")
      *          )
      *      )
      * )
@@ -94,7 +94,7 @@ class AuthController extends Controller
             $seconds = RateLimiter::availableIn($throttleKey);
             return response()->json([
                 'success' => false,
-                'message' => "Too many login attempts. Please try again in {$seconds} seconds."
+                'message' => "Çok fazla giriş denemesi. Lütfen {$seconds} saniye sonra tekrar deneyin."
             ], 429);
         }
 
@@ -108,7 +108,7 @@ class AuthController extends Controller
             RateLimiter::hit($throttleKey);
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Doğrulama başarısız',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -119,7 +119,7 @@ class AuthController extends Controller
             RateLimiter::hit($throttleKey);
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials'
+                'message' => 'Geçersiz giriş bilgileri'
             ], 401);
         }
 
@@ -131,7 +131,7 @@ class AuthController extends Controller
             Auth::logout();
             return response()->json([
                 'success' => false,
-                'message' => 'Account is deactivated. Please contact support.'
+                'message' => 'Hesap devre dışı bırakılmış. Lütfen destek ekibiyle iletişime geçin.'
             ], 403);
         }
 
@@ -139,7 +139,7 @@ class AuthController extends Controller
         if (config('auth.email_verification_enabled') && !$user->is_approved_dealer && !$user->email_verified_at) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please verify your email address before logging in.',
+                'message' => 'Giriş yapmadan önce lütfen e-posta adresinizi doğrulayın.',
                 'data' => [
                     'email_verification_required' => true,
                     'email' => $user->email
@@ -164,7 +164,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Login successful',
+            'message' => 'Giriş başarılı',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -194,29 +194,29 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"name","email","password","password_confirmation"},
-     *              @OA\Property(property="name", type="string", example="John Doe"),
-     *              @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *              @OA\Property(property="password", type="string", example="password123"),
-     *              @OA\Property(property="password_confirmation", type="string", example="password123"),
-     *              @OA\Property(property="phone", type="string", example="+905551234567"),
-     *              @OA\Property(property="customer_type", type="string", enum={"B2C","B2B"}, example="B2C")
+     *              @OA\Property(property="name", type="string", example="John Doe", description="Ad soyad"),
+     *              @OA\Property(property="email", type="string", format="email", example="user@example.com", description="E-posta adresi"),
+     *              @OA\Property(property="password", type="string", example="password123", description="Şifre"),
+     *              @OA\Property(property="password_confirmation", type="string", example="password123", description="Şifre onayı"),
+     *              @OA\Property(property="phone", type="string", example="+905551234567", description="Telefon numarası"),
+     *              @OA\Property(property="customer_type", type="string", enum={"B2C","B2B"}, example="B2C", description="Müşteri tipi")
      *          )
      *      ),
      *      @OA\Response(
      *          response=201,
-     *          description="Registration successful",
+     *          description="Kayıt başarılı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Registration successful. Please check your email for verification.")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Kayıt başarılı. Lütfen doğrulama için e-postanızı kontrol edin.", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=422,
-     *          description="Validation error",
+     *          description="Doğrulama hatası",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Validation failed"),
-     *              @OA\Property(property="errors", type="object")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Doğrulama başarısız", description="Hata mesajı"),
+     *              @OA\Property(property="errors", type="object", description="Doğrulama hataları")
      *          )
      *      )
      * )
@@ -234,7 +234,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Doğrulama başarısız',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -254,8 +254,8 @@ class AuthController extends Controller
         }
 
         $message = config('auth.email_verification_enabled') 
-            ? 'Registration successful. Please check your email for verification.'
-            : 'Registration successful. You can now login.';
+            ? 'Kayıt başarılı. Lütfen doğrulama için e-postanızı kontrol edin.'
+            : 'Kayıt başarılı. Şimdi giriş yapabilirsiniz.';
 
         return response()->json([
             'success' => true,
@@ -279,26 +279,26 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"refresh_token"},
-     *              @OA\Property(property="refresh_token", type="string", example="2|xyz789abc123...")
+     *              @OA\Property(property="refresh_token", type="string", example="2|xyz789abc123...", description="Yenileme belirteci")
      *          )
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Token refreshed successfully",
+     *          description="Belirteç başarıyla yenilendi",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="data", type="object",
-     *                  @OA\Property(property="token", type="string"),
-     *                  @OA\Property(property="expires_at", type="string", format="date-time")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="data", type="object", description="Yenilenen belirteç verileri",
+     *                  @OA\Property(property="token", type="string", description="Yeni erişim belirteci"),
+     *                  @OA\Property(property="expires_at", type="string", format="date-time", description="Bitiş tarihi")
      *              )
      *          )
      *      ),
      *      @OA\Response(
      *          response=401,
-     *          description="Invalid refresh token",
+     *          description="Geçersiz yenileme belirteci",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Invalid refresh token")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Geçersiz yenileme belirteci", description="Hata mesajı")
      *          )
      *      )
      * )
@@ -312,7 +312,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Doğrulama başarısız',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -324,7 +324,7 @@ class AuthController extends Controller
             if (!$token || !$token->can('refresh')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid refresh token'
+                    'message' => 'Geçersiz yenileme belirteci'
                 ], 401);
             }
 
@@ -348,7 +348,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid refresh token'
+                'message' => 'Geçersiz yenileme belirteci'
             ], 401);
         }
     }
@@ -364,24 +364,24 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"email"},
-     *              @OA\Property(property="email", type="string", format="email", example="user@example.com")
+     *              @OA\Property(property="email", type="string", format="email", example="user@example.com", description="E-posta adresi")
      *          )
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Password reset email sent",
+     *          description="Şifre sıfırlama e-postası gönderildi",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Password reset link sent to your email")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Şifre sıfırlama bağlantısı e-postanıza gönderildi", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=422,
-     *          description="Validation error",
+     *          description="Doğrulama hatası",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Validation failed"),
-     *              @OA\Property(property="errors", type="object")
+     *              @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Doğrulama başarısız", description="Hata mesajı"),
+     *              @OA\Property(property="errors", type="object", description="Doğrulama hataları")
      *          )
      *      )
      * )
@@ -395,7 +395,7 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Doğrulama başarısız',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -407,13 +407,13 @@ class AuthController extends Controller
         if ($status === Password::RESET_LINK_SENT) {
             return response()->json([
                 'success' => true,
-                'message' => 'Password reset link sent to your email'
+                'message' => 'Şifre sıfırlama bağlantısı e-postanıza gönderildi'
             ]);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Unable to send password reset link'
+            'message' => 'Şifre sıfırlama bağlantısı gönderilemedi'
         ], 400);
     }
 
@@ -428,18 +428,18 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"token","email","password","password_confirmation"},
-     *              @OA\Property(property="token", type="string", example="reset-token-here"),
-     *              @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *              @OA\Property(property="password", type="string", example="newpassword123"),
-     *              @OA\Property(property="password_confirmation", type="string", example="newpassword123")
+     *              @OA\Property(property="token", type="string", example="reset-token-here", description="Sıfırlama belirteci"),
+     *              @OA\Property(property="email", type="string", format="email", example="user@example.com", description="E-posta adresi"),
+     *              @OA\Property(property="password", type="string", example="newpassword123", description="Yeni şifre"),
+     *              @OA\Property(property="password_confirmation", type="string", example="newpassword123", description="Yeni şifre onayı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Password reset successful",
+     *          description="Şifre sıfırlama başarılı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Password reset successful")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Şifre sıfırlama başarılı", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
@@ -485,13 +485,13 @@ class AuthController extends Controller
         if ($status === Password::PASSWORD_RESET) {
             return response()->json([
                 'success' => true,
-                'message' => 'Password reset successful'
+                'message' => 'Şifre sıfırlama başarılı'
             ]);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Unable to reset password'
+            'message' => 'Şifre sıfırlanamadı'
         ], 400);
     }
 
@@ -506,15 +506,15 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"token"},
-     *              @OA\Property(property="token", type="string", example="verification-token-here")
+     *              @OA\Property(property="token", type="string", example="verification-token-here", description="Doğrulama belirteci")
      *          )
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Email verified successfully",
+     *          description="E-posta başarıyla doğrulandı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Email verified successfully")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="E-posta başarıyla doğrulandı", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
@@ -547,7 +547,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid verification token'
+                'message' => 'Geçersiz doğrulama belirteci'
             ], 422);
         }
 
@@ -558,7 +558,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Email verified successfully'
+            'message' => 'E-posta başarıyla doğrulandı'
         ]);
     }
 
@@ -578,10 +578,10 @@ class AuthController extends Controller
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Verification email sent",
+     *          description="Doğrulama e-postası gönderildi",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Verification email sent")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Doğrulama e-postası gönderildi", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
@@ -614,14 +614,14 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'Kullanıcı bulunamadı'
             ], 404);
         }
 
         if ($user->email_verified_at) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email is already verified'
+                'message' => 'E-posta zaten doğrulanmış'
             ], 422);
         }
 
@@ -635,7 +635,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Verification email sent'
+            'message' => 'Doğrulama e-postası gönderildi'
         ]);
     }
 
@@ -649,17 +649,17 @@ class AuthController extends Controller
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,
-     *          description="Logout successful",
+     *          description="Çıkış başarılı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Logout successful")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="message", type="string", example="Çıkış başarılı", description="Başarı mesajı")
      *          )
      *      ),
      *      @OA\Response(
      *          response=401,
-     *          description="Unauthenticated",
+     *          description="Kimlik doğrulaması yapılmamış",
      *          @OA\JsonContent(
-     *              @OA\Property(property="message", type="string", example="Unauthenticated")
+     *              @OA\Property(property="message", type="string", example="Kimlik doğrulaması gerekli", description="Hata mesajı")
      *          )
      *      )
      * )
@@ -670,7 +670,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Logout successful'
+            'message' => 'Çıkış başarılı'
         ]);
     }
 

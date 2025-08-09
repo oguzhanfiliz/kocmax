@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
- *     name="Sepet",
- *     description="Alışveriş sepeti yönetimi API uç noktaları"
+ *     name="Cart",
+ *     description="Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları"
  * )
  */
 class CartController extends Controller
@@ -39,18 +39,18 @@ class CartController extends Controller
      *      path="/api/v1/cart",
      *      operationId="getCart",
      *      tags={"Cart"},
-     *      summary="Mevcut kullanıcının sepetini al",
-     *      description="Kimliği doğrulanmış veya misafir kullanıcılar için para birimi dönüştürme ile mevcut sepeti alın",
+     *      summary="Kullanıcının mevcut sepetini görüntüle",
+     *      description="Giriş yapmış veya misafir kullanıcının sepetini para birimi dönüştürme seçeneğiyle getirir",
      *      @OA\Parameter(
      *          name="currency",
-     *          description="Target currency code (e.g., TRY, USD, EUR)",
+     *          description="Hedef para birimi kodu (örn: TRY, USD, EUR)",
      *          required=false,
      *          in="query",
      *          @OA\Schema(type="string", example="USD")
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Cart retrieved successfully",
+     *          description="Sepet başarıyla getirildi",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=true),
      *              @OA\Property(property="data", type="object",
@@ -61,15 +61,15 @@ class CartController extends Controller
      *      ),
      *      @OA\Response(
      *          response=500,
-     *          description="Failed to retrieve cart",
+     *          description="Sepet getirilemedi",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Failed to retrieve cart")
+     *              @OA\Property(property="message", type="string", example="Sepet getirilemedi")
      *          )
      *      )
      * )
      * 
-     * Get current user's cart
+     * Kullanıcının mevcut sepetini getir
      */
     public function show(Request $request): JsonResponse
     {
@@ -91,11 +91,11 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to get cart', ['error' => $e->getMessage()]);
+            Log::error('Sepet getirme hatası', ['error' => $e->getMessage()]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve cart',
+                'message' => 'Sepet getirilemedi',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -118,23 +118,23 @@ class CartController extends Controller
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Item added to cart successfully",
+     *          description="Ürün başarıyla sepete eklendi",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Item added to cart successfully")
+     *              @OA\Property(property="message", type="string", example="Ürün başarıyla sepete eklendi")
      *          )
      *      ),
      *      @OA\Response(
      *          response=400,
-     *          description="Failed to add item to cart",
+     *          description="Ürün sepete eklenemedi",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=false),
-     *              @OA\Property(property="message", type="string", example="Failed to add item to cart")
+     *              @OA\Property(property="message", type="string", example="Ürün sepete eklenemedi")
      *          )
      *      )
      * )
      * 
-     * Add item to cart
+     * Sepete ürün ekle
      */
     public function addItem(AddItemRequest $request): JsonResponse
     {
@@ -152,7 +152,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Item added to cart successfully',
+                'message' => 'Ürün başarıyla sepete eklendi',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items.product', 'items.productVariant'])),
                     'summary' => new CartSummaryResource($summary)
@@ -160,14 +160,14 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to add item to cart', [
+            Log::error('Sepete ürün ekleme hatası', [
                 'error' => $e->getMessage(),
                 'variant_id' => $request->product_variant_id ?? null
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to add item to cart',
+                'message' => 'Ürün sepete eklenemedi',
                 'error' => $e->getMessage()
             ], 400);
         }
@@ -182,7 +182,7 @@ class CartController extends Controller
      *      description="Mevcut bir sepet öğesinin miktarını güncelleyin",
      *      @OA\Parameter(
      *          name="item",
-     *          description="Cart item ID",
+     *          description="Sepet öğesi ID'si",
      *          required=true,
      *          in="path",
      *          @OA\Schema(type="integer")
@@ -196,15 +196,15 @@ class CartController extends Controller
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Cart item updated successfully"
+     *          description="Sepet öğesi başarıyla güncellendi"
      *      ),
      *      @OA\Response(
      *          response=400,
-     *          description="Failed to update cart item"
+     *          description="Sepet öğesi güncellenemedi"
      *      )
      * )
      * 
-     * Update item quantity in cart
+     * Sepetteki ürün miktarını güncelle
      */
     public function updateItem(UpdateQuantityRequest $request, int $itemId): JsonResponse
     {
@@ -222,7 +222,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cart item updated successfully',
+                'message' => 'Sepet öğesi başarıyla güncellendi',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items.product', 'items.productVariant'])),
                     'summary' => new CartSummaryResource($summary)
@@ -230,14 +230,14 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to update cart item', [
+            Log::error('Sepet öğesi güncelleme hatası', [
                 'error' => $e->getMessage(),
                 'item_id' => $itemId
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update cart item',
+                'message' => 'Sepet öğesi güncellenemedi',
                 'error' => $e->getMessage()
             ], 400);
         }
@@ -252,22 +252,22 @@ class CartController extends Controller
      *      description="Kullanıcının sepetinden bir ürünü kaldırın",
      *      @OA\Parameter(
      *          name="item",
-     *          description="Cart item ID",
+     *          description="Sepet öğesi ID'si",
      *          required=true,
      *          in="path",
      *          @OA\Schema(type="integer")
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="Item removed from cart successfully"
+     *          description="Ürün başarıyla sepetten kaldırıldı"
      *      ),
      *      @OA\Response(
      *          response=400,
-     *          description="Failed to remove cart item"
+     *          description="Ürün sepetten kaldırılamadı"
      *      )
      * )
      * 
-     * Remove item from cart
+     * Sepetten ürün kaldır
      */
     public function removeItem(Request $request, int $itemId): JsonResponse
     {
@@ -284,7 +284,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Item removed from cart successfully',
+                'message' => 'Ürün başarıyla sepetten kaldırıldı',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items.product', 'items.productVariant'])),
                     'summary' => new CartSummaryResource($summary)
@@ -292,14 +292,14 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to remove cart item', [
+            Log::error('Sepetten ürün kaldırma hatası', [
                 'error' => $e->getMessage(),
                 'item_id' => $itemId
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to remove cart item',
+                'message' => 'Ürün sepetten kaldırılamadı',
                 'error' => $e->getMessage()
             ], 400);
         }
@@ -314,15 +314,15 @@ class CartController extends Controller
      *      description="Kullanıcının sepetindeki tüm ürünleri kaldırın",
      *      @OA\Response(
      *          response=200,
-     *          description="Cart cleared successfully"
+     *          description="Sepet başarıyla temizlendi"
      *      ),
      *      @OA\Response(
      *          response=500,
-     *          description="Failed to clear cart"
+     *          description="Sepet temizlenemedi"
      *      )
      * )
      * 
-     * Clear entire cart
+     * Tüm sepeti temizle
      */
     public function clear(Request $request): JsonResponse
     {
@@ -337,7 +337,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cart cleared successfully',
+                'message' => 'Sepet başarıyla temizlendi',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items'])),
                     'summary' => new CartSummaryResource($this->cartService->calculateSummary($cart))
@@ -345,11 +345,11 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to clear cart', ['error' => $e->getMessage()]);
+            Log::error('Sepet temizleme hatası', ['error' => $e->getMessage()]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to clear cart',
+                'message' => 'Sepet temizlenemedi',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -364,15 +364,15 @@ class CartController extends Controller
      *      description="Fiyatlandırma bilgileriyle sepet özetini alın",
      *      @OA\Response(
      *          response=200,
-     *          description="Cart summary retrieved successfully"
+     *          description="Sepet özeti başarıyla getirildi"
      *      ),
      *      @OA\Response(
      *          response=500,
-     *          description="Failed to retrieve cart summary"
+     *          description="Sepet özeti getirilemedi"
      *      )
      * )
      * 
-     * Get cart summary only
+     * Sadece sepet özetini getir
      */
     public function summary(Request $request): JsonResponse
     {
@@ -386,18 +386,34 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to get cart summary', ['error' => $e->getMessage()]);
+            Log::error('Sepet özeti getirme hatası', ['error' => $e->getMessage()]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve cart summary',
+                'message' => 'Sepet özeti getirilemedi',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Refresh cart pricing
+     * @OA\Put(
+     *      path="/api/v1/cart/refresh-pricing",
+     *      operationId="refreshCartPricing",
+     *      tags={"Cart"},
+     *      summary="Sepet fiyatlarını yenile",
+     *      description="Mevcut sepetteki ürünlerin fiyatlarını güncel değerlerle yenileyin",
+     *      @OA\Response(
+     *          response=200,
+     *          description="Sepet fiyatları başarıyla yenilendi"
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Sepet fiyatları yenilenemedi"
+     *      )
+     * )
+     * 
+     * Sepet fiyatlarını yenile
      */
     public function refreshPricing(Request $request): JsonResponse
     {
@@ -413,7 +429,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cart pricing refreshed successfully',
+                'message' => 'Sepet fiyatları başarıyla yenilendi',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items.product', 'items.productVariant'])),
                     'summary' => new CartSummaryResource($summary)
@@ -421,11 +437,11 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to refresh cart pricing', ['error' => $e->getMessage()]);
+            Log::error('Sepet fiyat yenileme hatası', ['error' => $e->getMessage()]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to refresh cart pricing',
+                'message' => 'Sepet fiyatları yenilenemedi',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -441,19 +457,19 @@ class CartController extends Controller
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,
-     *          description="Guest cart migrated successfully"
+     *          description="Misafir sepeti başarıyla taşındı"
      *      ),
      *      @OA\Response(
      *          response=401,
-     *          description="User must be authenticated to migrate cart"
+     *          description="Sepeti taşımak için giriş yapılmalıdır"
      *      ),
      *      @OA\Response(
      *          response=500,
-     *          description="Failed to migrate guest cart"
+     *          description="Misafir sepeti taşınamadı"
      *      )
      * )
      * 
-     * Migrate guest cart to authenticated user
+     * Misafir sepetini kimliği doğrulanmış kullanıcıya taşı
      */
     public function migrate(Request $request): JsonResponse
     {
@@ -461,7 +477,7 @@ class CartController extends Controller
             if (!Auth::check()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User must be authenticated to migrate cart'
+                    'message' => 'Sepeti taşımak için giriş yapılmalıdır'
                 ], 401);
             }
 
@@ -473,7 +489,7 @@ class CartController extends Controller
             if (!$cart) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No guest cart found to migrate',
+                    'message' => 'Taşınacak misafir sepeti bulunamadı',
                     'data' => null
                 ]);
             }
@@ -482,7 +498,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Guest cart migrated successfully',
+                'message' => 'Misafir sepeti başarıyla taşındı',
                 'data' => [
                     'cart' => new CartResource($cart->fresh(['items.product', 'items.productVariant'])),
                     'summary' => new CartSummaryResource($summary)
@@ -490,23 +506,23 @@ class CartController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to migrate guest cart', ['error' => $e->getMessage()]);
+            Log::error('Misafir sepeti taşıma hatası', ['error' => $e->getMessage()]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to migrate guest cart',
+                'message' => 'Misafir sepeti taşınamadı',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get or create cart for current request
+     * Mevcut istek için sepeti getir veya oluştur
      */
     private function getOrCreateCart(Request $request): Cart
     {
         if (Auth::check()) {
-            // Authenticated user cart
+            // Kimliği doğrulanmış kullanıcı sepeti
             return Cart::firstOrCreate(
                 ['user_id' => Auth::id()],
                 [
@@ -516,7 +532,7 @@ class CartController extends Controller
                 ]
             );
         } else {
-            // Guest cart
+            // Misafir sepeti
             $sessionId = $request->session()->getId();
             return Cart::firstOrCreate(
                 ['session_id' => $sessionId],

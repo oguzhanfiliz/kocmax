@@ -16,7 +16,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @OA\Tag(
- *     name="Ürünler",
+ *     name="Products",
  *     description="Ürün kataloğu ve arama API uç noktaları"
  * )
  */
@@ -39,98 +39,100 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
-     *         description="Search term for product name, description, or SKU",
+     *         description="Ürün adı, açıklaması veya SKU için arama terimi",
      *         required=false,
      *         @OA\Schema(type="string", example="güvenlik ayakkabısı")
      *     ),
      *     @OA\Parameter(
      *         name="category_id",
      *         in="query",
-     *         description="Filter by category ID",
+     *         description="Kategori ID'sine göre filtrele",
      *         required=false,
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
      *         name="categories",
      *         in="query",
-     *         description="Filter by multiple category IDs (comma separated)",
+     *         description="Birden fazla kategori ID'sine göre filtrele (virgülle ayrılmış)",
      *         required=false,
      *         @OA\Schema(type="string", example="1,2,3")
      *     ),
      *     @OA\Parameter(
      *         name="min_price",
      *         in="query",
-     *         description="Minimum price filter",
+     *         description="Minimum fiyat filtresi",
      *         required=false,
      *         @OA\Schema(type="number", format="float", example=50.00)
      *     ),
      *     @OA\Parameter(
      *         name="max_price",
      *         in="query",
-     *         description="Maximum price filter",
+     *         description="Maksimum fiyat filtresi",
      *         required=false,
      *         @OA\Schema(type="number", format="float", example=500.00)
      *     ),
      *     @OA\Parameter(
      *         name="brand",
      *         in="query",
-     *         description="Filter by brand",
+     *         description="Markaya göre filtrele",
      *         required=false,
      *         @OA\Schema(type="string", example="3M")
      *     ),
      *     @OA\Parameter(
      *         name="gender",
      *         in="query",
-     *         description="Filter by gender",
+     *         description="Cinsiyete göre filtrele",
      *         required=false,
      *         @OA\Schema(type="string", enum={"male", "female", "unisex"}, example="unisex")
      *     ),
      *     @OA\Parameter(
      *         name="in_stock",
      *         in="query",
-     *         description="Filter only products in stock",
+     *         description="Sadece stokta olan ürünleri filtrele",
      *         required=false,
      *         @OA\Schema(type="boolean", example=true)
      *     ),
      *     @OA\Parameter(
      *         name="featured",
      *         in="query",
-     *         description="Filter only featured products",
+     *         description="Sadece öne çıkan ürünleri filtrele",
      *         required=false,
      *         @OA\Schema(type="boolean", example=true)
      *     ),
      *     @OA\Parameter(
      *         name="sort",
      *         in="query",
-     *         description="Sort field",
+     *         description="Sıralama alanı",
      *         required=false,
      *         @OA\Schema(type="string", enum={"name", "price", "created_at", "popularity"}, example="name")
      *     ),
      *     @OA\Parameter(
      *         name="order",
      *         in="query",
-     *         description="Sort order",
+     *         description="Sıralama düzeni",
      *         required=false,
      *         @OA\Schema(type="string", enum={"asc", "desc"}, example="asc")
      *     ),
      *     @OA\Parameter(
      *         name="per_page",
      *         in="query",
-     *         description="Number of items per page",
+     *         description="Sayfa başına öğe sayısı",
      *         required=false,
      *         @OA\Schema(type="integer", minimum=1, maximum=100, example=20)
      *     ),
      *     @OA\Parameter(
      *         name="currency",
      *         in="query",
-     *         description="Currency for price display",
+     *         description="Fiyat gösterimi için para birimi",
      *         required=false,
      *         @OA\Schema(type="string", enum={"TRY", "USD", "EUR"}, example="TRY")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
+     *         description="İstek başarıyla tamamlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Ürünler başarıyla getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Product")),
      *             @OA\Property(property="meta", type="object",
      *                 @OA\Property(property="current_page", type="integer", example=1),
@@ -146,7 +148,7 @@ class ProductController extends Controller
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Validation error",
+     *         description="Doğrulama hatası",
      *         @OA\JsonContent(ref="#/components/schemas/ValidationError")
      *     )
      * )
@@ -259,6 +261,7 @@ class ProductController extends Controller
         app()->instance('api_currency', $currency);
 
         return ProductResource::collection($products)->additional([
+            'message' => 'Ürünler başarıyla getirildi',
             'filters' => [
                 'applied' => array_filter($validated),
                 'available' => $this->getAvailableFilters(),
@@ -276,27 +279,29 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Product ID",
+     *         description="Ürün ID'si",
      *         required=true,
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
      *         name="currency",
      *         in="query",
-     *         description="Currency for price display",
+     *         description="Fiyat gösterimi için para birimi",
      *         required=false,
      *         @OA\Schema(type="string", enum={"TRY", "USD", "EUR"}, example="TRY")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
+     *         description="İstek başarıyla tamamlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Ürün detayları başarıyla getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(property="data", ref="#/components/schemas/ProductDetail")
      *         )
      *     ),
      *     @OA\Response(
      *         response=404,
-     *         description="Product not found",
+     *         description="Ürün bulunamadı",
      *         @OA\JsonContent(ref="#/components/schemas/Error")
      *     )
      * )
@@ -318,7 +323,9 @@ class ProductController extends Controller
             'variants.variantOptions.variantType'
         ]);
 
-        return new ProductDetailResource($product);
+        return (new ProductDetailResource($product))->additional([
+            'message' => 'Ürün detayları başarıyla getirildi',
+        ]);
     }
 
     /**
@@ -331,21 +338,25 @@ class ProductController extends Controller
      *     @OA\Parameter(
      *         name="q",
      *         in="query",
-     *         description="Search query (minimum 2 characters)",
+     *         description="Arama sorgusu (minimum 2 karakter)",
      *         required=true,
      *         @OA\Schema(type="string", minLength=2, example="güv")
      *     ),
      *     @OA\Parameter(
      *         name="limit",
      *         in="query",
-     *         description="Maximum number of suggestions",
+     *         description="Maksimum öneri sayısı",
      *         required=false,
      *         @OA\Schema(type="integer", minimum=1, maximum=20, example=10)
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
+     *         description="İstek başarıyla tamamlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Arama önerileri başarıyla getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="products", type="array", @OA\Items(
      *                     @OA\Property(property="id", type="integer"),
@@ -412,6 +423,8 @@ class ProductController extends Controller
             ->pluck('brand');
 
         return response()->json([
+            'success' => true,
+            'message' => 'Arama önerileri başarıyla getirildi',
             'data' => [
                 'products' => $products,
                 'categories' => $categories,
@@ -429,8 +442,12 @@ class ProductController extends Controller
      *     description="Ürünler için mevcut tüm filtre seçeneklerini döndürür",
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
+     *         description="İstek başarıyla tamamlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Filtreler başarıyla getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="categories", type="array", @OA\Items(
      *                     @OA\Property(property="id", type="integer"),
@@ -454,6 +471,8 @@ class ProductController extends Controller
     public function filters(): JsonResponse
     {
         return response()->json([
+            'success' => true,
+            'message' => 'Filtreler başarıyla getirildi',
             'data' => $this->getAvailableFilters(),
         ]);
     }
