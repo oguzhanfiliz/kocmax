@@ -188,12 +188,11 @@ return [
 
         /*
          * Apply a global security scheme to all operations.
-         *
-         * You can apply security globally by adding a security key at this level.
-         * The value of security is an array of security requirement objects.
-         * Each security requirement object lists one or more security schemes that are required.
-         * For example, to make all endpoints
-            ],
+         * The value is an array of security requirement objects.
+         * Example: all endpoints require the 'sanctum' bearer token.
+         */
+        'security' => [
+            ['sanctum' => []],
         ],
 
         /*

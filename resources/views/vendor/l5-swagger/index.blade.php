@@ -156,7 +156,24 @@
 
         window.ui = ui
 
-        @if(in_array('oauth2', array_column(config('l5-swagger.defaults.securityDefinitions.securitySchemes'), 'type')))
+        @php
+            // Güvenlik şemalarını hem yeni (components.securitySchemes) hem de eski (securityDefinitions.securitySchemes)
+            // anahtar yapılarıyla uyumlu biçimde ve null-güvenli olarak oku
+            $securitySchemes = config('l5-swagger.defaults.components.securitySchemes');
+            if ($securitySchemes === null) {
+                $securitySchemes = config('l5-swagger.defaults.securityDefinitions.securitySchemes');
+            }
+            $securitySchemes = is_array($securitySchemes) ? $securitySchemes : [];
+
+            $schemeTypes = [];
+            foreach ($securitySchemes as $scheme) {
+                if (is_array($scheme) && isset($scheme['type'])) {
+                    $schemeTypes[] = $scheme['type'];
+                }
+            }
+        @endphp
+
+        @if(in_array('oauth2', $schemeTypes, true))
         ui.initOAuth({
             usePkceWithAuthorizationCodeGrant: "{!! (bool)config('l5-swagger.defaults.ui.authorization.oauth2.use_pkce_with_authorization_code_grant') !!}"
         })
