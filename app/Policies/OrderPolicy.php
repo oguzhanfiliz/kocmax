@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Policies;
 
-use App\Models\Order;
 use App\Models\User;
+use App\Models\Order;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class OrderPolicy
@@ -13,122 +11,98 @@ class OrderPolicy
     use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view any orders.
+     * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
+        return $user->can('view_any_order');
     }
 
     /**
-     * Determine whether the user can view the order.
+     * Determine whether the user can view the model.
      */
     public function view(User $user, Order $order): bool
     {
-        // Users can view their own orders
-        if ($user->id === $order->user_id) {
-            return true;
-        }
-
-        // Admin/manager/customer service can view all orders
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
+        return $user->can('view_order');
     }
 
     /**
-     * Determine whether the user can create orders.
+     * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
-        // All authenticated users can create orders
-        return true;
+        return $user->can('create_order');
     }
 
     /**
-     * Determine whether the user can update the order.
+     * Determine whether the user can update the model.
      */
     public function update(User $user, Order $order): bool
     {
-        // Only admin and managers can update orders
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('update_order');
     }
 
     /**
-     * Determine whether the user can update order status.
-     */
-    public function updateStatus(User $user, Order $order): bool
-    {
-        // Admin, managers, and customer service can update order status
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
-    }
-
-    /**
-     * Determine whether the user can cancel the order.
-     */
-    public function cancel(User $user, Order $order): bool
-    {
-        // Users can cancel their own orders if in cancellable state
-        if ($user->id === $order->user_id) {
-            return $order->status->canTransitionTo(\App\Enums\OrderStatus::Cancelled);
-        }
-
-        // Admin and managers can cancel any order
-        return $user->hasRole(['admin', 'manager']);
-    }
-
-    /**
-     * Determine whether the user can process payment for the order.
-     */
-    public function processPayment(User $user, Order $order): bool
-    {
-        // Users can process payment for their own orders
-        if ($user->id === $order->user_id) {
-            return $order->payment_status !== 'paid';
-        }
-
-        // Admin, managers, and customer service can process payments
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
-    }
-
-    /**
-     * Determine whether the user can delete the order.
+     * Determine whether the user can delete the model.
      */
     public function delete(User $user, Order $order): bool
     {
-        // Only admin can delete orders
-        return $user->hasRole('admin');
+        return $user->can('delete_order');
     }
 
     /**
-     * Determine whether the user can restore the order.
+     * Determine whether the user can bulk delete.
      */
-    public function restore(User $user, Order $order): bool
+    public function deleteAny(User $user): bool
     {
-        // Only admin can restore orders
-        return $user->hasRole('admin');
+        return $user->can('delete_any_order');
     }
 
     /**
-     * Determine whether the user can permanently delete the order.
+     * Determine whether the user can permanently delete.
      */
     public function forceDelete(User $user, Order $order): bool
     {
-        // Only admin can force delete orders
-        return $user->hasRole('admin');
+        return $user->can('force_delete_order');
     }
 
     /**
-     * Determine whether the user can view order analytics.
+     * Determine whether the user can permanently bulk delete.
      */
-    public function viewAnalytics(User $user): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('force_delete_any_order');
     }
 
     /**
-     * Determine whether the user can export orders.
+     * Determine whether the user can restore.
      */
-    public function export(User $user): bool
+    public function restore(User $user, Order $order): bool
     {
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
+        return $user->can('restore_order');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_order');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, Order $order): bool
+    {
+        return $user->can('replicate_order');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_order');
     }
 }

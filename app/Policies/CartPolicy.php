@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Policies;
 
-use App\Models\Cart;
 use App\Models\User;
+use App\Models\Cart;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class CartPolicy
@@ -13,152 +11,98 @@ class CartPolicy
     use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view any carts.
+     * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
+        return $user->can('view_any_cart');
     }
 
     /**
-     * Determine whether the user can view the cart.
+     * Determine whether the user can view the model.
      */
     public function view(User $user, Cart $cart): bool
     {
-        // Users can view their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin/manager/customer service can view all carts
-        return $user->hasRole(['admin', 'manager', 'customer_service']);
+        return $user->can('view_cart');
     }
 
     /**
-     * Determine whether the user can create carts.
+     * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
-        // All authenticated users can create carts
-        return true;
+        return $user->can('create_cart');
     }
 
     /**
-     * Determine whether the user can update the cart.
+     * Determine whether the user can update the model.
      */
     public function update(User $user, Cart $cart): bool
     {
-        // Users can update their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can update any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('update_cart');
     }
 
     /**
-     * Determine whether the user can delete the cart.
+     * Determine whether the user can delete the model.
      */
     public function delete(User $user, Cart $cart): bool
     {
-        // Users can delete their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can delete any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('delete_cart');
     }
 
     /**
-     * Determine whether the user can restore the cart.
+     * Determine whether the user can bulk delete.
      */
-    public function restore(User $user, Cart $cart): bool
+    public function deleteAny(User $user): bool
     {
-        // Only admin can restore carts
-        return $user->hasRole('admin');
+        return $user->can('delete_any_cart');
     }
 
     /**
-     * Determine whether the user can permanently delete the cart.
+     * Determine whether the user can permanently delete.
      */
     public function forceDelete(User $user, Cart $cart): bool
     {
-        // Only admin can force delete carts
-        return $user->hasRole('admin');
+        return $user->can('force_delete_cart');
     }
 
     /**
-     * Determine whether the user can add items to the cart.
+     * Determine whether the user can permanently bulk delete.
      */
-    public function addItem(User $user, Cart $cart): bool
+    public function forceDeleteAny(User $user): bool
     {
-        // Users can add items to their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can add items to any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('force_delete_any_cart');
     }
 
     /**
-     * Determine whether the user can update cart items.
+     * Determine whether the user can restore.
      */
-    public function updateItem(User $user, Cart $cart): bool
+    public function restore(User $user, Cart $cart): bool
     {
-        // Users can update items in their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can update items in any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('restore_cart');
     }
 
     /**
-     * Determine whether the user can remove items from the cart.
+     * Determine whether the user can bulk restore.
      */
-    public function removeItem(User $user, Cart $cart): bool
+    public function restoreAny(User $user): bool
     {
-        // Users can remove items from their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can remove items from any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('restore_any_cart');
     }
 
     /**
-     * Determine whether the user can clear the cart.
+     * Determine whether the user can replicate.
      */
-    public function clear(User $user, Cart $cart): bool
+    public function replicate(User $user, Cart $cart): bool
     {
-        // Users can clear their own cart
-        if ($user->id === $cart->user_id) {
-            return true;
-        }
-
-        // Admin and managers can clear any cart
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('replicate_cart');
     }
 
     /**
-     * Determine whether the user can migrate the cart.
+     * Determine whether the user can reorder.
      */
-    public function migrate(User $user): bool
+    public function reorder(User $user): bool
     {
-        // All authenticated users can migrate their guest cart
-        return true;
-    }
-
-    /**
-     * Determine whether the user can view cart analytics.
-     */
-    public function viewAnalytics(User $user): bool
-    {
-        return $user->hasRole(['admin', 'manager']);
+        return $user->can('reorder_cart');
     }
 }
