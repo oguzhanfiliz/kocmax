@@ -22,14 +22,14 @@ Kısa özet: Ürün/varyant fiyatları TRY normalize edilerek saklanır; kaynak 
 
 ## Detaylı Adımlar
 
-1) Kaynak → TRY dönüşüm: `CurrencyConversionService::convertPrice`.
-2) TRY → hedef gösterim: `ProductVariant::getPriceInCurrency / getFormattedPrice`.
-3) Kur güncelleme: `ExchangeRateService` (TCMB), `CurrencyResource` yönetimi.
-4) Hata/fallback: Kur alınamazsa varsayılan oranlar devreye girer.
+1) Varyant fiyatı, girilen para biriminden (ör. USD/EUR) otomatik olarak TL karşılığına çevrilir ve sistemde bu TL değeri saklanır.
+2) Müşteri arayüzünde görüntülerken, istenen para birimine (ör. USD) anlık olarak çevrilerek gösterilir.
+3) Döviz kurları TCMB’den düzenli aralıklarla güncellenir; gerekirse panelden manuel güncelleme yapılabilir.
+4) TCMB geçici olarak yanıt vermezse, sistem makul “yedek” oranlarla hesaplayarak kullanıcı deneyimini kesintiye uğratmaz.
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

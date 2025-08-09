@@ -16,7 +16,7 @@ Kısa özet: Kullanıcıya özel istek listesi; ekleme/çıkarma, favori, öncel
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

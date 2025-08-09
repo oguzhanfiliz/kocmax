@@ -6,6 +6,9 @@ Kısa özet: Strategy pattern tabanlı kampanya motoru; X Al Y Hediye, Paket İn
 - [Detaylı Akış Adımları](#detaylı-akış-adımları)
 - [Mimari ve Dosya Yapısı](#mimari-ve-dosya-yapısı)
 - [Senaryolar](#senaryolar)
+ - [Etkilenen Dosyalar ve File Structure](#etkilenen-dosyalar-ve-file-structure)
+ - [Mermaid Akış Diyagramı](#mermaid-akış-diyagramı)
+ - [Mimariler, Desenler, Prensipler](#mimariler-desenler-prensipler)
 
 ---
 
@@ -52,5 +55,44 @@ app/
 - “Paket %20 İndirim”: seçili paket ürün toplamına %20 indirim.
 - “Flash %50”: belirli zaman aralığında tüm ürünlerde %50.
 - “500₺ Üzeri Kargo Bedava”: sepet toplamı eşik üstünde ise ücretsiz kargo.
+
+---
+
+## Etkilenen Dosyalar ve File Structure
+
+```text
+app/
+  Services/Campaign/
+    CampaignEngine.php
+    Handlers/*                     # Tür bazlı handler'lar
+  ValueObjects/Campaign/
+    CampaignResult.php
+    CartContext.php
+  Models/Campaign.php
+  Filament/Resources/CampaignResource/*
+```
+
+---
+
+## Mermaid Akış Diyagramı
+
+```mermaid
+flowchart TD
+  A[Kampanya Oluştur] --> B[Tür Seç: Gift/Bundle/Flash/Shipping]
+  B --> C[Kural Alanları]
+  C --> D[Kaydet]
+  D --> E[Sepette CampaignEngine]
+  E --> F[Uygun Handler]
+  F --> G[CampaignResult]
+  G --> H[Sepet Özeti]
+```
+
+---
+
+## Mimariler, Desenler, Prensipler
+
+- Strategy: Tür başına ayrı handler.
+- Value Object: Sonuçlar ve bağlam immutable nesnelerle taşınır.
+- Koordinasyon: Engine, öncelik/stacking kurallarıyla sonuçları optimize eder.
 
 

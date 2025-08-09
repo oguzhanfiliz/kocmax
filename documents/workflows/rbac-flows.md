@@ -25,7 +25,7 @@ Kısa özet: Spatie Permission ile rol/izin yönetimi; Filament kaynaklarında P
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

@@ -16,7 +16,7 @@ Kısa özet: Kullanıcı adres defteri; CRUD, varsayılan fatura/teslimat adresl
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

@@ -18,14 +18,9 @@ Bu doküman, sepet sisteminin uçtan uca akışlarını; API uçları, strateji 
 
 ## Genel Bakış
 
-- API Controller: `app/Http/Controllers/Api/CartController.php`
-- Domain Servisleri: `app/Services/Cart/*`
-  - `CartService` (domain servis)
-  - `CartPriceCoordinator` (fiyat hesapları koordinasyonu)
-  - `CartValidationService` (iş kuralı validasyonları)
-  - `AuthenticatedCartStrategy` ve `GuestCartStrategy` (stratejiler)
-- Value Objects: `app/ValueObjects/Cart/*`
-- Fiyatlandırma entegrasyonu: `App\Services\PricingService` ve `CustomerTypeDetector`
+- Sepetinizi görüntüleyebilir, ürün ekleyebilir, miktar güncelleyebilir, ürünü kaldırabilir veya sepeti tamamen temizleyebilirsiniz.
+- Fiyatlar her işlemden sonra otomatik güncellenir; kupon/kampanya gibi indirimler sepete yansır.
+- Giriş yaptıysanız sepetiniz hesabınıza bağlıdır; misafirseniz oturum bazında takip edilir ve giriş yaptığınızda sepetiniz hesabınıza taşınabilir.
 
 ---
 

@@ -24,14 +24,14 @@ Kısa özet: Fiyatlandırma, müşteri tipine (B2B/B2C/Guest), kampanyalara ve v
 
 ## Detaylı Adımlar
 
-1) Müşteri tipi tespiti (dealer onayı, tier indirimleri vs.).
-2) Varyant baz fiyatının alınması (TRY normalize edilmiş değer).
-3) Kural setlerinin uygulanması (tier, quantity break, kampanya vb.).
-4) Sonuçların `PriceResult` ile döndürülmesi (VO).
+1) Önce müşterinin tipi belirlenir: B2B (bayi), B2C (son kullanıcı) ya da misafir.
+2) Varyantın güncel temel fiyatı alınır (TL bazlı saklanır).
+3) Varsa bayi indirimi, kampanyalar veya miktara göre indirim kuralları uygulanır.
+4) Sonuç olarak, indirimin kaynağı ve toplam etkiyi içeren temiz bir fiyat özeti oluşturulur.
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

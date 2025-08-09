@@ -85,7 +85,7 @@ Kısa özet: Filament panelde “İndirim Kuponları” kaynağı üzerinden, ko
 
 ---
 
-## İlgili Dosyalar
+## Teknik Detaylar
 
 - Filament: `app/Filament/Resources/DiscountCouponResource/*`
 - API (varsa): `app/Http/Controllers/Api/CouponController.php`

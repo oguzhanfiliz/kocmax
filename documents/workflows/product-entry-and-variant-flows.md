@@ -2,6 +2,7 @@
 
 Bu doküman, admin panel üzerinden ürün ve varyant giriş süreçlerini, SKU üretim stratejisini, kategori hiyerarşisini, müşteriye yansıyan davranışları ve konuyla ilgili dosya/klasör yapısını kapsamlı şekilde açıklar. Bölümler birbiriyle linklenmiştir.
 
+- [Ürünleri Nasıl Girebilirim? (Alternatifler ve Senaryolar)](#ürünleri-nasıl-girebilirim-alternatifler-ve-senaryolar)
 - [Ürün Girişi Akışı](#ürün-girişi-akışı)
 - [SKU Üretim Sistemi](#sku-üretim-sistemi)
 - [Kategori Hiyerarşisi](#kategori-hiyerarşisi)
@@ -21,22 +22,49 @@ Bu doküman, admin panel üzerinden ürün ve varyant giriş süreçlerini, SKU 
 
 ---
 
+## Ürünleri Nasıl Girebilirim? (Alternatifler ve Senaryolar)
+
+- Basit Ürün (Varyantsız)
+  - Ürün adını yazın; bağlantı adresi otomatik oluşur.
+  - SKU’yu boş bırakırsanız sistem anlaşılır bir SKU atar; isterseniz kendiniz yazabilirsiniz.
+  - Kategori seçerken derin bir alt kategoriyi işaretlediğinizde, bağlı üst kategoriler otomatik eklenir.
+  - Temel fiyatı ve para birimini belirleyin (varsayılan TL). Kaydedin.
+
+- Varyantlı Ürün (Renk/Beden vb.)
+  - Ürünü kaydettikten sonra “Varyantlar” sekmesinden seçenekleri seçin (ör. Renk: Kırmızı, Beden: M).
+  - Varyant adı seçtiklerinizden otomatik oluşturulur; SKU’yu boş bırakırsanız ürün SKU’sundan türetilir.
+  - Çok sayıda kombinasyonunuz varsa “Toplu Varyant Oluştur” ile tek seferde ekleyebilirsiniz.
+
+- Farklı Para Birimiyle Fiyat
+  - Ürün için temel fiyat TL’de durur; varyantlarda orijinal para biriminde fiyat girebilirsiniz (USD/EUR gibi).
+  - Sistem güncel kurla TL karşılığını otomatik hesaplar; vitrin tarafında hedef para birimine göre gösterir.
+
+- Kategori Seçimi (Ağaç)
+  - Ağaç yapıdan alt bir kategori seçtiğinizde, o kategoriye bağlı üst kategoriler de otomatik eklenir.
+  - Bu sayede listeleme/filtreler doğru çalışır.
+
+- Görseller
+  - Ürün ve varyantlara birden çok görsel yükleyebilirsiniz.
+  - Sürükle-bırak ile sıralamayı değiştirebilir, bir görseli öne çıkarabilirsiniz.
+
+- Stok ve Yayınlama Durumu
+  - Stok miktarını ve isterseniz minimum stok eşiğini belirleyin.
+  - Ürünü/varyantı aktif ya da pasif yapabilir, “yeni/öne çıkan/çok satan” rozetleriyle vurgulayabilirsiniz.
+
+- SEO ve Liste Sırası
+  - Ürün detayında SEO alanlarını doldurabilir, listede kaçıncı sırada görüneceğini belirleyebilirsiniz.
+
+- Doğrulama ve Hata Mesajları
+  - Zorunlu alanlar boşsa veya benzersiz olması gereken bilgiler (slug/SKU) çakışırsa, anlaşılır uyarılar gösterilir.
+
+---
+
 ## Ürün Girişi Akışı
 
-- **Admin arayüzü**: Filament `ProductResource` formu üzerinden yapılır.
-  - İsim (`name`) girildiğinde `slug` otomatik oluşturulur.
-  - `sku` boş bırakılırsa oluşturma sırasında otomatik atanır (mevcut fallback formatla). Dilerseniz manuel de girilebilir.
-  - Kategoriler ağaç yapıda sunulur. Alt kategori seçildiğinde üst kategoriler otomatik eklenir ve kayıt sonrası model düzeyinde kesin senkron yapılır.
-  - Temel fiyat (`base_price`) ve para birimi (`base_currency`) ürün seviyesinde tanımlanır (TRY varsayılan). Varyantlar bu değerleri baz alabilir.
-
-Uygulamadaki önemli davranışlar (referanslar):
-
-- Slug ve SKU otomatiği (fallback): `app/Models/Product.php`
-  - `creating` sırasında `slug` boşsa isimden türetilir; `sku` boşsa `PRD-YYMMDD-XXX` benzeri bir değer atanır.
-- Form tarafı: `app/Filament/Resources/ProductResource.php`
-  - Kategori seçimi hiyerarşik olarak sunulur, afterStateUpdated ile ebeveynler forma eklenir.
-  - Para birimi seçimine göre etiket/simge dinamikleşir.
-- Kayıt sonrası ebeveynlerin garanti senkronu: `Product::validateAndSyncCategories()`
+- Ürün ekleme ekranında ürün adını yazdığınızda, bağlantı adresi (slug) otomatik üretilir.
+- SKU alanını boş bırakırsanız sistem anlaşılır bir SKU’yu kendisi atar; dilerseniz manuel de girebilirsiniz.
+- Kategoriler ağaç şeklinde seçilir. Derindeki bir alt kategoriyi seçtiğinizde, ebeveyn kategoriler otomatik olarak eklenir.
+- Ürünün temel fiyatı ve para birimi ürün seviyesinde belirlenir (varsayılan TRY). Varyantlar bu bilgiyi devralabilir.
 
 ---
 
@@ -55,23 +83,16 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 ## Kategori Hiyerarşisi
 
-- **Ağaç yapısı ve önbellek**: `app/Models/Category.php`
-  - `Category::getTreeForSelect()` ağaç yapıyı üretir ve cache’ler.
-  - Derinlik ve çocuk sayısına sınırlar getirilerek performans korunur.
-- **Form davranışı**: `ProductResource` içindeki `categories` alanında alt kategori seçildiğinde üst kategoriler otomatik olarak forma eklenir.
-- **Model garantisi**: `Product::validateAndSyncCategories()` kayıt sırasında ebeveyn kategorilerin tamamını ilişkilendirerek veri bütünlüğünü sağlar.
+- Kategoriler, üst-alt ilişkili bir ağaç şeklinde sunulur. Örneğin “İş Ayakkabıları > S1P” gibi.
+- Alt bir kategoriye tıkladığınızda, bağlı olduğu üst kategoriler de otomatik seçilir. Böylece listeleme ve filtrelemede doğru görünürlük sağlanır.
 
 ---
 
 ## Görsel Yönetimi
 
-- İlişki yöneticisi: `ProductResource/RelationManagers/ImagesRelationManager.php`
-- Tekli/çoklu görsel yükleme, sıralama (`sort_order`), ana görsel (`is_primary`) ayarlama desteklenir.
-- Yükleme sınırları: maks 2MB, türler `jpeg/png/webp`, maks 10 görsel (çoklu yükleme akışında).
-- Kullanışlı aksiyonlar:
-  - “Görsel Yükle” toplu yükleme ve otomatik sıralama.
-  - “Ana Görsel Yap” diğerlerini otomatik pasifleştirir.
-  - Sürükle-bırak ile sıralama (reorder) ve hızlı butonlar (Yukarı/Aşağı).
+- Ürüne bir veya birden fazla görsel yükleyebilirsiniz. Yükleme sonrası görselleri sürükleyerek sırasını değiştirebilirsiniz.
+- İstediğiniz görseli “öne çıkarılmış” (liste ve detayda ilk gösterilen) olarak işaretleyebilirsiniz.
+- Toplu yükleme yapabilir, ardından sıralamayı kolayca düzenleyebilirsiniz.
 
 ---
 
@@ -86,9 +107,9 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 ## Fiyatlandırma ve Para Birimi
 
-- Ürün seviyesi: `base_currency` + `base_price` (varsayılan TRY); form etiket ve prefix sembolleri dinamik.
-- Varyant seviyesi (detaylar Varyantlar bölümünde): `source_currency` + `source_price` girilir, TRY eşleniği `price` alanına otomatik hesaplanır.
-- Çoklu para birimi dönüşümleri, görüntüleme sırasında hedef para birimine çevrim ile yapılır.
+- Ürünün temel fiyatı ve para birimi ürün seviyesinde belirlenir (varsayılan TRY). Form üzerindeki etiket ve para birimi simgeleri seçiminize göre otomatik güncellenir.
+- Varyantlarda, orijinal para biriminde fiyat girebilirsiniz; sistem güncel döviz kuruna göre TRY karşılığını otomatik hesaplar.
+- Müşteri tarafında, seçilen hedef para birimine göre fiyatlar otomatik olarak gösterilir.
 
 ---
 
@@ -116,15 +137,11 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 ## Varyantlar
 
-- **Arayüz**: `app/Filament/Resources/ProductResource/RelationManagers/VariantsRelationManager.php`
-  - Varyant adı (`name`) seçilen seçeneklerden (örn. Renk/Beden) otomatik derlenebilir.
-  - `sku` boşsa ürün SKU’su baz alınarak sonek ile otomatik oluşturulur (örn. `PRD-...-KIR-M`).
-  - **Çoklu para birimi**: Varyant formunda `source_currency` ve `source_price` girilir. TRY karşılığı (`price`) otomatik hesaplanır; TCMB servisi kullanılır, hata durumunda fallback oranlar devreye girer.
-  - Görseller ve fiziksel boyutlar varyant bazında yönetilir.
-  - **Toplu oluşturma**: Renkler x Bedenler kombinasyonları tek aksiyonla oluşturulabilir; SKU her kombinasyon için otomatik türetilir.
-
-- **Müşteri tarafı yardımcıları**: `app/Models/ProductVariant.php`
-  - Farklı para birimlerinde fiyat, döviz kuru ve biçimlendirme yardımcıları içerir (örn. `getPriceInCurrency`, `getFormattedPrice`).
+- Renk ve beden gibi seçeneklerle, tek bir ürünün farklı varyantlarını oluşturabilirsiniz.
+- Varyant adları seçtiğiniz seçeneklerden otomatik türetilir. SKU alanını boş bırakırsanız, ürünün SKU’su baz alınarak varyanta özel bir sonek eklenir.
+- Varyant fiyatını orijinal para biriminde girebilirsiniz; sistem güncel döviz kuruna göre TRY karşılığını otomatik hesaplar.
+- Varyant bazında görseller ve fiziksel ölçüler tanımlayabilirsiniz.
+- Çok sayıda kombinasyonu, toplu varyant oluşturma aksiyonu ile tek hamlede ekleyebilirsiniz.
 
 ---
 
@@ -160,13 +177,14 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 ## Validasyon ve Hata Yönetimi
 
-- Form tarafı: zorunlu alanlar (örn. `name`, `slug`), benzersiz kısıtlar (örn. `slug`, `sku`, `barcode`).
-- Model tarafı: kategori ebeveyn senkronu, slug üretimi, SKU fallback üretimi.
-- Hata durumları kullanıcı dostu mesajlarla gösterilir; backend’de log’lama aktiftir.
+- Zorunlu alanlar doldurulmadığında veya benzersiz olması gereken bilgiler tekrarlandığında, form üzerinde anlaşılır uyarılar görürsünüz.
+- Kategori seçimi ve varyant üretimi gibi alanlarda sistem otomatik düzeltmeler yapar; başarısız olduğunda neyin eksik/hatalı olduğunu açıkça bildirir.
 
 ---
 
-## İlgili Dosya ve Klasör Yapısı
+## Teknik Detaylar ve Dosya Yapısı
+
+Bu bölüm teknik ekip içindir. Üstteki açıklamalar kullanıcı/iş tarafına yöneliktir.
 
 ```text
 app/

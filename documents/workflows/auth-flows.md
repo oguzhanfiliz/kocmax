@@ -15,7 +15,7 @@ Kısa özet: Laravel Sanctum tabanlı; kayıt, giriş, token yenileme, logout, �
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/

@@ -6,6 +6,8 @@ Kısa özet: Sepet doğrulaması sonrasında `CheckoutCoordinator` sipariş olu�
 - [Detaylı Adımlar](#detaylı-adımlar)
 - [Mimari ve Dosya Yapısı](#mimari-ve-dosya-yapısı)
 - [Senaryolar](#senaryolar)
+ - [Mermaid Akış Diyagramı](#mermaid-akış-diyagramı)
+ - [Mimariler, Desenler, Prensipler](#mimariler-desenler-prensipler)
 
 ---
 
@@ -48,5 +50,29 @@ app/
 - Guest checkout: adres ve iletişim bilgisi ile sipariş; e-posta ile takip linki.
 - Auth checkout: kayıtlı adres/cihaz bazlı token ile.
 - Ödeme başarısız: sipariş pending/cancel akışı; tekrar deneme.
+
+---
+
+## Mermaid Akış Diyagramı
+
+```mermaid
+flowchart TD
+  A[Checkout] --> B[CartService.prepareCheckout]
+  B --> C[CheckoutContext]
+  C --> D[OrderCreationService]
+  D --> E[OrderPaymentService]
+  E --> F{Başarılı?}
+  F -- Evet --> G[OrderNotificationService]
+  G --> H[Cart Clear]
+  F -- Hayır --> I[Retry/Cancel]
+```
+
+---
+
+## Mimariler, Desenler, Prensipler
+
+- Clear domain boundary: Cart → CheckoutContext → Order.
+- State pattern (Order States): Sipariş durum geçişleri kontrollü.
+- Dayanıklılık: Ödeme başarısızlıklarında güvenli yeniden deneme/iptal.
 
 

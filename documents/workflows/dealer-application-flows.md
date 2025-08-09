@@ -26,7 +26,7 @@ Kısa özet: B2B başvuru formu, onay/red süreci, rol/izin ataması ve bildirim
 
 ---
 
-## Mimari ve Dosya Yapısı
+## Teknik Detaylar ve Dosya Yapısı
 
 ```text
 app/
