@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Pricing System Services
         $this->registerPricingServices();
+        
+        // Register Cart System Services
+        $this->registerCartServices();
 
         // Laravel Ignition Livewire Context Provider hatası için geçici çözüm
         if (class_exists(Ignition::class)) {
@@ -62,6 +65,38 @@ class AppServiceProvider extends ServiceProvider
         
         // Register PricingService as singleton
         $this->app->singleton(\App\Services\PricingService::class);
+    }
+
+    /**
+     * Register cart system services
+     */
+    private function registerCartServices(): void
+    {
+        // Register Cart Strategy Factory
+        $this->app->singleton(\App\Services\Cart\CartStrategyFactory::class);
+        
+        // Register Cart Strategies
+        $this->app->singleton(\App\Services\Cart\AuthenticatedCartStrategy::class);
+        $this->app->singleton(\App\Services\Cart\GuestCartStrategy::class);
+        
+        // Bind CartStrategyInterface to default implementation
+        // Note: This is a dynamic binding - actual strategy is determined by CartStrategyFactory
+        $this->app->bind(
+            \App\Contracts\Cart\CartStrategyInterface::class,
+            function ($app) {
+                // Default to authenticated strategy - this will be overridden by CartService
+                return $app->make(\App\Services\Cart\AuthenticatedCartStrategy::class);
+            }
+        );
+        
+        // Register CartService Interface
+        $this->app->bind(
+            \App\Contracts\Cart\CartServiceInterface::class,
+            \App\Services\Cart\CartService::class
+        );
+        
+        // Register CartService as singleton
+        $this->app->singleton(\App\Services\Cart\CartService::class);
     }
 
     /**
