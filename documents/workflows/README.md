@@ -11,6 +11,14 @@ Bu klasör, sistemdeki uçtan uca iş akışlarını toplar. Her dosya, admin ve
  - [variant-flows.md](./variant-flows.md) — Varyant oluşturma, fiyat/kur, stok, çoklu görsel
  - [campaign-flows.md](./campaign-flows.md) — Kampanya motoru ve handler akışları
  - [order-checkout-flows.md](./order-checkout-flows.md) — Checkout → Order oluşturma → Ödeme → Bildirim
+ - [pricing-flows.md](./pricing-flows.md) — Fiyatlandırma stratejileri ve PriceResult
+ - [currency-flows.md](./currency-flows.md) — Para birimi/kur yönetimi
+ - [rbac-flows.md](./rbac-flows.md) — Rol/izin ve policy akışları
+ - [dealer-application-flows.md](./dealer-application-flows.md) — Bayi başvuru süreci
+ - [wishlist-flows.md](./wishlist-flows.md) — İstek listesi akışları
+ - [address-flows.md](./address-flows.md) — Adres defteri akışları
+ - [auth-flows.md](./auth-flows.md) — Kimlik doğrulama akışları
+ - [TASKS.md](./TASKS.md) — Dokümantasyon görev listesi
 
 ### Adlandırma Kuralları
 - Kebab-case dosya adı kullanın: `xxx-flows.md`

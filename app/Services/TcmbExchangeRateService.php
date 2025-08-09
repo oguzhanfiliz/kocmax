@@ -16,8 +16,11 @@ class TcmbExchangeRateService
     private const CACHE_DURATION = 3600; // 1 hour
     private const REQUEST_TIMEOUT = 30;
     
+    // TCMB'deki tüm para birimleri (2024-08-09 itibariyle)
     private array $supportedCurrencies = [
-        'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK'
+        'USD', 'AUD', 'DKK', 'EUR', 'GBP', 'CHF', 'SEK', 'CAD', 'KWD', 'NOK', 
+        'SAR', 'JPY', 'BGN', 'RON', 'RUB', 'CNY', 'PKR', 'QAR', 'KRW', 'AZN', 
+        'AED', 'XDR'
     ];
 
     public function updateRates(): array

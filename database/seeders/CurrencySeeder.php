@@ -13,65 +13,34 @@ class CurrencySeeder extends Seeder
      */
     public function run(): void
     {
-        // Soft delete'li kayıtlar nedeniyle unique index çatışması olmaması için
-        // withTrashed() ile upsert sonrası restore ediyoruz.
+        // Sadece temel/popüler para birimleri - Admin isterse diğerlerini ekleyebilir
+        $currencies = [
+            // Ana Para Birimleri
+            ['code' => 'TRY', 'name' => 'Turkish Lira', 'symbol' => '₺', 'rate' => 1.00, 'is_default' => true, 'is_active' => true],
+            ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$', 'rate' => 30.50, 'is_active' => true],
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'rate' => 33.25, 'is_active' => true],
+            ['code' => 'GBP', 'name' => 'British Pound', 'symbol' => '£', 'rate' => 38.75, 'is_active' => true],
+        ];
 
-        // Türk Lirası - Base Currency
-        $try = Currency::withTrashed()->updateOrCreate(
-            ['code' => 'TRY'],
-            [
-                'name' => 'Turkish Lira',
-                'symbol' => '₺',
-                'exchange_rate' => 1.00,
-                'is_default' => true,
-                'is_active' => true,
-            ]
-        );
-        if ($try->trashed()) {
-            $try->restore();
+        foreach ($currencies as $currencyData) {
+            $currency = Currency::withTrashed()->updateOrCreate(
+                ['code' => $currencyData['code']],
+                [
+                    'name' => $currencyData['name'],
+                    'symbol' => $currencyData['symbol'],
+                    'exchange_rate' => $currencyData['rate'],
+                    'is_default' => $currencyData['is_default'] ?? false,
+                    'is_active' => $currencyData['is_active'],
+                ]
+            );
+            
+            if ($currency->trashed()) {
+                $currency->restore();
+            }
         }
-
-        // Amerikan Doları
-        $usd = Currency::withTrashed()->updateOrCreate(
-            ['code' => 'USD'],
-            [
-                'name' => 'US Dollar',
-                'symbol' => '$',
-                'exchange_rate' => 30.50,
-                'is_active' => true,
-            ]
-        );
-        if ($usd->trashed()) {
-            $usd->restore();
-        }
-
-        // Euro
-        $eur = Currency::withTrashed()->updateOrCreate(
-            ['code' => 'EUR'],
-            [
-                'name' => 'Euro',
-                'symbol' => '€',
-                'exchange_rate' => 33.25,
-                'is_active' => true,
-            ]
-        );
-        if ($eur->trashed()) {
-            $eur->restore();
-        }
-
-        // İngiliz Sterlini
-        $gbp = Currency::withTrashed()->updateOrCreate(
-            ['code' => 'GBP'],
-            [
-                'name' => 'British Pound',
-                'symbol' => '£',
-                'exchange_rate' => 38.75,
-                'is_active' => true,
-            ]
-        );
-        if ($gbp->trashed()) {
-            $gbp->restore();
-        }
-
+        
+        $this->command->info('✅ ' . count($currencies) . ' temel para birimi eklendi/güncellendi');
+        $this->command->info('📝 Admin panelden istediğiniz diğer para birimlerini ekleyebilirsiniz');
+        $this->command->info('🌍 TCMB destekli para birimleri: USD, AUD, DKK, EUR, GBP, CHF, SEK, CAD, KWD, NOK, SAR, JPY, BGN, RON, RUB, CNY, PKR, QAR, KRW, AZN, AED, XDR');
     }
 }
