@@ -13,48 +13,64 @@ class CurrencySeeder extends Seeder
      */
     public function run(): void
     {
-        // Foreign key constraint nedeniyle truncate yerine delete kullanıyoruz
-        Currency::query()->delete();
+        // Soft delete'li kayıtlar nedeniyle unique index çatışması olmaması için
+        // withTrashed() ile upsert sonrası restore ediyoruz.
 
         // Türk Lirası - Base Currency
-        Currency::updateOrCreate(
+        $try = Currency::withTrashed()->updateOrCreate(
             ['code' => 'TRY'],
             [
                 'name' => 'Turkish Lira',
                 'symbol' => '₺',
                 'exchange_rate' => 1.00,
                 'is_default' => true,
+                'is_active' => true,
             ]
         );
+        if ($try->trashed()) {
+            $try->restore();
+        }
 
         // Amerikan Doları
-        Currency::updateOrCreate(
+        $usd = Currency::withTrashed()->updateOrCreate(
             ['code' => 'USD'],
             [
                 'name' => 'US Dollar',
                 'symbol' => '$',
                 'exchange_rate' => 30.50,
+                'is_active' => true,
             ]
         );
+        if ($usd->trashed()) {
+            $usd->restore();
+        }
 
         // Euro
-        Currency::updateOrCreate(
+        $eur = Currency::withTrashed()->updateOrCreate(
             ['code' => 'EUR'],
             [
                 'name' => 'Euro',
                 'symbol' => '€',
                 'exchange_rate' => 33.25,
+                'is_active' => true,
             ]
         );
+        if ($eur->trashed()) {
+            $eur->restore();
+        }
 
         // İngiliz Sterlini (opsiyonel)
-        Currency::updateOrCreate(
+        $gbp = Currency::withTrashed()->updateOrCreate(
             ['code' => 'GBP'],
             [
                 'name' => 'British Pound',
                 'symbol' => '£',
                 'exchange_rate' => 38.75,
+                'is_active' => true,
             ]
         );
+        if ($gbp->trashed()) {
+            $gbp->restore();
+        }
     }
 }

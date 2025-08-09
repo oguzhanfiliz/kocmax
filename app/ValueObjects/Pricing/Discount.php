@@ -13,6 +13,7 @@ class Discount
 
     private readonly float $value;
     private readonly string $type;
+    private readonly ?string $currency;
     private readonly string $name;
     private readonly ?string $description;
     private readonly int $priority;
@@ -41,6 +42,7 @@ class Discount
         $this->name = $name;
         $this->description = $description;
         $this->priority = $priority;
+        $this->currency = null;
     }
 
     public function getValue(): float
@@ -85,6 +87,9 @@ class Discount
         }
 
         // Fixed amount discount
+        if ($this->currency !== null && $this->currency !== $originalPrice->getCurrency()) {
+            throw new InvalidArgumentException('Currency mismatch between discount and price');
+        }
         $discountAmount = new Price($this->value, $originalPrice->getCurrency());
         return $originalPrice->subtract($discountAmount);
     }
@@ -96,6 +101,9 @@ class Discount
         }
 
         // Fixed amount discount
+        if ($this->currency !== null && $this->currency !== $originalPrice->getCurrency()) {
+            throw new InvalidArgumentException('Currency mismatch between discount and price');
+        }
         $fixedAmount = new Price($this->value, $originalPrice->getCurrency());
         
         // Don't allow discount to exceed original price
@@ -124,7 +132,8 @@ class Discount
             return number_format($this->value, 1) . '%';
         }
 
-        return number_format($this->value, 2) . ' TRY';
+        $currency = $this->currency ?? 'TRY';
+        return number_format($this->value, 1) . ' ' . $currency;
     }
 
     public function toArray(): array
@@ -144,13 +153,25 @@ class Discount
         return new self($percentage, self::TYPE_PERCENTAGE, $name, $description, $priority);
     }
 
-    public static function fixedAmount(float $amount, string $name = 'Fixed Amount Discount', ?string $description = null, int $priority = 0): self
+    public static function fixedAmount(float $amount, string $currency = 'TRY', string $name = 'Fixed Amount Discount', ?string $description = null, int $priority = 0): self
     {
-        return new self($amount, self::TYPE_FIXED_AMOUNT, $name, $description, $priority);
+        $instance = new self($amount, self::TYPE_FIXED_AMOUNT, $name, $description, $priority);
+        $instance->currency = strtoupper($currency);
+        return $instance;
     }
 
     public function __toString(): string
     {
-        return sprintf('%s (%s)', $this->name, $this->format());
+        return $this->format();
+    }
+
+    public function isFixed(): bool
+    {
+        return $this->isFixedAmount();
+    }
+
+    public function getCurrency(): ?string
+    {
+        return $this->currency;
     }
 }

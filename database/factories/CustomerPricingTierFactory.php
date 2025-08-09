@@ -21,7 +21,7 @@ class CustomerPricingTierFactory extends Factory
             'name' => $this->faker->randomElement(['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']),
             'description' => $this->faker->sentence(),
             'discount_percentage' => $this->faker->randomFloat(2, 5, 25),
-            'minimum_order_amount' => $this->faker->randomFloat(2, 0, 1000),
+            'min_order_amount' => $this->faker->randomFloat(2, 0, 1000),
             'credit_limit' => $this->faker->randomFloat(2, 1000, 50000),
             'payment_terms_days' => $this->faker->randomElement([15, 30, 45, 60]),
             'is_active' => true,
@@ -36,7 +36,7 @@ class CustomerPricingTierFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'B2B ' . $attributes['name'],
-            'minimum_order_amount' => $this->faker->randomFloat(2, 500, 2000),
+            'min_order_amount' => $this->faker->randomFloat(2, 500, 2000),
             'credit_limit' => $this->faker->randomFloat(2, 5000, 100000),
         ]);
     }
@@ -48,7 +48,7 @@ class CustomerPricingTierFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'B2C ' . $attributes['name'],
-            'minimum_order_amount' => 0,
+            'min_order_amount' => 0,
             'credit_limit' => 0,
             'payment_terms_days' => 0,
         ]);

@@ -105,13 +105,15 @@ class Price
 
     public function format(): string
     {
-        return number_format($this->amount, 2) . ' ' . $this->currency;
+        $symbol = $this->getCurrencySymbol();
+        // TR locale biçimi beklendiği için: 1.234,56 ₺
+        $formatted = number_format($this->amount, 2, ',', '.');
+        return $formatted . ' ' . trim($symbol);
     }
 
     public function formatForDisplay(): string
     {
-        $symbol = $this->getCurrencySymbol();
-        return $symbol . number_format($this->amount, 2);
+        return $this->format();
     }
 
     private function getCurrencySymbol(): string
@@ -121,16 +123,14 @@ class Price
             'USD' => '$',
             'EUR' => '€',
             'GBP' => '£',
-            default => $this->currency . ' '
+            default => $this->currency
         };
     }
 
     private function ensureSameCurrency(Price $other): void
     {
         if ($this->currency !== $other->currency) {
-            throw new InvalidArgumentException(
-                sprintf('Cannot operate on different currencies: %s and %s', $this->currency, $other->currency)
-            );
+            throw new InvalidArgumentException('Cannot perform operations on different currencies');
         }
     }
 

@@ -33,7 +33,6 @@ jobs:
           cd /home/mutfakyapimnet/b2bb2c.mutfakyapim.net
           # Git pull
           git pull origin main --force
-          
      
           
           # .env dosyasını kopyala
@@ -46,6 +45,9 @@ jobs:
           sed -i 's/^DB_USERNAME=.*/DB_USERNAME=mutfakyapimnet_b2bb2c/' .env
           sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=MUep6BUvBajj/' .env
           sed -i 's/^EXCHANGE_RATE_PROVIDER=.*/EXCHANGE_RATE_PROVIDER=tcmb/' .env
+          sed -i 's/^EMAIL_VERIFICATION_ENABLED=.*/EMAIL_VERIFICATION_ENABLED=false/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env
+          
           # Debug true kalacak, değiştirme
           # Composer dependencies güncelle
           composer install --no-interaction
