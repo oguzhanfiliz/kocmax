@@ -29,14 +29,14 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Kullanıcı adreslerini al",
-                "description": "Kimliği doğrulanmış kullanıcı için tüm adresleri al",
+                "summary": "Adresleri listele",
+                "description": "Kimliği doğrulanmış kullanıcının tüm adreslerini getirir",
                 "operationId": "getAddresses",
                 "parameters": [
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "Filter addresses by type",
+                        "description": "Adres tipi filtresi (teslimat, fatura veya her ikisi)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -50,7 +50,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Addresses retrieved successfully",
+                        "description": "Adresler başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -63,7 +63,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Addresses retrieved successfully"
+                                            "example": "Adresler başarıyla getirildi"
                                         }
                                     },
                                     "type": "object"
@@ -85,10 +85,11 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Yeni adres oluştur",
-                "description": "Kimliği doğrulanmış kullanıcı için yeni bir adres oluştur",
+                "summary": "Adres oluştur",
+                "description": "Kimliği doğrulanmış kullanıcı için yeni bir adres oluşturur",
                 "operationId": "createAddress",
                 "requestBody": {
+                    "description": "Adres bilgileri",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -103,63 +104,75 @@
                                 ],
                                 "properties": {
                                     "title": {
+                                        "description": "Adres başlığı",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Home"
+                                        "example": "Ev"
                                     },
                                     "first_name": {
+                                        "description": "Ad",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "John"
+                                        "example": "Ahmet"
                                     },
                                     "last_name": {
+                                        "description": "Soyad",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Doe"
+                                        "example": "Yılmaz"
                                     },
                                     "company_name": {
+                                        "description": "Şirket adı",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "ABC Company",
+                                        "example": "ABC Şirket",
                                         "nullable": true
                                     },
                                     "phone": {
+                                        "description": "Telefon numarası",
                                         "type": "string",
                                         "maxLength": 20,
                                         "example": "+90 555 123 4567",
                                         "nullable": true
                                     },
                                     "address_line_1": {
+                                        "description": "Adres satırı 1",
                                         "type": "string",
-                                        "example": "123 Main Street"
+                                        "example": "Atatürk Caddesi No:123"
                                     },
                                     "address_line_2": {
+                                        "description": "Adres satırı 2",
                                         "type": "string",
-                                        "example": "Apartment 4B",
+                                        "example": "Daire 4B",
                                         "nullable": true
                                     },
                                     "city": {
+                                        "description": "Şehir",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Istanbul"
+                                        "example": "İstanbul"
                                     },
                                     "state": {
+                                        "description": "İl/Eyalet",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Istanbul",
+                                        "example": "İstanbul",
                                         "nullable": true
                                     },
                                     "postal_code": {
+                                        "description": "Posta kodu",
                                         "type": "string",
                                         "maxLength": 20,
                                         "example": "34000"
                                     },
                                     "country": {
+                                        "description": "Ülke",
                                         "type": "string",
                                         "maxLength": 2,
                                         "example": "TR"
                                     },
                                     "type": {
+                                        "description": "Adres türü",
                                         "type": "string",
                                         "enum": [
                                             "shipping",
@@ -169,16 +182,19 @@
                                         "example": "both"
                                     },
                                     "is_default_shipping": {
+                                        "description": "Varsayılan teslimat adresi mi",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_default_billing": {
+                                        "description": "Varsayılan fatura adresi mi",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "notes": {
+                                        "description": "Notlar",
                                         "type": "string",
-                                        "example": "Ring the doorbell",
+                                        "example": "Zili çalın",
                                         "nullable": true
                                     }
                                 },
@@ -189,7 +205,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Address created successfully",
+                        "description": "Adres başarıyla oluşturuldu",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -199,7 +215,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Address created successfully"
+                                            "example": "Adres başarıyla oluşturuldu"
                                         }
                                     },
                                     "type": "object"
@@ -226,14 +242,14 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Belirli adresi al",
-                "description": "ID'ye göre belirli bir adresi al",
+                "summary": "Adres detaylarını getir",
+                "description": "Belirtilen ID'ye göre adres detaylarını getirir",
                 "operationId": "getAddress",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Address ID",
+                        "description": "Adres benzersiz kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -242,7 +258,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Address retrieved successfully",
+                        "description": "Adres başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -252,7 +268,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Address retrieved successfully"
+                                            "example": "Adres başarıyla getirildi"
                                         }
                                     },
                                     "type": "object"
@@ -278,13 +294,13 @@
                     "Addresses"
                 ],
                 "summary": "Adresi güncelle",
-                "description": "Belirli bir adresi güncelle",
+                "description": "Belirli bir adresi günceller",
                 "operationId": "updateAddress",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Address ID",
+                        "description": "Adres benzersiz kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -292,69 +308,82 @@
                     }
                 ],
                 "requestBody": {
+                    "description": "Güncellenecek adres bilgileri",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
                                     "title": {
+                                        "description": "Adres başlığı",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Home"
+                                        "example": "Ev"
                                     },
                                     "first_name": {
+                                        "description": "Ad",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "John"
+                                        "example": "Ahmet"
                                     },
                                     "last_name": {
+                                        "description": "Soyad",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Doe"
+                                        "example": "Yılmaz"
                                     },
                                     "company_name": {
+                                        "description": "Şirket adı",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "ABC Company",
+                                        "example": "ABC Şirket",
                                         "nullable": true
                                     },
                                     "phone": {
+                                        "description": "Telefon numarası",
                                         "type": "string",
                                         "maxLength": 20,
                                         "example": "+90 555 123 4567",
                                         "nullable": true
                                     },
                                     "address_line_1": {
+                                        "description": "Adres satırı 1",
                                         "type": "string",
-                                        "example": "123 Main Street"
+                                        "example": "Atatürk Caddesi No:123"
                                     },
                                     "address_line_2": {
+                                        "description": "Adres satırı 2",
                                         "type": "string",
-                                        "example": "Apartment 4B",
+                                        "example": "Daire 4B",
                                         "nullable": true
                                     },
                                     "city": {
+                                        "description": "Şehir",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Istanbul"
+                                        "example": "İstanbul"
                                     },
                                     "state": {
+                                        "description": "İl/Eyalet",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Istanbul",
+                                        "example": "İstanbul",
                                         "nullable": true
                                     },
                                     "postal_code": {
+                                        "description": "Posta kodu",
                                         "type": "string",
                                         "maxLength": 20,
                                         "example": "34000"
                                     },
                                     "country": {
+                                        "description": "Ülke",
                                         "type": "string",
                                         "maxLength": 2,
                                         "example": "TR"
                                     },
                                     "type": {
+                                        "description": "Adres türü",
                                         "type": "string",
                                         "enum": [
                                             "shipping",
@@ -364,16 +393,19 @@
                                         "example": "both"
                                     },
                                     "is_default_shipping": {
+                                        "description": "Varsayılan teslimat adresi mi",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "is_default_billing": {
+                                        "description": "Varsayılan fatura adresi mi",
                                         "type": "boolean",
                                         "example": false
                                     },
                                     "notes": {
+                                        "description": "Notlar",
                                         "type": "string",
-                                        "example": "Ring the doorbell",
+                                        "example": "Zili çalın",
                                         "nullable": true
                                     }
                                 },
@@ -384,7 +416,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Address updated successfully",
+                        "description": "Adres başarıyla güncellendi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -394,7 +426,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Address updated successfully"
+                                            "example": "Adres başarıyla güncellendi"
                                         }
                                     },
                                     "type": "object"
@@ -423,13 +455,13 @@
                     "Addresses"
                 ],
                 "summary": "Adresi sil",
-                "description": "Belirli bir adresi sil (geçici silme)",
+                "description": "Belirli bir adresi siler (geçici silme)",
                 "operationId": "deleteAddress",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Address ID",
+                        "description": "Adres benzersiz kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -438,14 +470,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Address deleted successfully",
+                        "description": "Adres başarıyla silindi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Address deleted successfully"
+                                            "example": "Adres başarıyla silindi"
                                         }
                                     },
                                     "type": "object"
@@ -472,14 +504,14 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Varsayılan gönderim adresi olarak ayarla",
-                "description": "Belirtilen adresi varsayılan gönderim adresi olarak ayarla",
+                "summary": "Varsayılan teslimat adresini ayarla",
+                "description": "Belirtilen adresi varsayılan teslimat adresi olarak ayarlar",
                 "operationId": "setDefaultShipping",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Address ID",
+                        "description": "Adres benzersiz kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -488,7 +520,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Default shipping address set successfully",
+                        "description": "Varsayılan teslimat adresi başarıyla ayarlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -498,7 +530,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Default shipping address set successfully"
+                                            "example": "Varsayılan teslimat adresi başarıyla ayarlandı"
                                         }
                                     },
                                     "type": "object"
@@ -513,14 +545,14 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "422": {
-                        "description": "Address cannot be used for shipping",
+                        "description": "Adres teslimat için kullanılamaz",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "This address cannot be used for shipping"
+                                            "example": "Bu adres teslimat için kullanılamaz"
                                         }
                                     },
                                     "type": "object"
@@ -541,14 +573,14 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Varsayılan fatura adresi olarak ayarla",
-                "description": "Belirtilen adresi varsayılan fatura adresi olarak ayarla",
+                "summary": "Varsayılan fatura adresini ayarla",
+                "description": "Belirtilen adresi varsayılan fatura adresi olarak ayarlar",
                 "operationId": "setDefaultBilling",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Address ID",
+                        "description": "Adres benzersiz kimliği",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -557,7 +589,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Default billing address set successfully",
+                        "description": "Varsayılan fatura adresi başarıyla ayarlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -567,7 +599,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Default billing address set successfully"
+                                            "example": "Varsayılan fatura adresi başarıyla ayarlandı"
                                         }
                                     },
                                     "type": "object"
@@ -582,14 +614,14 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "422": {
-                        "description": "Address cannot be used for billing",
+                        "description": "Adres fatura için kullanılamaz",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "This address cannot be used for billing"
+                                            "example": "Bu adres fatura için kullanılamaz"
                                         }
                                     },
                                     "type": "object"
@@ -610,17 +642,18 @@
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Varsayılan adresleri al",
-                "description": "Kullanıcının varsayılan gönderim ve fatura adreslerini al",
+                "summary": "Varsayılan adresleri getir",
+                "description": "Kullanıcının varsayılan teslimat ve fatura adreslerini getirir",
                 "operationId": "getDefaultAddresses",
                 "responses": {
                     "200": {
-                        "description": "Default addresses retrieved successfully",
+                        "description": "Varsayılan adresler başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "data": {
+                                            "description": "Varsayılan adresler",
                                             "properties": {
                                                 "shipping": {
                                                     "oneOf": [
@@ -628,7 +661,8 @@
                                                             "$ref": "#/components/schemas/AddressResource"
                                                         }
                                                     ],
-                                                    "nullable": true
+                                                    "nullable": true,
+                                                    "description": "Varsayılan teslimat adresi"
                                                 },
                                                 "billing": {
                                                     "oneOf": [
@@ -636,14 +670,15 @@
                                                             "$ref": "#/components/schemas/AddressResource"
                                                         }
                                                     ],
-                                                    "nullable": true
+                                                    "nullable": true,
+                                                    "description": "Varsayılan fatura adresi"
                                                 }
                                             },
                                             "type": "object"
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Default addresses retrieved successfully"
+                                            "example": "Varsayılan adresler başarıyla getirildi"
                                         }
                                     },
                                     "type": "object"
@@ -681,15 +716,18 @@
                                 ],
                                 "properties": {
                                     "email": {
+                                        "description": "E-posta adresi",
                                         "type": "string",
                                         "format": "email",
                                         "example": "user@example.com"
                                     },
                                     "password": {
+                                        "description": "Şifre",
                                         "type": "string",
                                         "example": "password123"
                                     },
                                     "device_name": {
+                                        "description": "Cihaz adı",
                                         "type": "string",
                                         "example": "mobile_app"
                                     }
@@ -701,33 +739,40 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login successful",
+                        "description": "Giriş başarılı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Login successful"
+                                            "example": "Giriş başarılı"
                                         },
                                         "data": {
+                                            "description": "Giriş verileri",
                                             "properties": {
                                                 "user": {
+                                                    "description": "Kullanıcı bilgileri",
                                                     "type": "object"
                                                 },
                                                 "token": {
+                                                    "description": "Erişim belirteci",
                                                     "type": "string",
                                                     "example": "1|abc123def456..."
                                                 },
                                                 "refresh_token": {
+                                                    "description": "Yenileme belirteci",
                                                     "type": "string",
                                                     "example": "2|xyz789abc123..."
                                                 },
                                                 "expires_at": {
+                                                    "description": "Belirteç bitiş tarihi",
                                                     "type": "string",
                                                     "format": "date-time"
                                                 }
@@ -741,18 +786,20 @@
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials",
+                        "description": "Geçersiz giriş bilgileri",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Invalid credentials"
+                                            "example": "Geçersiz giriş bilgileri"
                                         }
                                     },
                                     "type": "object"
@@ -761,20 +808,23 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error",
+                        "description": "Doğrulama hatası",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Validation failed"
+                                            "example": "Doğrulama başarısız"
                                         },
                                         "errors": {
+                                            "description": "Doğrulama hataları",
                                             "type": "object"
                                         }
                                     },
@@ -784,18 +834,20 @@
                         }
                     },
                     "429": {
-                        "description": "Too many login attempts",
+                        "description": "Çok fazla giriş denemesi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Too many login attempts. Please try again later."
+                                            "example": "Çok fazla giriş denemesi. Lütfen daha sonra tekrar deneyin."
                                         }
                                     },
                                     "type": "object"
@@ -827,27 +879,33 @@
                                 ],
                                 "properties": {
                                     "name": {
+                                        "description": "Ad soyad",
                                         "type": "string",
                                         "example": "John Doe"
                                     },
                                     "email": {
+                                        "description": "E-posta adresi",
                                         "type": "string",
                                         "format": "email",
                                         "example": "user@example.com"
                                     },
                                     "password": {
+                                        "description": "Şifre",
                                         "type": "string",
                                         "example": "password123"
                                     },
                                     "password_confirmation": {
+                                        "description": "Şifre onayı",
                                         "type": "string",
                                         "example": "password123"
                                     },
                                     "phone": {
+                                        "description": "Telefon numarası",
                                         "type": "string",
                                         "example": "+905551234567"
                                     },
                                     "customer_type": {
+                                        "description": "Müşteri tipi",
                                         "type": "string",
                                         "enum": [
                                             "B2C",
@@ -863,18 +921,20 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Registration successful",
+                        "description": "Kayıt başarılı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
-                                            "example": "Registration successful. Please check your email for verification."
+                                            "example": "Kayıt başarılı. Lütfen doğrulama için e-postanızı kontrol edin."
                                         }
                                     },
                                     "type": "object"
@@ -883,20 +943,23 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error",
+                        "description": "Doğrulama hatası",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Validation failed"
+                                            "example": "Doğrulama başarısız"
                                         },
                                         "errors": {
+                                            "description": "Doğrulama hataları",
                                             "type": "object"
                                         }
                                     },
@@ -926,6 +989,7 @@
                                 ],
                                 "properties": {
                                     "refresh_token": {
+                                        "description": "Yenileme belirteci",
                                         "type": "string",
                                         "example": "2|xyz789abc123..."
                                     }
@@ -937,21 +1001,25 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Token refreshed successfully",
+                        "description": "Belirteç başarıyla yenilendi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "data": {
+                                            "description": "Yenilenen belirteç verileri",
                                             "properties": {
                                                 "token": {
+                                                    "description": "Yeni erişim belirteci",
                                                     "type": "string"
                                                 },
                                                 "expires_at": {
+                                                    "description": "Bitiş tarihi",
                                                     "type": "string",
                                                     "format": "date-time"
                                                 }
@@ -965,18 +1033,20 @@
                         }
                     },
                     "401": {
-                        "description": "Invalid refresh token",
+                        "description": "Geçersiz yenileme belirteci",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": false
                                         },
                                         "message": {
+                                            "description": "Hata mesajı",
                                             "type": "string",
-                                            "example": "Invalid refresh token"
+                                            "example": "Geçersiz yenileme belirteci"
                                         }
                                     },
                                     "type": "object"
@@ -1943,14 +2013,14 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Mevcut kullanıcının sepetini al",
-                "description": "Kimliği doğrulanmış veya misafir kullanıcılar için para birimi dönüştürme ile mevcut sepeti alın",
+                "summary": "Kullanıcının mevcut sepetini görüntüle",
+                "description": "Giriş yapmış veya misafir kullanıcının sepetini para birimi dönüştürme seçeneğiyle getirir",
                 "operationId": "getCart",
                 "parameters": [
                     {
                         "name": "currency",
                         "in": "query",
-                        "description": "Target currency code (e.g., TRY, USD, EUR)",
+                        "description": "Hedef para birimi kodu (örn: TRY, USD, EUR)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -1960,7 +2030,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Cart retrieved successfully",
+                        "description": "Sepet başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1987,7 +2057,7 @@
                         }
                     },
                     "500": {
-                        "description": "Failed to retrieve cart",
+                        "description": "Sepet getirilemedi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1998,7 +2068,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Failed to retrieve cart"
+                                            "example": "Sepet getirilemedi"
                                         }
                                     },
                                     "type": "object"
@@ -2017,10 +2087,10 @@
                 "operationId": "clearCart",
                 "responses": {
                     "200": {
-                        "description": "Cart cleared successfully"
+                        "description": "Sepet başarıyla temizlendi"
                     },
                     "500": {
-                        "description": "Failed to clear cart"
+                        "description": "Sepet temizlenemedi"
                     }
                 }
             }
@@ -2059,7 +2129,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Item added to cart successfully",
+                        "description": "Ürün başarıyla sepete eklendi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2070,7 +2140,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Item added to cart successfully"
+                                            "example": "Ürün başarıyla sepete eklendi"
                                         }
                                     },
                                     "type": "object"
@@ -2079,7 +2149,7 @@
                         }
                     },
                     "400": {
-                        "description": "Failed to add item to cart",
+                        "description": "Ürün sepete eklenemedi",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2090,7 +2160,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Failed to add item to cart"
+                                            "example": "Ürün sepete eklenemedi"
                                         }
                                     },
                                     "type": "object"
@@ -2113,7 +2183,7 @@
                     {
                         "name": "item",
                         "in": "path",
-                        "description": "Cart item ID",
+                        "description": "Sepet öğesi ID'si",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2142,10 +2212,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Cart item updated successfully"
+                        "description": "Sepet öğesi başarıyla güncellendi"
                     },
                     "400": {
-                        "description": "Failed to update cart item"
+                        "description": "Sepet öğesi güncellenemedi"
                     }
                 }
             },
@@ -2160,7 +2230,7 @@
                     {
                         "name": "item",
                         "in": "path",
-                        "description": "Cart item ID",
+                        "description": "Sepet öğesi ID'si",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2169,10 +2239,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Item removed from cart successfully"
+                        "description": "Ürün başarıyla sepetten kaldırıldı"
                     },
                     "400": {
-                        "description": "Failed to remove cart item"
+                        "description": "Ürün sepetten kaldırılamadı"
                     }
                 }
             }
@@ -2187,10 +2257,28 @@
                 "operationId": "getCartSummary",
                 "responses": {
                     "200": {
-                        "description": "Cart summary retrieved successfully"
+                        "description": "Sepet özeti başarıyla getirildi"
                     },
                     "500": {
-                        "description": "Failed to retrieve cart summary"
+                        "description": "Sepet özeti getirilemedi"
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/refresh-pricing": {
+            "put": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Sepet fiyatlarını yenile",
+                "description": "Mevcut sepetteki ürünlerin fiyatlarını güncel değerlerle yenileyin",
+                "operationId": "refreshCartPricing",
+                "responses": {
+                    "200": {
+                        "description": "Sepet fiyatları başarıyla yenilendi"
+                    },
+                    "500": {
+                        "description": "Sepet fiyatları yenilenemedi"
                     }
                 }
             }
@@ -2205,18 +2293,343 @@
                 "operationId": "migrateGuestCart",
                 "responses": {
                     "200": {
-                        "description": "Guest cart migrated successfully"
+                        "description": "Misafir sepeti başarıyla taşındı"
                     },
                     "401": {
-                        "description": "User must be authenticated to migrate cart"
+                        "description": "Sepeti taşımak için giriş yapılmalıdır"
                     },
                     "500": {
-                        "description": "Failed to migrate guest cart"
+                        "description": "Misafir sepeti taşınamadı"
                     }
                 },
                 "security": [
                     {
                         "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Kategorileri listele",
+                "description": "Aktif kategorileri hiyerarşik yapıda getirir",
+                "operationId": "getCategories",
+                "parameters": [
+                    {
+                        "name": "parent_id",
+                        "in": "query",
+                        "description": "Ana kategori ID'si (alt kategorileri getirmek için)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "level",
+                        "in": "query",
+                        "description": "Kategori seviyesi (0: ana kategoriler, 1: alt kategoriler)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 3,
+                            "minimum": 0,
+                            "example": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kategoriler başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kategoriler başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Category"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/tree": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Kategori ağacını getir",
+                "description": "Tüm kategorileri hiyerarşik ağaç yapısında getirir",
+                "operationId": "getCategoryTree",
+                "responses": {
+                    "200": {
+                        "description": "Kategori ağacı başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kategori ağacı başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CategoryTree"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/breadcrumb/{id}": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Kategori breadcrumb'ını getir",
+                "description": "Belirtilen kategori için breadcrumb yolunu getirir",
+                "operationId": "getCategoryBreadcrumb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Kategori ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Breadcrumb başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Breadcrumb başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CategoryBreadcrumb"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kategori bulunamadı"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Kategori detayını getir",
+                "description": "Belirtilen kategori ID'sine ait detayları getirir",
+                "operationId": "getCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Kategori ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kategori detayı başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kategori başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kategori bulunamadı"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/{id}/products": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Kategoriye ait ürünleri getir",
+                "description": "Belirtilen kategori ID'sine ait aktif ürünleri getirir",
+                "operationId": "getCategoryProducts",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Kategori ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Sayfa başına ürün sayısı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 50,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sıralama kriteri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "price",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sıralama yönü",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kategori ürünleri başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kategori ürünleri başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kategori bulunamadı"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -2759,43 +3172,51 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Mevcut para birimlerini al",
-                "description": "Mevcut döviz kurları ile mevcut para birimlerinin listesini alın",
+                "summary": "Desteklenen para birimlerini listele",
+                "description": "Sistemde desteklenen tüm para birimlerini ve güncel döviz kurlarını getirir",
                 "operationId": "getCurrencies",
                 "responses": {
                     "200": {
-                        "description": "Currencies retrieved successfully",
+                        "description": "Para birimleri başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "data": {
+                                            "description": "Para birimi verileri",
                                             "properties": {
                                                 "currencies": {
+                                                    "description": "Desteklenen para birimleri",
                                                     "type": "array",
                                                     "items": {
                                                         "properties": {
                                                             "code": {
+                                                                "description": "Para birimi kodu",
                                                                 "type": "string",
                                                                 "example": "USD"
                                                             },
                                                             "name": {
+                                                                "description": "Para birimi adı",
                                                                 "type": "string",
                                                                 "example": "US Dollar"
                                                             },
                                                             "symbol": {
+                                                                "description": "Para birimi sembolü",
                                                                 "type": "string",
                                                                 "example": "$"
                                                             },
                                                             "exchange_rate": {
+                                                                "description": "Döviz kuru (TRY bazında)",
                                                                 "type": "number",
                                                                 "example": 29.85
                                                             },
                                                             "is_default": {
+                                                                "description": "Varsayılan para birimi mi",
                                                                 "type": "boolean",
                                                                 "example": false
                                                             }
@@ -2804,6 +3225,7 @@
                                                     }
                                                 },
                                                 "default_currency": {
+                                                    "description": "Varsayılan para birimi kodu",
                                                     "type": "string",
                                                     "example": "TRY"
                                                 }
@@ -2824,14 +3246,14 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Döviz kurlarını al",
-                "description": "Belirtilen para birimleri için mevcut döviz kurlarını alın",
+                "summary": "Döviz kurlarını getir",
+                "description": "Belirtilen kaynak para biriminden hedef para birimlerine güncel döviz kurlarını getirir",
                 "operationId": "getExchangeRates",
                 "parameters": [
                     {
                         "name": "base",
                         "in": "query",
-                        "description": "Base currency code",
+                        "description": "Kaynak para birimi kodu (varsayılan: TRY)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -2842,7 +3264,7 @@
                     {
                         "name": "currencies",
                         "in": "query",
-                        "description": "Comma-separated target currencies",
+                        "description": "Hedef para birimleri (virgülle ayrılmış, örn: USD,EUR,GBP)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -2852,28 +3274,34 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Exchange rates retrieved successfully",
+                        "description": "Döviz kurları başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "data": {
+                                            "description": "Döviz kuru verileri",
                                             "properties": {
                                                 "base_currency": {
+                                                    "description": "Kaynak para birimi",
                                                     "type": "string",
                                                     "example": "TRY"
                                                 },
                                                 "rates": {
+                                                    "description": "Hedef para birimlerine dönüşüm kurları",
                                                     "properties": {
                                                         "USD": {
+                                                            "description": "USD döviz kuru",
                                                             "type": "number",
                                                             "example": 0.0335
                                                         },
                                                         "EUR": {
+                                                            "description": "EUR döviz kuru",
                                                             "type": "number",
                                                             "example": 0.0309
                                                         }
@@ -2881,6 +3309,7 @@
                                                     "type": "object"
                                                 },
                                                 "timestamp": {
+                                                    "description": "Kur güncellenme zamanı",
                                                     "type": "string",
                                                     "format": "date-time"
                                                 }
@@ -2901,8 +3330,8 @@
                 "tags": [
                     "Currency"
                 ],
-                "summary": "Para birimi tutarını dönüştür",
-                "description": "Bir tutarı bir para biriminden diğerine dönüştürün",
+                "summary": "Para birimi dönüştür",
+                "description": "Belirtilen tutarı kaynak para biriminden hedef para birimine güncel kurlarla dönüştürür",
                 "operationId": "convertCurrency",
                 "requestBody": {
                     "required": true,
@@ -2916,14 +3345,17 @@
                                 ],
                                 "properties": {
                                     "amount": {
+                                        "description": "Dönüştürülecek miktar",
                                         "type": "number",
                                         "example": 100
                                     },
                                     "from": {
+                                        "description": "Kaynak para birimi kodu",
                                         "type": "string",
                                         "example": "TRY"
                                     },
                                     "to": {
+                                        "description": "Hedef para birimi kodu",
                                         "type": "string",
                                         "example": "USD"
                                     }
@@ -2935,42 +3367,51 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Currency converted successfully",
+                        "description": "Para birimi dönüştürme işlemi başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "data": {
+                                            "description": "Dönüştürme sonuç verileri",
                                             "properties": {
                                                 "original_amount": {
+                                                    "description": "Orijinal miktar",
                                                     "type": "number",
                                                     "example": 100
                                                 },
                                                 "original_currency": {
+                                                    "description": "Orijinal para birimi",
                                                     "type": "string",
                                                     "example": "TRY"
                                                 },
                                                 "converted_amount": {
+                                                    "description": "Dönüştürülen miktar",
                                                     "type": "number",
                                                     "example": 3.35
                                                 },
                                                 "converted_currency": {
+                                                    "description": "Dönüştürülen para birimi",
                                                     "type": "string",
                                                     "example": "USD"
                                                 },
                                                 "exchange_rate": {
+                                                    "description": "Kullanılan döviz kuru",
                                                     "type": "number",
                                                     "example": 0.0335
                                                 },
                                                 "formatted_original": {
+                                                    "description": "Formatlanmış orijinal tutar",
                                                     "type": "string",
                                                     "example": "₺100.00"
                                                 },
                                                 "formatted_converted": {
+                                                    "description": "Formatlanmış dönüştürülmüş tutar",
                                                     "type": "string",
                                                     "example": "$3.35"
                                                 }
@@ -2984,7 +3425,7 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Geçersiz veri hatası"
                     }
                 }
             }
@@ -3382,7 +3823,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search term for product name, description, or SKU",
+                        "description": "Ürün adı, açıklaması veya SKU için arama terimi",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3392,7 +3833,7 @@
                     {
                         "name": "category_id",
                         "in": "query",
-                        "description": "Filter by category ID",
+                        "description": "Kategori ID'sine göre filtrele",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -3402,7 +3843,7 @@
                     {
                         "name": "categories",
                         "in": "query",
-                        "description": "Filter by multiple category IDs (comma separated)",
+                        "description": "Birden fazla kategori ID'sine göre filtrele (virgülle ayrılmış)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3412,7 +3853,7 @@
                     {
                         "name": "min_price",
                         "in": "query",
-                        "description": "Minimum price filter",
+                        "description": "Minimum fiyat filtresi",
                         "required": false,
                         "schema": {
                             "type": "number",
@@ -3423,7 +3864,7 @@
                     {
                         "name": "max_price",
                         "in": "query",
-                        "description": "Maximum price filter",
+                        "description": "Maksimum fiyat filtresi",
                         "required": false,
                         "schema": {
                             "type": "number",
@@ -3434,7 +3875,7 @@
                     {
                         "name": "brand",
                         "in": "query",
-                        "description": "Filter by brand",
+                        "description": "Markaya göre filtrele",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3444,7 +3885,7 @@
                     {
                         "name": "gender",
                         "in": "query",
-                        "description": "Filter by gender",
+                        "description": "Cinsiyete göre filtrele",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3459,7 +3900,7 @@
                     {
                         "name": "in_stock",
                         "in": "query",
-                        "description": "Filter only products in stock",
+                        "description": "Sadece stokta olan ürünleri filtrele",
                         "required": false,
                         "schema": {
                             "type": "boolean",
@@ -3469,7 +3910,7 @@
                     {
                         "name": "featured",
                         "in": "query",
-                        "description": "Filter only featured products",
+                        "description": "Sadece öne çıkan ürünleri filtrele",
                         "required": false,
                         "schema": {
                             "type": "boolean",
@@ -3479,7 +3920,7 @@
                     {
                         "name": "sort",
                         "in": "query",
-                        "description": "Sort field",
+                        "description": "Sıralama alanı",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3495,7 +3936,7 @@
                     {
                         "name": "order",
                         "in": "query",
-                        "description": "Sort order",
+                        "description": "Sıralama düzeni",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3509,7 +3950,7 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Number of items per page",
+                        "description": "Sayfa başına öğe sayısı",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -3521,7 +3962,7 @@
                     {
                         "name": "currency",
                         "in": "query",
-                        "description": "Currency for price display",
+                        "description": "Fiyat gösterimi için para birimi",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3536,11 +3977,16 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "İstek başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "message": {
+                                            "description": "Başarı mesajı",
+                                            "type": "string",
+                                            "example": "Ürünler başarıyla getirildi"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
@@ -3586,7 +4032,7 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error",
+                        "description": "Doğrulama hatası",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3610,7 +4056,7 @@
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Product ID",
+                        "description": "Ürün ID'si",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -3620,7 +4066,7 @@
                     {
                         "name": "currency",
                         "in": "query",
-                        "description": "Currency for price display",
+                        "description": "Fiyat gösterimi için para birimi",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -3635,11 +4081,16 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "İstek başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "message": {
+                                            "description": "Başarı mesajı",
+                                            "type": "string",
+                                            "example": "Ürün detayları başarıyla getirildi"
+                                        },
                                         "data": {
                                             "$ref": "#/components/schemas/ProductDetail"
                                         }
@@ -3650,7 +4101,7 @@
                         }
                     },
                     "404": {
-                        "description": "Product not found",
+                        "description": "Ürün bulunamadı",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3674,7 +4125,7 @@
                     {
                         "name": "q",
                         "in": "query",
-                        "description": "Search query (minimum 2 characters)",
+                        "description": "Arama sorgusu (minimum 2 karakter)",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -3685,7 +4136,7 @@
                     {
                         "name": "limit",
                         "in": "query",
-                        "description": "Maximum number of suggestions",
+                        "description": "Maksimum öneri sayısı",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -3697,11 +4148,21 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "İstek başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "description": "İşlem durumu",
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "description": "Başarı mesajı",
+                                            "type": "string",
+                                            "example": "Arama önerileri başarıyla getirildi"
+                                        },
                                         "data": {
                                             "properties": {
                                                 "products": {
@@ -3763,11 +4224,21 @@
                 "operationId": "getProductFilters",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "İstek başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "description": "İşlem durumu",
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "description": "Başarı mesajı",
+                                            "type": "string",
+                                            "example": "Filtreler başarıyla getirildi"
+                                        },
                                         "data": {
                                             "properties": {
                                                 "categories": {
@@ -5197,6 +5668,181 @@
                 },
                 "type": "object"
             },
+            "Category": {
+                "title": "Category",
+                "description": "Category data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "İş Güvenliği Ekipmanları"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "is-guvenligi-ekipmanlari"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "İş güvenliği için gerekli ekipmanlar",
+                        "nullable": true
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "example": "https://example.com/category-image.jpg",
+                        "nullable": true
+                    },
+                    "icon": {
+                        "type": "string",
+                        "example": "heroicon-o-shield-check",
+                        "nullable": true
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "parent_id": {
+                        "type": "integer",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "level": {
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "products_count": {
+                        "type": "integer",
+                        "example": 25
+                    },
+                    "children_count": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "parent": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CategoryParent"
+                            }
+                        ],
+                        "nullable": true,
+                        "type": "object"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryChild"
+                        },
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "CategoryParent": {
+                "title": "Category Parent",
+                "description": "Parent category data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Ana Kategori"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "ana-kategori"
+                    }
+                },
+                "type": "object"
+            },
+            "CategoryChild": {
+                "title": "Category Child",
+                "description": "Child category data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Alt Kategori"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "alt-kategori"
+                    },
+                    "products_count": {
+                        "type": "integer",
+                        "example": 10
+                    }
+                },
+                "type": "object"
+            },
+            "CategoryTree": {
+                "title": "Category Tree",
+                "description": "Hierarchical category tree structure",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Ana Kategori"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "ana-kategori"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryChild"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "CategoryBreadcrumb": {
+                "title": "Category Breadcrumb",
+                "description": "Category breadcrumb item",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Kategori Adı"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "kategori-adi"
+                    }
+                },
+                "type": "object"
+            },
             "OrderItem": {
                 "title": "Order Item",
                 "description": "Order item data",
@@ -5987,36 +6633,40 @@
     },
     "tags": [
         {
+            "name": "Addresses",
+            "description": "Kullanıcı adres yönetimi API uç noktaları"
+        },
+        {
+            "name": "Authentication",
+            "description": "Kullanıcı kimlik doğrulama API uç noktaları"
+        },
+        {
             "name": "Campaigns",
             "description": "E-ticaret kampanya yönetimi API uç noktaları"
+        },
+        {
+            "name": "Cart",
+            "description": "Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları"
+        },
+        {
+            "name": "Categories",
+            "description": "Kategori yönetimi API uç noktaları"
         },
         {
             "name": "Coupons",
             "description": "İndirim kuponları yönetimi API uç noktaları"
         },
         {
-            "name": "Addresses",
-            "description": "Addresses"
-        },
-        {
-            "name": "Authentication",
-            "description": "Authentication"
-        },
-        {
-            "name": "Cart",
-            "description": "Cart"
-        },
-        {
             "name": "Currency",
-            "description": "Currency"
+            "description": "Para birimi ve döviz kuru API uç noktaları"
+        },
+        {
+            "name": "Products",
+            "description": "Ürün kataloğu ve arama API uç noktaları"
         },
         {
             "name": "Orders",
             "description": "Orders"
-        },
-        {
-            "name": "Products",
-            "description": "Products"
         },
         {
             "name": "Users",
