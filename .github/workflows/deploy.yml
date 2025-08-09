@@ -32,7 +32,7 @@ jobs:
         ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd /home/mutfakyapimnet/b2bb2c.mutfakyapim.net
           # Git pull
-          git pull origin main
+          git pull origin main --force
           
      
           
