@@ -4,6 +4,7 @@ Bu doküman, sepet sisteminin uçtan uca akışlarını; API uçları, strateji 
 
 - [Genel Bakış](#genel-bakış)
 - [Uç Noktalar ve Akışlar](#uç-noktalar-ve-akışlar)
+- [Uçtan Uca Akış Diyagramı](#uçtan-uca-akış-diyagramı)
 - [Strateji Seçimi (Guest vs Authenticated)](#strateji-seçimi-guest-vs-authenticated)
 - [Validasyon Kuralları](#validasyon-kuralları)
 - [Fiyatlandırma Koordinasyonu](#fiyatlandırma-koordinasyonu)
@@ -65,6 +66,38 @@ Bu doküman, sepet sisteminin uçtan uca akışlarını; API uçları, strateji 
     - Eğer kullanıcı sepeti varsa: misafir sepetindeki kalemler kullanıcının sepetine birleştirilir (miktarlar toplanır), misafir sepeti silinir.
     - Yoksa: misafir sepeti kullanıcı sepetine dönüştürülür (user_id atanır, session_id null).
   - Ardından fiyatlar güncellenir ve güncel sepet + özet döner.
+
+---
+
+## Uçtan Uca Akış Diyagramı
+
+```mermaid
+flowchart TD
+  A[GET /cart] -->|getOrCreateCart| B[Cart]
+  B --> C{Auth?}
+  C -- Yes --> D[AuthenticatedCartStrategy]
+  C -- No --> E[GuestCartStrategy]
+  A --> F[calculateSummary]
+  F --> G[CartSummaryResource]
+
+  H[POST /cart/items] --> I[AddItemRequest]
+  I --> J[CartValidationService]
+  J --> K[Strategy.addItem]
+  K --> L[CartPriceCoordinator.update]
+
+  M[PUT /cart/items/{id}] --> N[updateQuantity]
+  N --> L
+
+  O[DELETE /cart/items/{id}] --> P[removeItem]
+  P --> L
+
+  Q[PUT /cart/refresh-pricing] --> L
+
+  R[POST /cart/migrate] --> S{Auth?}
+  S -- No --> T[401]
+  S -- Yes --> U[migrateGuestCart]
+  U --> L
+```
 
 ---
 

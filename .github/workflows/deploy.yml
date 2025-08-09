@@ -69,7 +69,7 @@ jobs:
           php artisan shield:super-admin --user=1 --panel=admin
           
 
-          
+          chown -R mutfakyapimnet:mutfakyapimnet /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs && chmod 775 /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs && chmod 664 /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs/api-docs.json
           # Storage link oluştur (eğer yoksa)
           php artisan storage:link
           

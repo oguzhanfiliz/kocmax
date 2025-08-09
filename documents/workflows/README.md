@@ -8,6 +8,9 @@ Bu klasör, sistemdeki uçtan uca iş akışlarını toplar. Her dosya, admin ve
 - (Opsiyonel) `campaign-flows.md` — Kampanya oluşturma/uygulama uçtan uca akışları
 - (Opsiyonel) `order-checkout-flows.md` — Checkout → Sipariş → Ödeme akışı
 - (Opsiyonel) `cart-flows.md` — Sepet ekleme/güncelleme/senkronizasyon akışları
+ - [variant-flows.md](./variant-flows.md) — Varyant oluşturma, fiyat/kur, stok, çoklu görsel
+ - [campaign-flows.md](./campaign-flows.md) — Kampanya motoru ve handler akışları
+ - [order-checkout-flows.md](./order-checkout-flows.md) — Checkout → Order oluşturma → Ödeme → Bildirim
 
 ### Adlandırma Kuralları
 - Kebab-case dosya adı kullanın: `xxx-flows.md`

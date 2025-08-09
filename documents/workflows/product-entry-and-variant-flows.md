@@ -5,8 +5,16 @@ Bu doküman, admin panel üzerinden ürün ve varyant giriş süreçlerini, SKU 
 - [Ürün Girişi Akışı](#ürün-girişi-akışı)
 - [SKU Üretim Sistemi](#sku-üretim-sistemi)
 - [Kategori Hiyerarşisi](#kategori-hiyerarşisi)
+- [Görsel Yönetimi](#görsel-yönetimi)
+- [Yorumlar ve Moderasyon](#yorumlar-ve-moderasyon)
+- [Fiyatlandırma ve Para Birimi](#fiyatlandırma-ve-para-birimi)
+- [Stok, Durumlar ve Sıralama](#stok-durumlar-ve-sıralama)
+- [Yetkilendirme (Policies)](#yetkilendirme-policies)
+- [Observer & Cache Temizliği](#observer--cache-temizliği)
 - [Varyantlar](#varyantlar)
 - [Müşteri Senaryoları](#müşteri-senaryoları)
+- [Toplu İşlemler ve Liste Görünümü](#toplu-işlemler-ve-liste-görünümü)
+- [Validasyon ve Hata Yönetimi](#validasyon-ve-hata-yönetimi)
 - [İlgili Dosya ve Klasör Yapısı](#ilgili-dosya-ve-klasör-yapısı)
 - [Mimariler, Desenler ve Prensipler](#mimariler-desenler-ve-prensipler)
 
@@ -54,6 +62,57 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 ---
 
+## Görsel Yönetimi
+
+- İlişki yöneticisi: `ProductResource/RelationManagers/ImagesRelationManager.php`
+- Tekli/çoklu görsel yükleme, sıralama (`sort_order`), ana görsel (`is_primary`) ayarlama desteklenir.
+- Yükleme sınırları: maks 2MB, türler `jpeg/png/webp`, maks 10 görsel (çoklu yükleme akışında).
+- Kullanışlı aksiyonlar:
+  - “Görsel Yükle” toplu yükleme ve otomatik sıralama.
+  - “Ana Görsel Yap” diğerlerini otomatik pasifleştirir.
+  - Sürükle-bırak ile sıralama (reorder) ve hızlı butonlar (Yukarı/Aşağı).
+
+---
+
+## Yorumlar ve Moderasyon
+
+- İlişki yöneticisi: `ProductResource/RelationManagers/ReviewsRelationManager.php`
+- Alanlar: kullanıcı, puan, başlık, yorum, onay durumları (`is_approved`, `is_verified_purchase`).
+- Filtreler: onaylı/ doğrulanmış/ puan seçicileri; tablo sütunlarında puan görseli (⭐) ile gösterim.
+- Toplu aksiyon: “Onayla” ile birden çok yorumu onaylama.
+
+---
+
+## Fiyatlandırma ve Para Birimi
+
+- Ürün seviyesi: `base_currency` + `base_price` (varsayılan TRY); form etiket ve prefix sembolleri dinamik.
+- Varyant seviyesi (detaylar Varyantlar bölümünde): `source_currency` + `source_price` girilir, TRY eşleniği `price` alanına otomatik hesaplanır.
+- Çoklu para birimi dönüşümleri, görüntüleme sırasında hedef para birimine çevrim ile yapılır.
+
+---
+
+## Stok, Durumlar ve Sıralama
+
+- Durum anahtarları: `is_active`, `is_featured`, `is_new`, `is_bestseller` (liste ve form üzerinden yönetilir).
+- Sıralama: `sort_order` alanı ile ürün liste görünümünde varsayılan artan sıralama.
+- Stok: Toplam stok ve stokta olma kontrolleri varyantlar üzerinden yapılır (ürün düzeyinde toplam/ aralık hesapları sistemde optimize amaçlı kapatılabilir).
+
+---
+
+## Yetkilendirme (Policies)
+
+- `ProductPolicy` ile Filament kaynak yetkileri kontrol edilir: view/create/update/delete/bulk/deleteAny vb.
+- Menüde görünürlük ve “Oluştur/Düzenle/Sil” aksiyonlarına erişim rol/izin bazlıdır (Spatie Permission).
+
+---
+
+## Observer & Cache Temizliği
+
+- `ProductObserver` güncelleme/silme olaylarında ürünle ilişkili cache anahtarlarını temizler.
+- Örnek anahtarlar: toplam stok, min/max fiyat, renk/beden listeleri.
+
+---
+
 ## Varyantlar
 
 - **Arayüz**: `app/Filament/Resources/ProductResource/RelationManagers/VariantsRelationManager.php`
@@ -87,6 +146,22 @@ Uygulamadaki önemli davranışlar (referanslar):
 
 - **Senaryo 5: Varyantlarda farklı para birimi**
   - Orijinal fiyat USD/EUR girilir → TRY karşılığı otomatik hesaplanır ve kaydedilir; müşteri tarafında istenen para birimiyle görüntülenebilir.
+
+---
+
+## Toplu İşlemler ve Liste Görünümü
+
+- Liste sütunları: Ana görsel, ürün adı, SKU, temel fiyat (TRY), varyant sayısı, durum ikonları, oluşturulma tarihi.
+- Toplu aksiyonlar: “Aktif Yap / Pasif Yap / Sil” gibi kayıt grubu işlemleri.
+- Navigasyonda aktif ürün sayısı badge olarak gösterilir.
+
+---
+
+## Validasyon ve Hata Yönetimi
+
+- Form tarafı: zorunlu alanlar (örn. `name`, `slug`), benzersiz kısıtlar (örn. `slug`, `sku`, `barcode`).
+- Model tarafı: kategori ebeveyn senkronu, slug üretimi, SKU fallback üretimi.
+- Hata durumları kullanıcı dostu mesajlarla gösterilir; backend’de log’lama aktiftir.
 
 ---
 
