@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
- *     name="Campaigns",
- *     description="E-ticaret kampanya yönetimi API endpoints"
+ *     name="Kampanyalar",
+ *     description="E-ticaret kampanya yönetimi API uç noktaları"
  * )
  */
 class CampaignController extends Controller
@@ -24,58 +24,80 @@ class CampaignController extends Controller
      *     path="/api/v1/campaigns",
      *     summary="Aktif kampanyaları listele",
      *     description="Müşteri tipine göre geçerli kampanyaları getirir",
-     *     tags={"Campaigns"},
+     *     tags={"Kampanyalar"},
      *     @OA\Parameter(
      *         name="type",
      *         in="query",
      *         description="Kampanya tipi filtresi",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"buy_x_get_y_free", "bundle_discount", "cross_sell"})
+     *         @OA\Schema(type="string", enum={"buy_x_get_y_free", "bundle_discount", "cross_sell"}, 
+     *                    example="bundle_discount")
      *     ),
      *     @OA\Parameter(
      *         name="customer_type",
      *         in="query",
-     *         description="Müşteri tipi (b2b, b2c, guest)",
+     *         description="Müşteri tipi (B2B: işletme, B2C: bireysel, Guest: misafir)",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"b2b", "b2c", "guest"})
+     *         @OA\Schema(type="string", enum={"b2b", "b2c", "guest"}, example="b2c")
      *     ),
      *     @OA\Parameter(
      *         name="per_page",
      *         in="query",
-     *         description="Sayfa başına kampanya sayısı (max: 50)",
+     *         description="Sayfa başına kampanya sayısı (maksimum: 50)",
      *         required=false,
      *         @OA\Schema(type="integer", minimum=1, maximum=50, default=15)
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Başarılı",
+     *         description="İstek başarıyla tamamlandı",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Kampanyalar başarıyla getirildi"),
+     *             @OA\Property(property="success", type="boolean", example=true, 
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Kampanyalar başarıyla getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="per_page", type="integer", example=15),
-     *                 @OA\Property(property="total", type="integer", example=25),
+     *                 description="Kampanya verileri",
+     *                 @OA\Property(property="current_page", type="integer", example=1, 
+     *                             description="Mevcut sayfa numarası"),
+     *                 @OA\Property(property="per_page", type="integer", example=15,
+     *                             description="Sayfa başına öğe sayısı"),
+     *                 @OA\Property(property="total", type="integer", example=25,
+     *                             description="Toplam kampanya sayısı"),
      *                 @OA\Property(
      *                     property="campaigns",
      *                     type="array",
+     *                     description="Kampanya listesi",
      *                     @OA\Items(
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Kışlık İndirim Kampanyası"),
-     *                         @OA\Property(property="slug", type="string", example="kislik-indirim-kampanyasi"),
-     *                         @OA\Property(property="description", type="string", example="Kışlık ürünlerde %30'a kadar indirim"),
-     *                         @OA\Property(property="type", type="string", example="bundle_discount"),
-     *                         @OA\Property(property="status", type="string", example="active"),
-     *                         @OA\Property(property="priority", type="integer", example=1),
-     *                         @OA\Property(property="minimum_cart_amount", type="number", format="float", example=500.00),
-     *                         @OA\Property(property="starts_at", type="string", format="date-time", example="2025-01-01T00:00:00.000000Z"),
-     *                         @OA\Property(property="ends_at", type="string", format="date-time", example="2025-01-31T23:59:59.000000Z"),
-     *                         @OA\Property(property="days_remaining", type="integer", example=15),
-     *                         @OA\Property(property="usage_count", type="integer", example=125),
-     *                         @OA\Property(property="usage_limit", type="integer", example=1000),
-     *                         @OA\Property(property="progress_percentage", type="number", format="float", example=12.5)
+     *                         @OA\Property(property="id", type="integer", example=1, description="Kampanya ID"),
+     *                         @OA\Property(property="name", type="string", example="Kışlık İndirim Kampanyası",
+     *                                     description="Kampanya adı"),
+     *                         @OA\Property(property="slug", type="string", example="kislik-indirim-kampanyasi",
+     *                                     description="URL dostu kampanya adı"),
+     *                         @OA\Property(property="description", type="string", 
+     *                                     example="Kışlık ürünlerde %30'a varan indirim fırsatı",
+     *                                     description="Kampanya açıklaması"),
+     *                         @OA\Property(property="type", type="string", example="bundle_discount",
+     *                                     description="Kampanya türü"),
+     *                         @OA\Property(property="status", type="string", example="active",
+     *                                     description="Kampanya durumu"),
+     *                         @OA\Property(property="priority", type="integer", example=1,
+     *                                     description="Öncelik sırası (1 en yüksek)"),
+     *                         @OA\Property(property="minimum_cart_amount", type="number", format="float", example=500.00,
+     *                                     description="Minimum sepet tutarı (TL)"),
+     *                         @OA\Property(property="starts_at", type="string", format="date-time", 
+     *                                     example="2025-01-01T00:00:00.000000Z", description="Başlangıç tarihi"),
+     *                         @OA\Property(property="ends_at", type="string", format="date-time", 
+     *                                     example="2025-01-31T23:59:59.000000Z", description="Bitiş tarihi"),
+     *                         @OA\Property(property="days_remaining", type="integer", example=15,
+     *                                     description="Kalan gün sayısı"),
+     *                         @OA\Property(property="usage_count", type="integer", example=125,
+     *                                     description="Kullanım sayısı"),
+     *                         @OA\Property(property="usage_limit", type="integer", example=1000,
+     *                                     description="Kullanım limiti"),
+     *                         @OA\Property(property="progress_percentage", type="number", format="float", example=12.5,
+     *                                     description="İlerleme yüzdesi")
      *                     )
      *                 )
      *             )
@@ -154,36 +176,56 @@ class CampaignController extends Controller
      * @OA\Get(
      *     path="/api/v1/campaigns/{campaign}",
      *     summary="Kampanya detaylarını getir",
-     *     description="Belirli bir kampanyanın tüm detaylarını getirir",
-     *     tags={"Campaigns"},
+     *     description="Belirli bir kampanyanın tüm detaylarını ve kurallarını getirir",
+     *     tags={"Kampanyalar"},
      *     @OA\Parameter(
      *         name="campaign",
      *         in="path",
-     *         description="Kampanya ID'si veya slug'ı",
+     *         description="Kampanya ID'si veya URL dostu adı (slug)",
      *         required=true,
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(type="string", example="kislik-indirim-kampanyasi"),
+     *         style="simple"
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Başarılı",
+     *         description="Kampanya detayları başarıyla getirildi",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Kampanya detayları getirildi"),
+     *             @OA\Property(property="success", type="boolean", example=true, 
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Kampanya detayları getirildi",
+     *                         description="Başarı mesajı"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Kışlık İndirim Kampanyası"),
-     *                 @OA\Property(property="slug", type="string", example="kislik-indirim-kampanyasi"),
-     *                 @OA\Property(property="description", type="string", example="Kışlık ürünlerde %30'a kadar indirim"),
-     *                 @OA\Property(property="type", type="string", example="bundle_discount"),
-     *                 @OA\Property(property="rules", type="object", example={"discount_percentage": 30, "min_quantity": 2}),
-     *                 @OA\Property(property="rewards", type="object", example={"type": "percentage", "value": 30}),
-     *                 @OA\Property(property="conditions", type="object", example={"min_cart_amount": 500}),
-     *                 @OA\Property(property="customer_types", type="array", @OA\Items(type="string"), example={"b2c", "guest"}),
-     *                 @OA\Property(property="is_stackable", type="boolean", example=false),
-     *                 @OA\Property(property="products_count", type="integer", example=15),
-     *                 @OA\Property(property="categories_count", type="integer", example=3)
+     *                 description="Kampanya detay verileri",
+     *                 @OA\Property(property="id", type="integer", example=1, description="Kampanya benzersiz kimliği"),
+     *                 @OA\Property(property="name", type="string", example="Kışlık İndirim Kampanyası",
+     *                             description="Kampanya başlığı"),
+     *                 @OA\Property(property="slug", type="string", example="kislik-indirim-kampanyasi",
+     *                             description="URL dostu kampanya adı"),
+     *                 @OA\Property(property="description", type="string", 
+     *                             example="Kışlık ürünlerde %30'a varan indirim fırsatı. Seçili ürünlerde geçerli.",
+     *                             description="Kampanya detaylı açıklaması"),
+     *                 @OA\Property(property="type", type="string", example="bundle_discount",
+     *                             description="Kampanya türü"),
+     *                 @OA\Property(property="rules", type="object", 
+     *                             example={"discount_percentage": 30, "min_quantity": 2, "max_discount": 500},
+     *                             description="Kampanya kuralları ve koşulları"),
+     *                 @OA\Property(property="rewards", type="object", 
+     *                             example={"type": "percentage", "value": 30, "description": "%30 indirim"},
+     *                             description="Kampanya ödülleri ve faydaları"),
+     *                 @OA\Property(property="conditions", type="object", 
+     *                             example={"min_cart_amount": 500, "excluded_categories": ["sale"]},
+     *                             description="Kampanya geçerlilik koşulları"),
+     *                 @OA\Property(property="customer_types", type="array", 
+     *                             @OA\Items(type="string"), example={"b2c", "guest"},
+     *                             description="Geçerli müşteri tipleri"),
+     *                 @OA\Property(property="is_stackable", type="boolean", example=false,
+     *                             description="Diğer kampanyalarla birleştirilebilir mi"),
+     *                 @OA\Property(property="products_count", type="integer", example=15,
+     *                             description="Kampanyada yer alan ürün sayısı"),
+     *                 @OA\Property(property="categories_count", type="integer", example=3,
+     *                             description="Kampanyada yer alan kategori sayısı")
      *             )
      *         )
      *     ),
@@ -191,8 +233,17 @@ class CampaignController extends Controller
      *         response=404,
      *         description="Kampanya bulunamadı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false, description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Aradığınız kampanya bulunamadı",
+     *                         description="Hata mesajı")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Kampanya erişim yetkisi yok",
+     *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Kampanya bulunamadı")
+     *             @OA\Property(property="message", type="string", example="Bu kampanya sizin müşteri tipiniz için geçerli değil")
      *         )
      *     )
      * )
@@ -280,42 +331,79 @@ class CampaignController extends Controller
      * @OA\Post(
      *     path="/api/v1/campaigns/{campaign}/validate",
      *     summary="Kampanya geçerliliğini kontrol et",
-     *     description="Belirli bir kampanyanın sepet için geçerli olup olmadığını kontrol eder",
-     *     tags={"Campaigns"},
+     *     description="Mevcut sepet içeriğine göre kampanyanın uygulanabilir olup olmadığını kontrol eder ve indirim miktarını hesaplar",
+     *     tags={"Kampanyalar"},
      *     security={{"sanctum": {}}},
      *     @OA\Parameter(
      *         name="campaign",
      *         in="path",
-     *         description="Kampanya ID'si",
+     *         description="Kontrol edilecek kampanya ID'si",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Sepet bilgileri",
      *         @OA\JsonContent(
-     *             @OA\Property(property="cart_total", type="number", format="float", example=750.00),
-     *             @OA\Property(property="cart_items", type="array", @OA\Items(
-     *                 @OA\Property(property="product_id", type="integer", example=1),
-     *                 @OA\Property(property="variant_id", type="integer", example=2),
-     *                 @OA\Property(property="quantity", type="integer", example=3),
-     *                 @OA\Property(property="price", type="number", format="float", example=250.00)
+     *             @OA\Property(property="cart_total", type="number", format="float", example=750.00,
+     *                         description="Sepet toplam tutarı (TL)"),
+     *             @OA\Property(property="cart_items", type="array", 
+     *                         description="Sepetteki ürünler",
+     *                         @OA\Items(
+     *                 @OA\Property(property="product_id", type="integer", example=1,
+     *                             description="Ürün ID'si"),
+     *                 @OA\Property(property="variant_id", type="integer", example=2,
+     *                             description="Ürün varyant ID'si"),
+     *                 @OA\Property(property="quantity", type="integer", example=3,
+     *                             description="Ürün adedi"),
+     *                 @OA\Property(property="price", type="number", format="float", example=250.00,
+     *                             description="Ürün birim fiyatı (TL)")
      *             ))
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Başarılı",
+     *         description="Kampanya geçerlilik kontrolü tamamlandı",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Kampanya geçerliliği kontrol edildi"),
+     *             @OA\Property(property="success", type="boolean", example=true,
+     *                         description="İşlem durumu"),
+     *             @OA\Property(property="message", type="string", example="Kampanya geçerliliği kontrol edildi",
+     *                         description="İşlem açıklaması"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="is_valid", type="boolean", example=true),
-     *                 @OA\Property(property="applicable_discount", type="number", format="float", example=75.00),
-     *                 @OA\Property(property="discount_type", type="string", example="percentage"),
-     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"))
+     *                 description="Geçerlilik sonuçları",
+     *                 @OA\Property(property="is_valid", type="boolean", example=true,
+     *                             description="Kampanya uygulanabilir mi"),
+     *                 @OA\Property(property="applicable_discount", type="number", format="float", example=75.00,
+     *                             description="Uygulanabilir indirim miktarı (TL)"),
+     *                 @OA\Property(property="discount_type", type="string", example="percentage",
+     *                             description="İndirim türü (percentage/fixed)"),
+     *                 @OA\Property(property="reasons", type="array", @OA\Items(type="string"),
+     *                             example={"Minimum sepet tutarı karşılanmadı", "Bu kategoride geçerli değil"},
+     *                             description="Geçersizlik sebepleri (varsa)"),
+     *                 @OA\Property(property="campaign", type="object",
+     *                             description="Kampanya özet bilgileri",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="name", type="string", example="Kışlık İndirim"),
+     *                             @OA\Property(property="type", type="string", example="bundle_discount")
+     *                 )
      *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Kampanya bulunamadı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Belirtilen kampanya bulunamadı")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Kimlik doğrulama gerekli",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
      *         )
      *     )
      * )
