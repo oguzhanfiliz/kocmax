@@ -11,8 +11,17 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config()->set('database.default', 'sqlite');
-        config()->set('database.connections.sqlite.database', ':memory:');
-        config()->set('database.connections.sqlite.foreign_key_constraints', true);
+
+        // Sadece sqlite kullanılırken gerekli ayarları koşullu uygula
+        if (config('database.default') === 'sqlite') {
+            // CI ortamında dosya tabanlı sqlite kullanılıyorsa mevcut ayarı bozma
+            $configuredDatabase = config('database.connections.sqlite.database');
+            if (empty($configuredDatabase) || $configuredDatabase === ':memory:') {
+                // Lokal hızlı testler için bellek içi veritabanı
+                config()->set('database.connections.sqlite.database', ':memory:');
+            }
+
+            config()->set('database.connections.sqlite.foreign_key_constraints', true);
+        }
     }
 }
