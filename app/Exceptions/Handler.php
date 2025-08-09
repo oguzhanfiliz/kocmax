@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Auth\AuthenticationException;
 use Throwable;
 use ErrorException;
 
@@ -62,5 +63,24 @@ class Handler extends ExceptionHandler
         }
 
         return parent::render($request, $e);
+    }
+
+    /**
+     * Convert an authentication exception into a response.
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        // For API requests, return JSON response
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated. Please login to access this resource.',
+                'error_code' => 'AUTHENTICATION_REQUIRED',
+                'login_endpoint' => '/api/v1/auth/login'
+            ], 401);
+        }
+
+        // For web requests, redirect to login info page
+        return redirect()->to('/login-required');
     }
 }
