@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\WishlistController;
+use App\Http\Controllers\Api\CampaignController;
+use App\Http\Controllers\Api\CouponController;
 
 /*
 |--------------------------------------------------------------------------
@@ -202,4 +204,39 @@ Route::prefix('v1/wishlist')->middleware('auth:sanctum')->group(function () {
     // Wishlist actions
     Route::post('/{wishlist}/toggle-favorite', [WishlistController::class, 'toggleFavorite'])->name('api.wishlist.toggle-favorite');
     Route::delete('/clear', [WishlistController::class, 'clear'])->name('api.wishlist.clear');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Campaign API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/campaigns')->group(function () {
+    // Public campaign routes (no authentication required)
+    Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
+    Route::get('/{campaign}', [CampaignController::class, 'show'])->name('api.campaigns.show')
+          ->where('campaign', '[A-Za-z0-9\-_]+'); // ID or slug
+    
+    // Protected campaign routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/{campaign}/validate', [CampaignController::class, 'validateCampaign'])->name('api.campaigns.validate')
+              ->where('campaign', '[0-9]+'); // Only numeric IDs for validation
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Coupon API Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/coupons')->group(function () {
+    // Public coupon routes (no authentication required)
+    Route::post('/validate', [CouponController::class, 'validateCoupon'])->name('api.coupons.validate');
+    Route::get('/public', [CouponController::class, 'publicCoupons'])->name('api.coupons.public');
+    
+    // Protected coupon routes (authentication required)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/apply', [CouponController::class, 'apply'])->name('api.coupons.apply');
+        Route::get('/my-coupons', [CouponController::class, 'myCoupons'])->name('api.coupons.my-coupons');
+    });
 });

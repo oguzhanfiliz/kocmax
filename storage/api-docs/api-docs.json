@@ -1395,6 +1395,409 @@
                 ]
             }
         },
+        "/api/v1/campaigns": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Aktif kampanyaları listele",
+                "description": "Müşteri tipine göre geçerli kampanyaları getirir",
+                "operationId": "617d936d65b29bf3912371d823eceba3",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Kampanya tipi filtresi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "buy_x_get_y_free",
+                                "bundle_discount",
+                                "cross_sell"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "customer_type",
+                        "in": "query",
+                        "description": "Müşteri tipi (b2b, b2c, guest)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "b2b",
+                                "b2c",
+                                "guest"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Sayfa başına kampanya sayısı (max: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 50,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kampanyalar başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                },
+                                                "campaigns": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Kışlık İndirim Kampanyası"
+                                                            },
+                                                            "slug": {
+                                                                "type": "string",
+                                                                "example": "kislik-indirim-kampanyasi"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "Kışlık ürünlerde %30'a kadar indirim"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "bundle_discount"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
+                                                            "priority": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "minimum_cart_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "starts_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2025-01-01T00:00:00.000000Z"
+                                                            },
+                                                            "ends_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2025-01-31T23:59:59.000000Z"
+                                                            },
+                                                            "days_remaining": {
+                                                                "type": "integer",
+                                                                "example": 15
+                                                            },
+                                                            "usage_count": {
+                                                                "type": "integer",
+                                                                "example": 125
+                                                            },
+                                                            "usage_limit": {
+                                                                "type": "integer",
+                                                                "example": 1000
+                                                            },
+                                                            "progress_percentage": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 12.5
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{campaign}": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampanya detaylarını getir",
+                "description": "Belirli bir kampanyanın tüm detaylarını getirir",
+                "operationId": "c61ae1adb555aa371b98056e538fd573",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "description": "Kampanya ID'si veya slug'ı",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kampanya detayları getirildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Kışlık İndirim Kampanyası"
+                                                },
+                                                "slug": {
+                                                    "type": "string",
+                                                    "example": "kislik-indirim-kampanyasi"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Kışlık ürünlerde %30'a kadar indirim"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bundle_discount"
+                                                },
+                                                "rules": {
+                                                    "type": "object",
+                                                    "example": {
+                                                        "discount_percentage": 30,
+                                                        "min_quantity": 2
+                                                    }
+                                                },
+                                                "rewards": {
+                                                    "type": "object",
+                                                    "example": {
+                                                        "type": "percentage",
+                                                        "value": 30
+                                                    }
+                                                },
+                                                "conditions": {
+                                                    "type": "object",
+                                                    "example": {
+                                                        "min_cart_amount": 500
+                                                    }
+                                                },
+                                                "customer_types": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "b2c",
+                                                        "guest"
+                                                    ]
+                                                },
+                                                "is_stackable": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "products_count": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "categories_count": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kampanya bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kampanya bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{campaign}/validate": {
+            "post": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampanya geçerliliğini kontrol et",
+                "description": "Belirli bir kampanyanın sepet için geçerli olup olmadığını kontrol eder",
+                "operationId": "1c57c9b03bf28ac2675155751ec61720",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "description": "Kampanya ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "cart_total": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 750
+                                    },
+                                    "cart_items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "variant_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 250
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kampanya geçerliliği kontrol edildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_valid": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "applicable_discount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 75
+                                                },
+                                                "discount_type": {
+                                                    "type": "string",
+                                                    "example": "percentage"
+                                                },
+                                                "reasons": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/cart": {
             "get": {
                 "tags": [
@@ -4917,6 +5320,10 @@
         {
             "name": "Authentication",
             "description": "User authentication endpoints"
+        },
+        {
+            "name": "Campaigns",
+            "description": "E-ticaret kampanya yönetimi API endpoints"
         },
         {
             "name": "Cart",
