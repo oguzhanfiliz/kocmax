@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Gate;
 /**
  * @OA\Tag(
  *     name="Siparişler",
- *     description="Sipariş yönetimi endpointleri"
+ *     description="Sipariş yönetimi API uç noktaları"
  * )
  */
 class OrderController extends Controller

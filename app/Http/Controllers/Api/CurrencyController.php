@@ -13,7 +13,7 @@ use Illuminate\Http\JsonResponse;
 /**
  * @OA\Tag(
  *     name="Para Birimi",
- *     description="Para birimi ve döviz kuru endpointleri"
+ *     description="Para birimi ve döviz kuru API uç noktaları"
  * )
  */
 class CurrencyController extends Controller

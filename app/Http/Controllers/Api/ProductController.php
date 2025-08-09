@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 /**
  * @OA\Tag(
  *     name="Ürünler",
- *     description="Ürün kataloğu ve arama işlemleri"
+ *     description="Ürün kataloğu ve arama API uç noktaları"
  * )
  */
 class ProductController extends Controller

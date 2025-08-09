@@ -14,7 +14,7 @@ use Illuminate\Validation\Rules\Password;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Kullanıcılar", description="Kullanıcı profili ve hesap yönetimi")
+ * @OA\Tag(name="Kullanıcılar", description="Kullanıcı profili ve hesap yönetimi API uç noktaları")
  */
 class UserController extends Controller
 {

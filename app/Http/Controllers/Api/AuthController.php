@@ -23,8 +23,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * @OA\Tag(
- *     name="Authentication",
- *     description="User authentication endpoints"
+ *     name="Kimlik Doğrulama",
+ *     description="Kullanıcı kimlik doğrulama API uç noktaları"
  * )
  */
 class AuthController extends Controller
@@ -34,8 +34,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/login",
      *      operationId="loginUser",
      *      tags={"Authentication"},
-     *      summary="User login",
-     *      description="Login user and get access token with rate limiting",
+     *      summary="Kullanıcı girişi",
+     *      description="Kullanıcı girişi yapın ve hız sınırlaması ile erişim belirteci alın",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -188,8 +188,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/register",
      *      operationId="registerUser",
      *      tags={"Authentication"},
-     *      summary="User registration",
-     *      description="Register a new user account",
+     *      summary="Kullanıcı kaydı",
+     *      description="Yeni bir kullanıcı hesabı kaydedin",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -272,8 +272,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/refresh",
      *      operationId="refreshToken",
      *      tags={"Authentication"},
-     *      summary="Refresh access token",
-     *      description="Refresh access token using refresh token",
+     *      summary="Erişim belirtecini yenile",
+     *      description="Yenileme belirtecini kullanarak erişim belirtecini yenileyin",
      *      security={{ "sanctum": {} }},
      *      @OA\RequestBody(
      *          required=true,
@@ -358,8 +358,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/forgot-password",
      *      operationId="forgotPassword",
      *      tags={"Authentication"},
-     *      summary="Send password reset email",
-     *      description="Send password reset link to user's email",
+     *      summary="Şifre sıfırlama e-postası gönder",
+     *      description="Kullanıcının e-postasına şifre sıfırlama bağlantısı gönderin",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -422,8 +422,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/reset-password",
      *      operationId="resetPassword",
      *      tags={"Authentication"},
-     *      summary="Reset password",
-     *      description="Reset password using token from email",
+     *      summary="Şifreyi sıfırla",
+     *      description="E-postadaki belirteci kullanarak şifreyi sıfırlayın",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -500,8 +500,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/verify-email",
      *      operationId="verifyEmail",
      *      tags={"Authentication"},
-     *      summary="Verify email address",
-     *      description="Verify email address using verification token",
+     *      summary="E-posta adresini doğrula",
+     *      description="Doğrulama belirtecini kullanarak e-posta adresini doğrulayın",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -567,8 +567,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/resend-verification",
      *      operationId="resendVerification",
      *      tags={"Authentication"},
-     *      summary="Resend email verification",
-     *      description="Resend email verification link",
+     *      summary="E-posta doğrulamasını yeniden gönder",
+     *      description="E-posta doğrulama bağlantısını yeniden gönderin",
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -644,8 +644,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/logout",
      *      operationId="logoutUser",
      *      tags={"Authentication"},
-     *      summary="User logout",
-     *      description="Logout user and revoke access token",
+     *      summary="Kullanıcı çıkışı",
+     *      description="Kullanıcı çıkışı yapın ve erişim belirtecini iptal edin",
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,
@@ -679,8 +679,8 @@ class AuthController extends Controller
      *      path="/api/v1/auth/user",
      *      operationId="getCurrentUser",
      *      tags={"Authentication"},
-     *      summary="Get current user",
-     *      description="Get authenticated user information",
+     *      summary="Mevcut kullanıcıyı al",
+     *      description="Kimliği doğrulanmış kullanıcı bilgilerini alın",
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,

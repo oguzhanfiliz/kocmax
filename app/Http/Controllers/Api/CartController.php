@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * @OA\Tag(
  *     name="Sepet",
- *     description="Sepet yönetimi endpointleri"
+ *     description="Alışveriş sepeti yönetimi API uç noktaları"
  * )
  */
 class CartController extends Controller

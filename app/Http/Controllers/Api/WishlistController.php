@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="İstek Listesi", description="Kullanıcı istek listesi yönetimi")
+ * @OA\Tag(name="İstek Listesi", description="Kullanıcı istek listesi yönetimi API uç noktaları")
  */
 class WishlistController extends Controller
 {
