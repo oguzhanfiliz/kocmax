@@ -684,15 +684,15 @@ class AuthController extends Controller
      *      security={{ "sanctum": {} }},
      *      @OA\Response(
      *          response=200,
-     *          description="User information retrieved",
+     *          description="Kullanıcı bilgileri alındı",
      *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="data", type="object")
+     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
+     *              @OA\Property(property="data", type="object", description="Kullanıcı verileri")
      *          )
      *      ),
      *      @OA\Response(
      *          response=401,
-     *          description="Unauthenticated"
+     *          description="Kimlik doğrulaması yapılmamış"
      *      )
      * )
      */
