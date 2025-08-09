@@ -135,8 +135,8 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Check email verification for B2C users
-        if (!$user->is_approved_dealer && !$user->email_verified_at) {
+        // Check email verification for B2C users (only if enabled)
+        if (config('auth.email_verification_enabled') && !$user->is_approved_dealer && !$user->email_verified_at) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please verify your email address before logging in.',
@@ -248,12 +248,18 @@ class AuthController extends Controller
             'customer_type_override' => $request->customer_type ?? 'B2C'
         ]);
 
-        // Send email verification
-        event(new Registered($user));
+        // Send email verification (only if enabled)
+        if (config('auth.email_verification_enabled')) {
+            event(new Registered($user));
+        }
+
+        $message = config('auth.email_verification_enabled') 
+            ? 'Registration successful. Please check your email for verification.'
+            : 'Registration successful. You can now login.';
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful. Please check your email for verification.',
+            'message' => $message,
             'data' => [
                 'user_id' => $user->id,
                 'email' => $user->email
