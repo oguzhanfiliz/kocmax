@@ -62,10 +62,21 @@ class Currency extends Model
             return $amount;
         }
 
-        // Convert to default currency first
-        $defaultAmount = $amount / $this->exchange_rate;
+        // All exchange rates are relative to TRY (default currency)
+        // If converting FROM TRY to another currency: divide by target rate
+        // If converting TO TRY from another currency: multiply by source rate
+        // If converting between two non-TRY currencies: first convert to TRY, then to target
         
-        // Then convert to target currency
-        return $defaultAmount * $targetCurrency->exchange_rate;
+        if ($this->is_default) {
+            // FROM TRY to target currency
+            return $amount / $targetCurrency->exchange_rate;
+        } elseif ($targetCurrency->is_default) {
+            // FROM source currency to TRY
+            return $amount * $this->exchange_rate;
+        } else {
+            // FROM source currency to target currency (via TRY)
+            $tryAmount = $amount * $this->exchange_rate;
+            return $tryAmount / $targetCurrency->exchange_rate;
+        }
     }
 }

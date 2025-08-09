@@ -182,30 +182,52 @@ class VariantsRelationManager extends RelationManager
                                     ->label('💰 Diğer Para Birimlerinde')
                                     ->content(function (Forms\Get $get): string {
                                         $tryPrice = $get('price');
+                                        $sourceCurrency = $get('source_currency') ?? 'TRY';
+                                        
                                         if (!$tryPrice) return 'Fiyat henüz hesaplanmadı...';
                                         
                                         try {
                                             $conversionService = app(\App\Services\CurrencyConversionService::class);
-                                            $usdPrice = $conversionService->convertPrice((float)$tryPrice, 'TRY', 'USD');
-                                            $eurPrice = $conversionService->convertPrice((float)$tryPrice, 'TRY', 'EUR');
+                                            $currencies = \App\Helpers\CurrencyHelper::getActiveCurrencyOptions();
                                             
-                                            return sprintf(
-                                                "💵 $%.2f • 💶 €%.2f", 
-                                                $usdPrice, 
-                                                $eurPrice
-                                            );
+                                            $previews = [];
+                                            foreach ($currencies as $code => $name) {
+                                                if ($code !== $sourceCurrency) {
+                                                    $convertedPrice = $conversionService->convertPrice(
+                                                        (float)$tryPrice, 
+                                                        'TRY', 
+                                                        $code
+                                                    );
+                                                    $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($code);
+                                                    $previews[] = "{$symbol}" . number_format($convertedPrice, 2);
+                                                }
+                                            }
+                                            
+                                            return count($previews) > 0 ? implode(' • ', $previews) : 'Diğer para birimi yok';
+                                            
                                         } catch (\Exception $e) {
                                             return 'Döviz kuru bilgisi alınamadı';
                                         }
                                     })
                                     ->columnSpan(2),
                                 Forms\Components\TextInput::make('cost')
-                                    ->label('Maliyet Fiyatı (₺)')
+                                    ->label(function (Forms\Get $get): string {
+                                        $currencyCode = $get('source_currency') ?? 'TRY';
+                                        $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                        return 'Maliyet Fiyatı (' . $symbol . ')';
+                                    })
                                     ->numeric()
                                     ->step(0.01)
-                                    ->prefix('₺')
+                                    ->prefix(function (Forms\Get $get): string {
+                                        $currencyCode = $get('source_currency') ?? 'TRY';
+                                        return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                    })
                                     ->placeholder('150.00')
-                                    ->helperText('Ürünün size maliyeti (isteğe bağlı, Türk Lirası)')
+                                    ->helperText(function (Forms\Get $get): string {
+                                        $currencyCode = $get('source_currency') ?? 'TRY';
+                                        $currencyName = \App\Helpers\CurrencyHelper::getCurrencyName($currencyCode);
+                                        return 'Ürünün size maliyeti (isteğe bağlı, ' . $currencyName . ')';
+                                    })
                                     ->hint('Kar marjı hesabı için'),
                                 Forms\Components\TextInput::make('stock')
                                     ->label('Mevcut Stok')

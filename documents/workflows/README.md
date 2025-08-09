@@ -4,6 +4,7 @@ Bu klasör, sistemdeki uçtan uca iş akışlarını toplar. Her dosya, admin ve
 
 ### İçerik
 - [product-entry-and-variant-flows.md](./product-entry-and-variant-flows.md) — Ürün girişi, SKU üretimi, kategori hiyerarşisi, varyant akışları
+- [cart-flows.md](./cart-flows.md) — Sepet ekleme/güncelleme/kaldırma, fiyatlandırma, migrate akışları
 - (Opsiyonel) `campaign-flows.md` — Kampanya oluşturma/uygulama uçtan uca akışları
 - (Opsiyonel) `order-checkout-flows.md` — Checkout → Sipariş → Ödeme akışı
 - (Opsiyonel) `cart-flows.md` — Sepet ekleme/güncelleme/senkronizasyon akışları

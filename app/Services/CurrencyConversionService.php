@@ -99,6 +99,19 @@ class CurrencyConversionService
     }
 
     /**
+     * Convert a price from one currency to another
+     */
+    public function convertPrice(float $amount, string $fromCurrency, string $toCurrency): float
+    {
+        if ($fromCurrency === $toCurrency) {
+            return $amount;
+        }
+
+        $exchangeRate = $this->getExchangeRate($fromCurrency, $toCurrency);
+        return round($amount * $exchangeRate, 2);
+    }
+
+    /**
      * Get current exchange rate between currencies
      */
     public function getExchangeRate(string $fromCurrency, string $toCurrency): float
