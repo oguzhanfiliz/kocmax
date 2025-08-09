@@ -3235,7 +3235,7 @@
                                                             "exchange_rate": {
                                                                 "description": "Döviz kuru (TRY bazında)",
                                                                 "type": "number",
-                                                                "example": 29.85
+                                                                "example": 29.85000000000000142108547152020037174224853515625
                                                             },
                                                             "is_default": {
                                                                 "description": "Varsayılan para birimi mi",
@@ -3320,12 +3320,12 @@
                                                         "USD": {
                                                             "description": "USD döviz kuru",
                                                             "type": "number",
-                                                            "example": 0.0335
+                                                            "example": 0.0335000000000000019984014443252817727625370025634765625
                                                         },
                                                         "EUR": {
                                                             "description": "EUR döviz kuru",
                                                             "type": "number",
-                                                            "example": 0.0309
+                                                            "example": 0.0309000000000000003830269434956790064461529254913330078125
                                                         }
                                                     },
                                                     "type": "object"
@@ -3415,7 +3415,7 @@
                                                 "converted_amount": {
                                                     "description": "Dönüştürülen miktar",
                                                     "type": "number",
-                                                    "example": 3.35
+                                                    "example": 3.350000000000000088817841970012523233890533447265625
                                                 },
                                                 "converted_currency": {
                                                     "description": "Dönüştürülen para birimi",
@@ -3425,7 +3425,7 @@
                                                 "exchange_rate": {
                                                     "description": "Kullanılan döviz kuru",
                                                     "type": "number",
-                                                    "example": 0.0335
+                                                    "example": 0.0335000000000000019984014443252817727625370025634765625
                                                 },
                                                 "formatted_original": {
                                                     "description": "Formatlanmış orijinal tutar",
@@ -6678,12 +6678,8 @@
     },
     "tags": [
         {
-            "name": "Addresses",
-            "description": "Kullanıcı adres yönetimi API uç noktaları"
-        },
-        {
             "name": "Authentication",
-            "description": "Kullanıcı kimlik doğrulama API uç noktaları"
+            "description": "User authentication endpoints"
         },
         {
             "name": "Campaigns",
@@ -6696,6 +6692,10 @@
         {
             "name": "Categories",
             "description": "Kategori yönetimi API uç noktaları"
+        },
+        {
+            "name": "Authentication",
+            "description": "Authentication"
         },
         {
             "name": "Coupons",
