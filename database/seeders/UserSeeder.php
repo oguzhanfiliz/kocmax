@@ -95,6 +95,7 @@ class UserSeeder extends Seeder
                 'is_approved_dealer' => true,
                 'pricing_tier_id' => $altinBayi?->id,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Altın bayi seviyesinde kurumsal güvenlik çözümleri uzmanı.'
             ]
         );
@@ -110,6 +111,7 @@ class UserSeeder extends Seeder
                 'is_approved_dealer' => true,
                 'pricing_tier_id' => $platinBayi?->id,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Platin bayi seviyesinde endüstriyel güvenlik ürünleri distribütörü.'
             ]
         );
@@ -124,6 +126,7 @@ class UserSeeder extends Seeder
                 'is_approved_dealer' => false,
                 'pricing_tier_id' => $sadikMusteri?->id,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Düzenli alışveriş yapan sadık müşteri, ev tekstili ve kişisel koruma ürünleri alıcısı.'
             ]
         );
@@ -137,6 +140,7 @@ class UserSeeder extends Seeder
                 'is_approved_dealer' => false,
                 'pricing_tier_id' => $vipMusteri?->id,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'VIP müşteri, yüksek hacimli bireysel alımlar yapan profesyonel.'
             ]
         );
@@ -150,6 +154,7 @@ class UserSeeder extends Seeder
                 'phone' => '+905556666666',
                 'is_approved_dealer' => false,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Standart bireysel müşteri, ara sıra güvenlik ürünleri satın alıyor.'
             ]
         );
@@ -165,6 +170,7 @@ class UserSeeder extends Seeder
                 'tax_number' => '4567890123',
                 'is_approved_dealer' => true,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Eğitim kurumu temsilcisi, öğrenci laboratuvarları için güvenlik ekipmanları sorumlusu.'
             ]
         );
@@ -179,6 +185,7 @@ class UserSeeder extends Seeder
                 'tax_number' => '5678901234',
                 'is_approved_dealer' => true,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Sağlık kurumu temsilcisi, hastane personeli için koruyucu ekipman sorumlusu.'
             ]
         );
@@ -192,6 +199,7 @@ class UserSeeder extends Seeder
                 'phone' => '+905559999999',
                 'is_approved_dealer' => false,
                 'is_active' => false,
+                'email_verified_at' => now(), // İnaktif olsa da email verification var
                 'bio' => 'Test amaçlı oluşturulmuş inaktif kullanıcı hesabı.'
             ]
         );
