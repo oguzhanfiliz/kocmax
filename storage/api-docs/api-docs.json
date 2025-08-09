@@ -667,8 +667,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User login",
-                "description": "Login user and get access token with rate limiting",
+                "summary": "Kullanıcı girişi",
+                "description": "Kullanıcı girişi yapın ve hız sınırlaması ile erişim belirteci alın",
                 "operationId": "loginUser",
                 "requestBody": {
                     "required": true,
@@ -811,8 +811,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User registration",
-                "description": "Register a new user account",
+                "summary": "Kullanıcı kaydı",
+                "description": "Yeni bir kullanıcı hesabı kaydedin",
                 "operationId": "registerUser",
                 "requestBody": {
                     "required": true,
@@ -913,8 +913,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Refresh access token",
-                "description": "Refresh access token using refresh token",
+                "summary": "Erişim belirtecini yenile",
+                "description": "Yenileme belirtecini kullanarak erişim belirtecini yenileyin",
                 "operationId": "refreshToken",
                 "requestBody": {
                     "required": true,
@@ -997,8 +997,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Send password reset email",
-                "description": "Send password reset link to user's email",
+                "summary": "Şifre sıfırlama e-postası gönder",
+                "description": "Kullanıcının e-postasına şifre sıfırlama bağlantısı gönderin",
                 "operationId": "forgotPassword",
                 "requestBody": {
                     "required": true,
@@ -1072,8 +1072,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Reset password",
-                "description": "Reset password using token from email",
+                "summary": "Şifreyi sıfırla",
+                "description": "E-postadaki belirteci kullanarak şifreyi sıfırlayın",
                 "operationId": "resetPassword",
                 "requestBody": {
                     "required": true,
@@ -1162,8 +1162,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Verify email address",
-                "description": "Verify email address using verification token",
+                "summary": "E-posta adresini doğrula",
+                "description": "Doğrulama belirtecini kullanarak e-posta adresini doğrulayın",
                 "operationId": "verifyEmail",
                 "requestBody": {
                     "required": true,
@@ -1233,8 +1233,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Resend email verification",
-                "description": "Resend email verification link",
+                "summary": "E-posta doğrulamasını yeniden gönder",
+                "description": "E-posta doğrulama bağlantısını yeniden gönderin",
                 "operationId": "resendVerification",
                 "requestBody": {
                     "required": true,
@@ -1308,8 +1308,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User logout",
-                "description": "Logout user and revoke access token",
+                "summary": "Kullanıcı çıkışı",
+                "description": "Kullanıcı çıkışı yapın ve erişim belirtecini iptal edin",
                 "operationId": "logoutUser",
                 "responses": {
                     "200": {
@@ -1361,8 +1361,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Get current user",
-                "description": "Get authenticated user information",
+                "summary": "Mevcut kullanıcıyı al",
+                "description": "Kimliği doğrulanmış kullanıcı bilgilerini alın",
                 "operationId": "getCurrentUser",
                 "responses": {
                     "200": {
@@ -5987,10 +5987,6 @@
     },
     "tags": [
         {
-            "name": "Authentication",
-            "description": "User authentication endpoints"
-        },
-        {
             "name": "Campaigns",
             "description": "E-ticaret kampanya yönetimi API uç noktaları"
         },
@@ -6001,6 +5997,10 @@
         {
             "name": "Addresses",
             "description": "Addresses"
+        },
+        {
+            "name": "Authentication",
+            "description": "Authentication"
         },
         {
             "name": "Cart",
