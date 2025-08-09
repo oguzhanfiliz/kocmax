@@ -25,6 +25,7 @@ class UserSeeder extends Seeder
                 'position' => 'Sistem Yöneticisi',
                 'bio' => 'Fiyatlandırma sistemi yöneticisi ve genel sistem sorumlusu.',
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $admin->assignRole(['admin']);
@@ -39,6 +40,7 @@ class UserSeeder extends Seeder
                 'position' => 'İçerik Editörü',
                 'bio' => 'Ürün içerikleri ve fiyat güncellemeleri sorumlusu.',
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $editor->assignRole('editor');
@@ -53,6 +55,7 @@ class UserSeeder extends Seeder
                 'position' => 'İçerik Yazarı',
                 'bio' => 'İçerik oluşturma ve düzenleme sorumlusu.',
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $author->assignRole('author');
@@ -76,6 +79,7 @@ class UserSeeder extends Seeder
                 'is_approved_dealer' => true,
                 'pricing_tier_id' => $standardBayi?->id,
                 'is_active' => true,
+                'email_verified_at' => now(),
                 'bio' => 'Standart bayi seviyesinde iş güvenliği ürünleri satış temsilcisi.'
             ]
         );
