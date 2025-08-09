@@ -215,7 +215,7 @@ class CampaignController extends Controller
      *                             example={"type": "percentage", "value": 30, "description": "%30 indirim"},
      *                             description="Kampanya ödülleri ve faydaları"),
      *                 @OA\Property(property="conditions", type="object", 
-     *                             example={"min_cart_amount": 500, "excluded_categories": ["sale"]},
+     *                             example={"min_cart_amount": 500, "excluded_categories": {"sale"}},
      *                             description="Kampanya geçerlilik koşulları"),
      *                 @OA\Property(property="customer_types", type="array", 
      *                             @OA\Items(type="string"), example={"b2c", "guest"},

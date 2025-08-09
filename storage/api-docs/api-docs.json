@@ -1398,7 +1398,7 @@
         "/api/v1/campaigns": {
             "get": {
                 "tags": [
-                    "Campaigns"
+                    "Kampanyalar"
                 ],
                 "summary": "Aktif kampanyaları listele",
                 "description": "Müşteri tipine göre geçerli kampanyaları getirir",
@@ -1415,13 +1415,14 @@
                                 "buy_x_get_y_free",
                                 "bundle_discount",
                                 "cross_sell"
-                            ]
+                            ],
+                            "example": "bundle_discount"
                         }
                     },
                     {
                         "name": "customer_type",
                         "in": "query",
-                        "description": "Müşteri tipi (b2b, b2c, guest)",
+                        "description": "Müşteri tipi (B2B: işletme, B2C: bireysel, Guest: misafir)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -1429,13 +1430,14 @@
                                 "b2b",
                                 "b2c",
                                 "guest"
-                            ]
+                            ],
+                            "example": "b2c"
                         }
                     },
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Sayfa başına kampanya sayısı (max: 50)",
+                        "description": "Sayfa başına kampanya sayısı (maksimum: 50)",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -1447,93 +1449,114 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Başarılı",
+                        "description": "İstek başarıyla tamamlandı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
                                             "example": "Kampanyalar başarıyla getirildi"
                                         },
                                         "data": {
+                                            "description": "Kampanya verileri",
                                             "properties": {
                                                 "current_page": {
+                                                    "description": "Mevcut sayfa numarası",
                                                     "type": "integer",
                                                     "example": 1
                                                 },
                                                 "per_page": {
+                                                    "description": "Sayfa başına öğe sayısı",
                                                     "type": "integer",
                                                     "example": 15
                                                 },
                                                 "total": {
+                                                    "description": "Toplam kampanya sayısı",
                                                     "type": "integer",
                                                     "example": 25
                                                 },
                                                 "campaigns": {
+                                                    "description": "Kampanya listesi",
                                                     "type": "array",
                                                     "items": {
                                                         "properties": {
                                                             "id": {
+                                                                "description": "Kampanya ID",
                                                                 "type": "integer",
                                                                 "example": 1
                                                             },
                                                             "name": {
+                                                                "description": "Kampanya adı",
                                                                 "type": "string",
                                                                 "example": "Kışlık İndirim Kampanyası"
                                                             },
                                                             "slug": {
+                                                                "description": "URL dostu kampanya adı",
                                                                 "type": "string",
                                                                 "example": "kislik-indirim-kampanyasi"
                                                             },
                                                             "description": {
+                                                                "description": "Kampanya açıklaması",
                                                                 "type": "string",
-                                                                "example": "Kışlık ürünlerde %30'a kadar indirim"
+                                                                "example": "Kışlık ürünlerde %30'a varan indirim fırsatı"
                                                             },
                                                             "type": {
+                                                                "description": "Kampanya türü",
                                                                 "type": "string",
                                                                 "example": "bundle_discount"
                                                             },
                                                             "status": {
+                                                                "description": "Kampanya durumu",
                                                                 "type": "string",
                                                                 "example": "active"
                                                             },
                                                             "priority": {
+                                                                "description": "Öncelik sırası (1 en yüksek)",
                                                                 "type": "integer",
                                                                 "example": 1
                                                             },
                                                             "minimum_cart_amount": {
+                                                                "description": "Minimum sepet tutarı (TL)",
                                                                 "type": "number",
                                                                 "format": "float",
                                                                 "example": 500
                                                             },
                                                             "starts_at": {
+                                                                "description": "Başlangıç tarihi",
                                                                 "type": "string",
                                                                 "format": "date-time",
                                                                 "example": "2025-01-01T00:00:00.000000Z"
                                                             },
                                                             "ends_at": {
+                                                                "description": "Bitiş tarihi",
                                                                 "type": "string",
                                                                 "format": "date-time",
                                                                 "example": "2025-01-31T23:59:59.000000Z"
                                                             },
                                                             "days_remaining": {
+                                                                "description": "Kalan gün sayısı",
                                                                 "type": "integer",
                                                                 "example": 15
                                                             },
                                                             "usage_count": {
+                                                                "description": "Kullanım sayısı",
                                                                 "type": "integer",
                                                                 "example": 125
                                                             },
                                                             "usage_limit": {
+                                                                "description": "Kullanım limiti",
                                                                 "type": "integer",
                                                                 "example": 1000
                                                             },
                                                             "progress_percentage": {
+                                                                "description": "İlerleme yüzdesi",
                                                                 "type": "number",
                                                                 "format": "float",
                                                                 "example": 12.5
@@ -1557,80 +1580,99 @@
         "/api/v1/campaigns/{campaign}": {
             "get": {
                 "tags": [
-                    "Campaigns"
+                    "Kampanyalar"
                 ],
                 "summary": "Kampanya detaylarını getir",
-                "description": "Belirli bir kampanyanın tüm detaylarını getirir",
+                "description": "Belirli bir kampanyanın tüm detaylarını ve kurallarını getirir",
                 "operationId": "c61ae1adb555aa371b98056e538fd573",
                 "parameters": [
                     {
                         "name": "campaign",
                         "in": "path",
-                        "description": "Kampanya ID'si veya slug'ı",
+                        "description": "Kampanya ID'si veya URL dostu adı (slug)",
                         "required": true,
+                        "style": "simple",
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "example": "kislik-indirim-kampanyasi"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Başarılı",
+                        "description": "Kampanya detayları başarıyla getirildi",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
+                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Başarı mesajı",
                                             "type": "string",
                                             "example": "Kampanya detayları getirildi"
                                         },
                                         "data": {
+                                            "description": "Kampanya detay verileri",
                                             "properties": {
                                                 "id": {
+                                                    "description": "Kampanya benzersiz kimliği",
                                                     "type": "integer",
                                                     "example": 1
                                                 },
                                                 "name": {
+                                                    "description": "Kampanya başlığı",
                                                     "type": "string",
                                                     "example": "Kışlık İndirim Kampanyası"
                                                 },
                                                 "slug": {
+                                                    "description": "URL dostu kampanya adı",
                                                     "type": "string",
                                                     "example": "kislik-indirim-kampanyasi"
                                                 },
                                                 "description": {
+                                                    "description": "Kampanya detaylı açıklaması",
                                                     "type": "string",
-                                                    "example": "Kışlık ürünlerde %30'a kadar indirim"
+                                                    "example": "Kışlık ürünlerde %30'a varan indirim fırsatı. Seçili ürünlerde geçerli."
                                                 },
                                                 "type": {
+                                                    "description": "Kampanya türü",
                                                     "type": "string",
                                                     "example": "bundle_discount"
                                                 },
                                                 "rules": {
+                                                    "description": "Kampanya kuralları ve koşulları",
                                                     "type": "object",
                                                     "example": {
                                                         "discount_percentage": 30,
-                                                        "min_quantity": 2
+                                                        "min_quantity": 2,
+                                                        "max_discount": 500
                                                     }
                                                 },
                                                 "rewards": {
+                                                    "description": "Kampanya ödülleri ve faydaları",
                                                     "type": "object",
                                                     "example": {
                                                         "type": "percentage",
-                                                        "value": 30
+                                                        "value": 30,
+                                                        "description": "%30 indirim"
                                                     }
                                                 },
                                                 "conditions": {
+                                                    "description": "Kampanya geçerlilik koşulları",
                                                     "type": "object",
                                                     "example": {
-                                                        "min_cart_amount": 500
+                                                        "min_cart_amount": 500,
+                                                        "excluded_categories": [
+                                                            "sale"
+                                                        ]
                                                     }
                                                 },
                                                 "customer_types": {
+                                                    "description": "Geçerli müşteri tipleri",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -1641,16 +1683,207 @@
                                                     ]
                                                 },
                                                 "is_stackable": {
+                                                    "description": "Diğer kampanyalarla birleştirilebilir mi",
                                                     "type": "boolean",
                                                     "example": false
                                                 },
                                                 "products_count": {
+                                                    "description": "Kampanyada yer alan ürün sayısı",
                                                     "type": "integer",
                                                     "example": 15
                                                 },
                                                 "categories_count": {
+                                                    "description": "Kampanyada yer alan kategori sayısı",
                                                     "type": "integer",
                                                     "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kampanya bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "description": "İşlem durumu",
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "description": "Hata mesajı",
+                                            "type": "string",
+                                            "example": "Aradığınız kampanya bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Kampanya erişim yetkisi yok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bu kampanya sizin müşteri tipiniz için geçerli değil"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{campaign}/validate": {
+            "post": {
+                "tags": [
+                    "Kampanyalar"
+                ],
+                "summary": "Kampanya geçerliliğini kontrol et",
+                "description": "Mevcut sepet içeriğine göre kampanyanın uygulanabilir olup olmadığını kontrol eder ve indirim miktarını hesaplar",
+                "operationId": "1c57c9b03bf28ac2675155751ec61720",
+                "parameters": [
+                    {
+                        "name": "campaign",
+                        "in": "path",
+                        "description": "Kontrol edilecek kampanya ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Sepet bilgileri",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "cart_total": {
+                                        "description": "Sepet toplam tutarı (TL)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 750
+                                    },
+                                    "cart_items": {
+                                        "description": "Sepetteki ürünler",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "description": "Ürün ID'si",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "variant_id": {
+                                                    "description": "Ürün varyant ID'si",
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "quantity": {
+                                                    "description": "Ürün adedi",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "price": {
+                                                    "description": "Ürün birim fiyatı (TL)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 250
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kampanya geçerlilik kontrolü tamamlandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "description": "İşlem durumu",
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "description": "İşlem açıklaması",
+                                            "type": "string",
+                                            "example": "Kampanya geçerliliği kontrol edildi"
+                                        },
+                                        "data": {
+                                            "description": "Geçerlilik sonuçları",
+                                            "properties": {
+                                                "is_valid": {
+                                                    "description": "Kampanya uygulanabilir mi",
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "applicable_discount": {
+                                                    "description": "Uygulanabilir indirim miktarı (TL)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 75
+                                                },
+                                                "discount_type": {
+                                                    "description": "İndirim türü (percentage/fixed)",
+                                                    "type": "string",
+                                                    "example": "percentage"
+                                                },
+                                                "reasons": {
+                                                    "description": "Geçersizlik sebepleri (varsa)",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "Minimum sepet tutarı karşılanmadı",
+                                                        "Bu kategoride geçerli değil"
+                                                    ]
+                                                },
+                                                "campaign": {
+                                                    "description": "Kampanya özet bilgileri",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Kışlık İndirim"
+                                                        },
+                                                        "type": {
+                                                            "type": "string",
+                                                            "example": "bundle_discount"
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
@@ -1673,116 +1906,23 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Kampanya bulunamadı"
+                                            "example": "Belirtilen kampanya bulunamadı"
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/api/v1/campaigns/{campaign}/validate": {
-            "post": {
-                "tags": [
-                    "Campaigns"
-                ],
-                "summary": "Kampanya geçerliliğini kontrol et",
-                "description": "Belirli bir kampanyanın sepet için geçerli olup olmadığını kontrol eder",
-                "operationId": "1c57c9b03bf28ac2675155751ec61720",
-                "parameters": [
-                    {
-                        "name": "campaign",
-                        "in": "path",
-                        "description": "Kampanya ID'si",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "cart_total": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 750
-                                    },
-                                    "cart_items": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "variant_id": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "quantity": {
-                                                    "type": "integer",
-                                                    "example": 3
-                                                },
-                                                "price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 250
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Başarılı",
+                    },
+                    "401": {
+                        "description": "Kimlik doğrulama gerekli",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Kampanya geçerliliği kontrol edildi"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "is_valid": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "applicable_discount": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 75
-                                                },
-                                                "discount_type": {
-                                                    "type": "string",
-                                                    "example": "percentage"
-                                                },
-                                                "reasons": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
+                                            "example": "Unauthenticated"
                                         }
                                     },
                                     "type": "object"
@@ -2079,6 +2219,511 @@
                         "sanctum": []
                     }
                 ]
+            }
+        },
+        "/api/v1/coupons/validate": {
+            "post": {
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Kupon geçerliliğini kontrol et",
+                "description": "Kupon kodunun geçerli olup olmadığını ve indirim miktarını hesaplar",
+                "operationId": "442db7adbf421379d7169aeacf3504d5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "description": "Kupon kodu",
+                                        "type": "string",
+                                        "example": "SUMMER25"
+                                    },
+                                    "cart_total": {
+                                        "description": "Sepet toplam tutarı",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 750
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kupon geçerliliği kontrol edildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_valid": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "coupon_code": {
+                                                    "type": "string",
+                                                    "example": "SUMMER25"
+                                                },
+                                                "coupon_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "percentage",
+                                                        "fixed"
+                                                    ],
+                                                    "example": "percentage"
+                                                },
+                                                "coupon_value": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 25
+                                                },
+                                                "discount_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 187.5
+                                                },
+                                                "min_order_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 200
+                                                },
+                                                "remaining_usage": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-12-31T23:59:59.000000Z",
+                                                    "nullable": true
+                                                },
+                                                "reasons": {
+                                                    "description": "Geçersizlik sebepleri",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kupon bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kupon bulunamadı"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_valid": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "reasons": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "Kupon kodu geçersiz"
+                                                    ]
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasyon hatası",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validasyon hatası"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/coupons/apply": {
+            "post": {
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Kupon uygula",
+                "description": "Geçerli kuponu sepete uygular ve kullanım sayısını artırır",
+                "operationId": "acd68b67b817c20655d076768252570b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "description": "Kupon kodu",
+                                        "type": "string",
+                                        "example": "SUMMER25"
+                                    },
+                                    "cart_total": {
+                                        "description": "Sepet toplam tutarı",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 750
+                                    },
+                                    "order_id": {
+                                        "description": "Sipariş ID (opsiyonel)",
+                                        "type": "integer",
+                                        "example": 123,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kupon başarıyla uygulandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kupon başarıyla uygulandı"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "coupon_code": {
+                                                    "type": "string",
+                                                    "example": "SUMMER25"
+                                                },
+                                                "discount_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 187.5
+                                                },
+                                                "original_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 750
+                                                },
+                                                "new_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 562.5
+                                                },
+                                                "used_count": {
+                                                    "type": "integer",
+                                                    "example": 51
+                                                },
+                                                "remaining_usage": {
+                                                    "type": "integer",
+                                                    "example": 49,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Kupon uygulanamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kupon uygulanamadı"
+                                        },
+                                        "reasons": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/coupons/my-coupons": {
+            "get": {
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Kullanıcı kuponlarını listele",
+                "description": "Kullanıcının sahip olduğu aktif kuponları listeler (admin tarafından atanmış)",
+                "operationId": "4517738b3751845adb146422f43a143d",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Kupon durumu filtresi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "expired",
+                                "used"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kuponlar listelendi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "WELCOME10"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "percentage",
+                                                            "fixed"
+                                                        ],
+                                                        "example": "percentage"
+                                                    },
+                                                    "value": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 10
+                                                    },
+                                                    "min_order_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 100,
+                                                        "nullable": true
+                                                    },
+                                                    "usage_limit": {
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
+                                                    },
+                                                    "used_count": {
+                                                        "type": "integer",
+                                                        "example": 0
+                                                    },
+                                                    "expires_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-12-31T23:59:59.000000Z",
+                                                        "nullable": true
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "is_expired": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "is_used_up": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "remaining_usage": {
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/coupons/public": {
+            "get": {
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Genel kuponları listele",
+                "description": "Herkese açık aktif kuponları listeler",
+                "operationId": "2788c719327545fa3959bcab5f855cb4",
+                "parameters": [
+                    {
+                        "name": "min_amount",
+                        "in": "query",
+                        "description": "Minimum sipariş tutarı filtresi",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 500
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Başarılı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Genel kuponlar listelendi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "FREESHIP"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "percentage",
+                                                            "fixed"
+                                                        ],
+                                                        "example": "fixed"
+                                                    },
+                                                    "value": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 50
+                                                    },
+                                                    "min_order_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 200,
+                                                        "nullable": true
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "%25 indirim kuponunuz"
+                                                    },
+                                                    "expires_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-12-31T23:59:59.000000Z",
+                                                        "nullable": true
+                                                    },
+                                                    "remaining_usage": {
+                                                        "type": "integer",
+                                                        "example": 150,
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/v1/currencies": {
@@ -5322,12 +5967,16 @@
             "description": "User authentication endpoints"
         },
         {
-            "name": "Campaigns",
-            "description": "E-ticaret kampanya yönetimi API endpoints"
+            "name": "Kampanyalar",
+            "description": "E-ticaret kampanya yönetimi API uç noktaları"
         },
         {
             "name": "Cart",
             "description": "Cart management endpoints"
+        },
+        {
+            "name": "Coupons",
+            "description": "İndirim kuponları yönetimi API endpoints"
         },
         {
             "name": "Currency",
