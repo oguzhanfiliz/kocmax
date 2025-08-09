@@ -51,7 +51,7 @@ class CategoryController extends Controller
      *         )
      *     ),
      *     @OA\Response(response=401, description="Unauthorized"),
-     *     security={{"bearerAuth":{}}}
+     *     security={{"sanctum":{}}}
      * )
      */
     public function index(Request $request): AnonymousResourceCollection
@@ -97,7 +97,7 @@ class CategoryController extends Controller
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/CategoryTree"))
      *         )
      *     ),
-     *     security={{"bearerAuth":{}}}
+     *     security={{"sanctum":{}}}
      * )
      */
     public function tree(): JsonResponse
@@ -144,7 +144,7 @@ class CategoryController extends Controller
      *         )
      *     ),
      *     @OA\Response(response=404, description="Kategori bulunamadı"),
-     *     security={{"bearerAuth":{}}}
+     *     security={{"sanctum":{}}}
      * )
      */
     public function breadcrumb(int $id): JsonResponse
@@ -195,7 +195,7 @@ class CategoryController extends Controller
      *         )
      *     ),
      *     @OA\Response(response=404, description="Kategori bulunamadı"),
-     *     security={{"bearerAuth":{}}}
+     *     security={{"sanctum":{}}}
      * )
      */
     public function show(int $id): JsonResponse

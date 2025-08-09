@@ -47,6 +47,7 @@ class CampaignController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", minimum=1, maximum=50, default=15)
      *     ),
+     *     security={{"sanctum": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="İstek başarıyla tamamlandı",
@@ -229,6 +230,7 @@ class CampaignController extends Controller
      *             )
      *         )
      *     ),
+     *     security={{"sanctum": {}}},
      *     @OA\Response(
      *         response=404,
      *         description="Kampanya bulunamadı",

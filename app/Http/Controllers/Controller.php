@@ -35,10 +35,10 @@ use Illuminate\Routing\Controller as BaseController;
  * 
  * @OA\SecurityScheme(
  *     securityScheme="sanctum",
- *     type="apiKey",
- *     in="header",
- *     name="Authorization",
- *     description="Enter token in format (Bearer {token})"
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ *     description="Bearer token (Authorization: Bearer {token})"
  * )
  * 
  * @OA\Schema(
