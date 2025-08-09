@@ -12,31 +12,31 @@ use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Tag(name="Adresler", description="Kullanıcı adres yönetimi")
+ * @OA\Tag(name="Addresses", description="Kullanıcı adres yönetimi API uç noktaları")
  */
 class AddressController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/v1/addresses",
-     *     summary="Kullanıcı adreslerini al",
-     *     description="Kimliği doğrulanmış kullanıcı için tüm adresleri al",
+     *     summary="Adresleri listele",
+     *     description="Kimliği doğrulanmış kullanıcının tüm adreslerini getirir",
      *     operationId="getAddresses",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="type",
      *         in="query",
-     *         description="Filter addresses by type",
+     *         description="Adres tipi filtresi (teslimat, fatura veya her ikisi)",
      *         required=false,
      *         @OA\Schema(type="string", enum={"shipping", "billing", "both"})
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Addresses retrieved successfully",
+     *         description="Adresler başarıyla getirildi",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/AddressResource")),
-     *             @OA\Property(property="message", type="string", example="Addresses retrieved successfully")
+     *             @OA\Property(property="message", type="string", example="Adresler başarıyla getirildi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated")
@@ -65,45 +65,46 @@ class AddressController extends Controller
 
         return response()->json([
             'data' => AddressResource::collection($addresses),
-            'message' => 'Addresses retrieved successfully'
+            'message' => 'Adresler başarıyla getirildi'
         ]);
     }
 
     /**
      * @OA\Post(
      *     path="/api/v1/addresses",
-     *     summary="Yeni adres oluştur",
-     *     description="Kimliği doğrulanmış kullanıcı için yeni bir adres oluştur",
+     *     summary="Adres oluştur",
+     *     description="Kimliği doğrulanmış kullanıcı için yeni bir adres oluşturur",
      *     operationId="createAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Adres bilgileri",
      *         @OA\JsonContent(
      *             required={"first_name", "last_name", "address_line_1", "city", "postal_code", "country"},
-     *             @OA\Property(property="title", type="string", maxLength=255, example="Home"),
-     *             @OA\Property(property="first_name", type="string", maxLength=255, example="John"),
-     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe"),
-     *             @OA\Property(property="company_name", type="string", maxLength=255, nullable=true, example="ABC Company"),
-     *             @OA\Property(property="phone", type="string", maxLength=20, nullable=true, example="+90 555 123 4567"),
-     *             @OA\Property(property="address_line_1", type="string", example="123 Main Street"),
-     *             @OA\Property(property="address_line_2", type="string", nullable=true, example="Apartment 4B"),
-     *             @OA\Property(property="city", type="string", maxLength=255, example="Istanbul"),
-     *             @OA\Property(property="state", type="string", maxLength=255, nullable=true, example="Istanbul"),
-     *             @OA\Property(property="postal_code", type="string", maxLength=20, example="34000"),
-     *             @OA\Property(property="country", type="string", maxLength=2, example="TR"),
-     *             @OA\Property(property="type", type="string", enum={"shipping", "billing", "both"}, example="both"),
-     *             @OA\Property(property="is_default_shipping", type="boolean", example=false),
-     *             @OA\Property(property="is_default_billing", type="boolean", example=false),
-     *             @OA\Property(property="notes", type="string", nullable=true, example="Ring the doorbell")
+     *             @OA\Property(property="title", type="string", maxLength=255, example="Ev", description="Adres başlığı"),
+     *             @OA\Property(property="first_name", type="string", maxLength=255, example="Ahmet", description="Ad"),
+     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Yılmaz", description="Soyad"),
+     *             @OA\Property(property="company_name", type="string", maxLength=255, nullable=true, example="ABC Şirket", description="Şirket adı"),
+     *             @OA\Property(property="phone", type="string", maxLength=20, nullable=true, example="+90 555 123 4567", description="Telefon numarası"),
+     *             @OA\Property(property="address_line_1", type="string", example="Atatürk Caddesi No:123", description="Adres satırı 1"),
+     *             @OA\Property(property="address_line_2", type="string", nullable=true, example="Daire 4B", description="Adres satırı 2"),
+     *             @OA\Property(property="city", type="string", maxLength=255, example="İstanbul", description="Şehir"),
+     *             @OA\Property(property="state", type="string", maxLength=255, nullable=true, example="İstanbul", description="İl/Eyalet"),
+     *             @OA\Property(property="postal_code", type="string", maxLength=20, example="34000", description="Posta kodu"),
+     *             @OA\Property(property="country", type="string", maxLength=2, example="TR", description="Ülke"),
+     *             @OA\Property(property="type", type="string", enum={"shipping", "billing", "both"}, example="both", description="Adres türü"),
+     *             @OA\Property(property="is_default_shipping", type="boolean", example=false, description="Varsayılan teslimat adresi mi"),
+     *             @OA\Property(property="is_default_billing", type="boolean", example=false, description="Varsayılan fatura adresi mi"),
+     *             @OA\Property(property="notes", type="string", nullable=true, example="Zili çalın", description="Notlar")
      *         )
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Address created successfully",
+     *         description="Adres başarıyla oluşturuldu",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
-     *             @OA\Property(property="message", type="string", example="Address created successfully")
+     *             @OA\Property(property="message", type="string", example="Adres başarıyla oluşturuldu")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -145,31 +146,31 @@ class AddressController extends Controller
 
         return response()->json([
             'data' => new AddressResource($address),
-            'message' => 'Address created successfully'
+            'message' => 'Adres başarıyla oluşturuldu'
         ], 201);
     }
 
     /**
      * @OA\Get(
      *     path="/api/v1/addresses/{id}",
-     *     summary="Belirli adresi al",
-     *     description="ID'ye göre belirli bir adresi al",
+     *     summary="Adres detaylarını getir",
+     *     description="Belirtilen ID'ye göre adres detaylarını getirir",
      *     operationId="getAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Address ID",
+     *         description="Adres benzersiz kimliği",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Address retrieved successfully",
+     *         description="Adres başarıyla getirildi",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
-     *             @OA\Property(property="message", type="string", example="Address retrieved successfully")
+     *             @OA\Property(property="message", type="string", example="Adres başarıyla getirildi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -181,13 +182,13 @@ class AddressController extends Controller
         // Ensure user can only access their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
-                'message' => 'Address not found'
+                'message' => 'Adres bulunamadı'
             ], 404);
         }
 
         return response()->json([
             'data' => new AddressResource($address),
-            'message' => 'Address retrieved successfully'
+            'message' => 'Adres başarıyla getirildi'
         ]);
     }
 
@@ -195,43 +196,44 @@ class AddressController extends Controller
      * @OA\Put(
      *     path="/api/v1/addresses/{id}",
      *     summary="Adresi güncelle",
-     *     description="Belirli bir adresi güncelle",
+     *     description="Belirli bir adresi günceller",
      *     operationId="updateAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Address ID",
+     *         description="Adres benzersiz kimliği",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Güncellenecek adres bilgileri",
      *         @OA\JsonContent(
-     *             @OA\Property(property="title", type="string", maxLength=255, example="Home"),
-     *             @OA\Property(property="first_name", type="string", maxLength=255, example="John"),
-     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe"),
-     *             @OA\Property(property="company_name", type="string", maxLength=255, nullable=true, example="ABC Company"),
-     *             @OA\Property(property="phone", type="string", maxLength=20, nullable=true, example="+90 555 123 4567"),
-     *             @OA\Property(property="address_line_1", type="string", example="123 Main Street"),
-     *             @OA\Property(property="address_line_2", type="string", nullable=true, example="Apartment 4B"),
-     *             @OA\Property(property="city", type="string", maxLength=255, example="Istanbul"),
-     *             @OA\Property(property="state", type="string", maxLength=255, nullable=true, example="Istanbul"),
-     *             @OA\Property(property="postal_code", type="string", maxLength=20, example="34000"),
-     *             @OA\Property(property="country", type="string", maxLength=2, example="TR"),
-     *             @OA\Property(property="type", type="string", enum={"shipping", "billing", "both"}, example="both"),
-     *             @OA\Property(property="is_default_shipping", type="boolean", example=false),
-     *             @OA\Property(property="is_default_billing", type="boolean", example=false),
-     *             @OA\Property(property="notes", type="string", nullable=true, example="Ring the doorbell")
+     *             @OA\Property(property="title", type="string", maxLength=255, example="Ev", description="Adres başlığı"),
+     *             @OA\Property(property="first_name", type="string", maxLength=255, example="Ahmet", description="Ad"),
+     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Yılmaz", description="Soyad"),
+     *             @OA\Property(property="company_name", type="string", maxLength=255, nullable=true, example="ABC Şirket", description="Şirket adı"),
+     *             @OA\Property(property="phone", type="string", maxLength=20, nullable=true, example="+90 555 123 4567", description="Telefon numarası"),
+     *             @OA\Property(property="address_line_1", type="string", example="Atatürk Caddesi No:123", description="Adres satırı 1"),
+     *             @OA\Property(property="address_line_2", type="string", nullable=true, example="Daire 4B", description="Adres satırı 2"),
+     *             @OA\Property(property="city", type="string", maxLength=255, example="İstanbul", description="Şehir"),
+     *             @OA\Property(property="state", type="string", maxLength=255, nullable=true, example="İstanbul", description="İl/Eyalet"),
+     *             @OA\Property(property="postal_code", type="string", maxLength=20, example="34000", description="Posta kodu"),
+     *             @OA\Property(property="country", type="string", maxLength=2, example="TR", description="Ülke"),
+     *             @OA\Property(property="type", type="string", enum={"shipping", "billing", "both"}, example="both", description="Adres türü"),
+     *             @OA\Property(property="is_default_shipping", type="boolean", example=false, description="Varsayılan teslimat adresi mi"),
+     *             @OA\Property(property="is_default_billing", type="boolean", example=false, description="Varsayılan fatura adresi mi"),
+     *             @OA\Property(property="notes", type="string", nullable=true, example="Zili çalın", description="Notlar")
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Address updated successfully",
+     *         description="Adres başarıyla güncellendi",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
-     *             @OA\Property(property="message", type="string", example="Address updated successfully")
+     *             @OA\Property(property="message", type="string", example="Adres başarıyla güncellendi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -244,7 +246,7 @@ class AddressController extends Controller
         // Ensure user can only update their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
-                'message' => 'Address not found'
+                'message' => 'Adres bulunamadı'
             ], 404);
         }
 
@@ -283,7 +285,7 @@ class AddressController extends Controller
 
         return response()->json([
             'data' => new AddressResource($address->fresh()),
-            'message' => 'Address updated successfully'
+            'message' => 'Adres başarıyla güncellendi'
         ]);
     }
 
@@ -291,22 +293,22 @@ class AddressController extends Controller
      * @OA\Delete(
      *     path="/api/v1/addresses/{id}",
      *     summary="Adresi sil",
-     *     description="Belirli bir adresi sil (geçici silme)",
+     *     description="Belirli bir adresi siler (geçici silme)",
      *     operationId="deleteAddress",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Address ID",
+     *         description="Adres benzersiz kimliği",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Address deleted successfully",
+     *         description="Adres başarıyla silindi",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Address deleted successfully")
+     *             @OA\Property(property="message", type="string", example="Adres başarıyla silindi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -318,47 +320,47 @@ class AddressController extends Controller
         // Ensure user can only delete their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
-                'message' => 'Address not found'
+                'message' => 'Adres bulunamadı'
             ], 404);
         }
 
         $address->delete();
 
         return response()->json([
-            'message' => 'Address deleted successfully'
+            'message' => 'Adres başarıyla silindi'
         ]);
     }
 
     /**
      * @OA\Post(
      *     path="/api/v1/addresses/{id}/set-default-shipping",
-     *     summary="Varsayılan gönderim adresi olarak ayarla",
-     *     description="Belirtilen adresi varsayılan gönderim adresi olarak ayarla",
+     *     summary="Varsayılan teslimat adresini ayarla",
+     *     description="Belirtilen adresi varsayılan teslimat adresi olarak ayarlar",
      *     operationId="setDefaultShipping",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Address ID",
+     *         description="Adres benzersiz kimliği",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Default shipping address set successfully",
+     *         description="Varsayılan teslimat adresi başarıyla ayarlandı",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
-     *             @OA\Property(property="message", type="string", example="Default shipping address set successfully")
+     *             @OA\Property(property="message", type="string", example="Varsayılan teslimat adresi başarıyla ayarlandı")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
      *     @OA\Response(response=404, ref="#/components/responses/NotFound"),
      *     @OA\Response(
      *         response=422,
-     *         description="Address cannot be used for shipping",
+     *         description="Adres teslimat için kullanılamaz",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="This address cannot be used for shipping")
+     *             @OA\Property(property="message", type="string", example="Bu adres teslimat için kullanılamaz")
      *         )
      *     )
      * )
@@ -368,14 +370,14 @@ class AddressController extends Controller
         // Ensure user can only modify their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
-                'message' => 'Address not found'
+                'message' => 'Adres bulunamadı'
             ], 404);
         }
 
         // Check if address can be used for shipping
         if (!in_array($address->type, ['shipping', 'both'])) {
             return response()->json([
-                'message' => 'This address cannot be used for shipping'
+                'message' => 'Bu adres teslimat için kullanılamaz'
             ], 422);
         }
 
@@ -383,40 +385,40 @@ class AddressController extends Controller
 
         return response()->json([
             'data' => new AddressResource($address->fresh()),
-            'message' => 'Default shipping address set successfully'
+            'message' => 'Varsayılan teslimat adresi başarıyla ayarlandı'
         ]);
     }
 
     /**
      * @OA\Post(
      *     path="/api/v1/addresses/{id}/set-default-billing",
-     *     summary="Varsayılan fatura adresi olarak ayarla",
-     *     description="Belirtilen adresi varsayılan fatura adresi olarak ayarla",
+     *     summary="Varsayılan fatura adresini ayarla",
+     *     description="Belirtilen adresi varsayılan fatura adresi olarak ayarlar",
      *     operationId="setDefaultBilling",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Address ID",
+     *         description="Adres benzersiz kimliği",
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Default billing address set successfully",
+     *         description="Varsayılan fatura adresi başarıyla ayarlandı",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
-     *             @OA\Property(property="message", type="string", example="Default billing address set successfully")
+     *             @OA\Property(property="message", type="string", example="Varsayılan fatura adresi başarıyla ayarlandı")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
      *     @OA\Response(response=404, ref="#/components/responses/NotFound"),
      *     @OA\Response(
      *         response=422,
-     *         description="Address cannot be used for billing",
+     *         description="Adres fatura için kullanılamaz",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="This address cannot be used for billing")
+     *             @OA\Property(property="message", type="string", example="Bu adres fatura için kullanılamaz")
      *         )
      *     )
      * )
@@ -426,14 +428,14 @@ class AddressController extends Controller
         // Ensure user can only modify their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
-                'message' => 'Address not found'
+                'message' => 'Adres bulunamadı'
             ], 404);
         }
 
         // Check if address can be used for billing
         if (!in_array($address->type, ['billing', 'both'])) {
             return response()->json([
-                'message' => 'This address cannot be used for billing'
+                'message' => 'Bu adres fatura için kullanılamaz'
             ], 422);
         }
 
@@ -441,27 +443,27 @@ class AddressController extends Controller
 
         return response()->json([
             'data' => new AddressResource($address->fresh()),
-            'message' => 'Default billing address set successfully'
+            'message' => 'Varsayılan fatura adresi başarıyla ayarlandı'
         ]);
     }
 
     /**
      * @OA\Get(
      *     path="/api/v1/addresses/defaults",
-     *     summary="Varsayılan adresleri al",
-     *     description="Kullanıcının varsayılan gönderim ve fatura adreslerini al",
+     *     summary="Varsayılan adresleri getir",
+     *     description="Kullanıcının varsayılan teslimat ve fatura adreslerini getirir",
      *     operationId="getDefaultAddresses",
      *     tags={"Addresses"},
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
-     *         description="Default addresses retrieved successfully",
+     *         description="Varsayılan adresler başarıyla getirildi",
      *         @OA\JsonContent(
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="shipping", ref="#/components/schemas/AddressResource", nullable=true),
-     *                 @OA\Property(property="billing", ref="#/components/schemas/AddressResource", nullable=true)
+     *             @OA\Property(property="data", type="object", description="Varsayılan adresler",
+     *                 @OA\Property(property="shipping", ref="#/components/schemas/AddressResource", nullable=true, description="Varsayılan teslimat adresi"),
+     *                 @OA\Property(property="billing", ref="#/components/schemas/AddressResource", nullable=true, description="Varsayılan fatura adresi")
      *             ),
-     *             @OA\Property(property="message", type="string", example="Default addresses retrieved successfully")
+     *             @OA\Property(property="message", type="string", example="Varsayılan adresler başarıyla getirildi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated")
@@ -478,7 +480,7 @@ class AddressController extends Controller
                 'shipping' => $defaultShipping ? new AddressResource($defaultShipping) : null,
                 'billing' => $defaultBilling ? new AddressResource($defaultBilling) : null,
             ],
-            'message' => 'Default addresses retrieved successfully'
+            'message' => 'Varsayılan adresler başarıyla getirildi'
         ]);
     }
 }
