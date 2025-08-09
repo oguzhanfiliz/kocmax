@@ -19,6 +19,7 @@ Bu klasör, sistemdeki uçtan uca iş akışlarını toplar. Her dosya, admin ve
  - [address-flows.md](./address-flows.md) — Adres defteri akışları
  - [auth-flows.md](./auth-flows.md) — Kimlik doğrulama akışları
  - [TASKS.md](./TASKS.md) — Dokümantasyon görev listesi
+ - [coupon-flows.md](./coupon-flows.md) — İndirim kuponları (kısa ve pratik senaryolar)
 
 ### Adlandırma Kuralları
 - Kebab-case dosya adı kullanın: `xxx-flows.md`

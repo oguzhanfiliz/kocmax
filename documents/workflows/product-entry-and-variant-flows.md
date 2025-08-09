@@ -17,6 +17,7 @@ Bu doküman, admin panel üzerinden ürün ve varyant giriş süreçlerini, SKU 
 - [Validasyon ve Hata Yönetimi](#validasyon-ve-hata-yönetimi)
 - [İlgili Dosya ve Klasör Yapısı](#ilgili-dosya-ve-klasör-yapısı)
 - [Mimariler, Desenler ve Prensipler](#mimariler-desenler-ve-prensipler)
+ - [Mermaid Akış Diyagramları](#mermaid-akış-diyagramları)
 
 ---
 
@@ -227,6 +228,35 @@ database/
   - **Veri tutarlılığı**: Ebeveyn kategorilerin model düzeyinde zorunlu senkronizasyonu.
   - **Çoklu para birimi**: Orijinal fiyat kaydı + TRY eşleniğinin hesaplanması, hata toleransı (fallback kurlar).
   - **Performans**: Gerekli kolon seçimi, sayfalarda eager loading/select optimizasyonları, ağaç üretiminde limit/derinlik sınırları.
+
+---
+
+## Mermaid Akış Diyagramları
+
+```mermaid
+flowchart TD
+  A[Ürün Oluştur] --> B[Temel Bilgiler: İsim/Slug/SKU]
+  B --> C[Kategori Seçimi (ağaç)]
+  C --> D[Fiyat & Fiziksel: base_currency/base_price]
+  D --> E[Durumlar: Aktif/Öne Çıkan/Yeni/Bestseller]
+  E --> F[SEO]
+  F --> G[Kaydet]
+  G --> H{Başarılı?}
+  H -- Evet --> I[Listeye Dön / Varyantlara Geç]
+  H -- Hayır --> J[Hata Mesajları]
+```
+
+```mermaid
+flowchart TD
+  K[Varyant Ekle] --> L[Seçenekler: Renk/Beden]
+  L --> M[Ad Otomatik]
+  L --> N[SKU Otomatik (Ürün SKU + sonek)]
+  N --> O[Fiyat: Source Currency/Price]
+  O --> P[TRY Eşleniği Hesapla]
+  P --> Q[Stok & Boyutlar]
+  Q --> R[Görseller]
+  R --> S[Kaydet]
+```
 
 ---
 
