@@ -3279,6 +3279,572 @@
                     }
                 ]
             }
+        },
+        "/api/v1/wishlist": {
+            "get": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Get user's wishlist",
+                "description": "Retrieve all items in the authenticated user's wishlist",
+                "operationId": "getWishlist",
+                "parameters": [
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "description": "Filter by priority (1=Low, 2=Medium, 3=High, 4=Urgent)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                1,
+                                2,
+                                3,
+                                4
+                            ]
+                        }
+                    },
+                    {
+                        "name": "favorites_only",
+                        "in": "query",
+                        "description": "Show only favorite items",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "available_only",
+                        "in": "query",
+                        "description": "Show only items that are in stock",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wishlist retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WishlistResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "total_items": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "favorite_items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "high_priority_items": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wishlist retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Add item to wishlist",
+                "description": "Add a product or product variant to the user's wishlist",
+                "operationId": "addToWishlist",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "product_variant_id": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Need this for the office",
+                                        "nullable": true
+                                    },
+                                    "priority": {
+                                        "description": "1=Low, 2=Medium, 3=High, 4=Urgent",
+                                        "type": "integer",
+                                        "enum": [
+                                            1,
+                                            2,
+                                            3,
+                                            4
+                                        ],
+                                        "example": 2
+                                    },
+                                    "is_favorite": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Item added to wishlist successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WishlistResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Item added to wishlist successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "409": {
+                        "description": "Item already exists in wishlist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "This item is already in your wishlist"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/wishlist/{id}": {
+            "get": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Get specific wishlist item",
+                "description": "Retrieve a specific item from the user's wishlist",
+                "operationId": "getWishlistItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Wishlist item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wishlist item retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WishlistResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wishlist item retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Update wishlist item",
+                "description": "Update a specific item in the user's wishlist",
+                "operationId": "updateWishlistItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Wishlist item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "notes": {
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated notes",
+                                        "nullable": true
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "enum": [
+                                            1,
+                                            2,
+                                            3,
+                                            4
+                                        ],
+                                        "example": 3
+                                    },
+                                    "is_favorite": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Wishlist item updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WishlistResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wishlist item updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Remove item from wishlist",
+                "description": "Remove a specific item from the user's wishlist",
+                "operationId": "removeFromWishlist",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Wishlist item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item removed from wishlist successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Item removed from wishlist successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/wishlist/{id}/toggle-favorite": {
+            "post": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Toggle favorite status",
+                "description": "Toggle the favorite status of a wishlist item",
+                "operationId": "toggleWishlistFavorite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Wishlist item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Favorite status toggled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WishlistResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Favorite status updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/wishlist/clear": {
+            "delete": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Clear entire wishlist",
+                "description": "Remove all items from the user's wishlist",
+                "operationId": "clearWishlist",
+                "responses": {
+                    "200": {
+                        "description": "Wishlist cleared successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wishlist cleared successfully"
+                                        },
+                                        "removed_count": {
+                                            "type": "integer",
+                                            "example": 12
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/wishlist/stats": {
+            "get": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Get wishlist statistics",
+                "description": "Get statistics about the user's wishlist",
+                "operationId": "getWishlistStats",
+                "responses": {
+                    "200": {
+                        "description": "Wishlist statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "total_items": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                },
+                                                "favorite_items": {
+                                                    "type": "integer",
+                                                    "example": 8
+                                                },
+                                                "high_priority_items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "available_items": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "priority_breakdown": {
+                                                    "properties": {
+                                                        "low": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "medium": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "high": {
+                                                            "type": "integer",
+                                                            "example": 4
+                                                        },
+                                                        "urgent": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "total_value": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 2450.75
+                                                },
+                                                "oldest_item_date": {
+                                                    "type": "string",
+                                                    "format": "datetime"
+                                                },
+                                                "newest_item_date": {
+                                                    "type": "string",
+                                                    "format": "datetime"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wishlist statistics retrieved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -4124,6 +4690,145 @@
                     }
                 },
                 "type": "object"
+            },
+            "WishlistResource": {
+                "title": "Wishlist Resource",
+                "description": "Wishlist item resource representation",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "product": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Professional Safety Boot"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "professional-safety-boot"
+                            },
+                            "base_price": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 380
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "product_variant": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "color": {
+                                "type": "string",
+                                "example": "Black"
+                            },
+                            "size": {
+                                "type": "string",
+                                "example": "42"
+                            },
+                            "price": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 380
+                            },
+                            "stock": {
+                                "type": "integer",
+                                "example": 15
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Need this for the office",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "description": "1=Low, 2=Medium, 3=High, 4=Urgent",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "priority_label": {
+                        "type": "string",
+                        "example": "Medium"
+                    },
+                    "is_favorite": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_available": {
+                        "description": "Whether item is in stock",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "current_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 125.5
+                    },
+                    "added_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "notification_sent_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    }
+                },
+                "type": "object"
+            },
+            "ProductVariantResource": {
+                "title": "Product Variant Resource (Simplified)",
+                "description": "Simplified product variant resource for wishlist",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "color": {
+                        "type": "string",
+                        "example": "Red",
+                        "nullable": true
+                    },
+                    "size": {
+                        "type": "string",
+                        "example": "L",
+                        "nullable": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 125.5
+                    },
+                    "stock": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "ISG-BOOT-PRO-001-L-RED"
+                    }
+                },
+                "type": "object"
             }
         },
         "responses": {
@@ -4232,6 +4937,10 @@
         {
             "name": "Users",
             "description": "User profile and account management"
+        },
+        {
+            "name": "Wishlist",
+            "description": "User wishlist management"
         }
     ]
 }

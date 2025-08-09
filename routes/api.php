@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -180,4 +181,25 @@ Route::prefix('v1/addresses')->middleware('auth:sanctum')->group(function () {
     Route::get('/defaults', [AddressController::class, 'getDefaults'])->name('api.addresses.defaults');
     Route::post('/{address}/set-default-shipping', [AddressController::class, 'setDefaultShipping'])->name('api.addresses.set-default-shipping');
     Route::post('/{address}/set-default-billing', [AddressController::class, 'setDefaultBilling'])->name('api.addresses.set-default-billing');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Wishlist API Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/wishlist')->middleware('auth:sanctum')->group(function () {
+    // Wishlist statistics (must be before {wishlist} routes)
+    Route::get('/stats', [WishlistController::class, 'stats'])->name('api.wishlist.stats');
+    
+    // Wishlist CRUD operations
+    Route::get('/', [WishlistController::class, 'index'])->name('api.wishlist.index');
+    Route::post('/', [WishlistController::class, 'store'])->name('api.wishlist.store');
+    Route::get('/{wishlist}', [WishlistController::class, 'show'])->name('api.wishlist.show');
+    Route::put('/{wishlist}', [WishlistController::class, 'update'])->name('api.wishlist.update');
+    Route::delete('/{wishlist}', [WishlistController::class, 'destroy'])->name('api.wishlist.destroy');
+    
+    // Wishlist actions
+    Route::post('/{wishlist}/toggle-favorite', [WishlistController::class, 'toggleFavorite'])->name('api.wishlist.toggle-favorite');
+    Route::delete('/clear', [WishlistController::class, 'clear'])->name('api.wishlist.clear');
 });
