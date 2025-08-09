@@ -7,6 +7,8 @@ Kısa özet: Ürün/varyant fiyatları TRY normalize edilerek saklanır; kaynak 
 - [Mimari ve Dosya Yapısı](#mimari-ve-dosya-yapısı)
 - [Senaryolar](#senaryolar)
 - [Checklist](#checklist)
+ - [Mermaid Akış Diyagramı](#mermaid-akış-diyagramı)
+ - [Mimariler, Desenler, Prensipler](#mimariler-desenler-prensipler)
 
 ---
 
@@ -52,5 +54,26 @@ app/
 - [ ] Kaynak fiyatlar düzgün normalize ediliyor (TRY)
 - [ ] Gösterim dönüşümleri doğru
 - [ ] TCMB cache ve hata toleransı çalışıyor
+
+---
+
+## Mermaid Akış Diyagramı
+
+```mermaid
+flowchart TD
+  A[Varyant Fiyat Girişi] --> B[Source Currency/Price]
+  B --> C[TRY Normalize: convertPrice]
+  C --> D[Kaydet: price=TRY]
+  D --> E[GET /cart?currency=USD]
+  E --> F[TRY→USD Gösterim: getPriceInCurrency]
+```
+
+---
+
+## Mimariler, Desenler, Prensipler
+
+- Normalize saklama: Persist her zaman TRY; gösterim dönüşümle.
+- Hata toleransı: TCMB hatasında fallback oranlar.
+- Tek sorumluluk: Dönüşüm hesapları `CurrencyConversionService`, oran yönetimi `ExchangeRateService`.
 
 

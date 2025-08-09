@@ -7,6 +7,8 @@ Kısa özet: Fiyatlandırma, müşteri tipine (B2B/B2C/Guest), kampanyalara ve v
 - [Mimari ve Dosya Yapısı](#mimari-ve-dosya-yapısı)
 - [Senaryolar](#senaryolar)
 - [Checklist](#checklist)
+ - [Mermaid Akış Diyagramı](#mermaid-akış-diyagramı)
+ - [Mimariler, Desenler, Prensipler](#mimariler-desenler-prensipler)
 
 ---
 
@@ -62,5 +64,30 @@ app/
 - [ ] Varyant price TRY normalize
 - [ ] Kampanya indirimleri uygulanıyor
 - [ ] VO dönüşümleri (Price, Discount, PriceResult) tutarlı
+
+---
+
+## Mermaid Akış Diyagramı
+
+```mermaid
+flowchart TD
+  A[calculatePrice(variant, qty, user)] --> B[CustomerTypeDetector]
+  B --> C{B2B/B2C/Guest}
+  C -->|B2B| D[B2BPricingStrategy]
+  C -->|B2C| E[B2CPricingStrategy]
+  C -->|Guest| F[Default]
+  D --> G[CampaignPricingService]
+  E --> G
+  F --> G
+  G --> H[PriceResult(base/final/discount)]
+```
+
+---
+
+## Mimariler, Desenler, Prensipler
+
+- Strategy: Müşteri tipi bazlı stratejiler.
+- VO: Fiyat ve indirimleri ifade etmek için değer nesneleri.
+- Ayrık sorumluluk: Kampanya etkileri ayrı servisle entegre edilir.
 
 

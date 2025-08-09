@@ -12,6 +12,7 @@ Bu doküman, sepet sisteminin uçtan uca akışlarını; API uçları, strateji 
 - [Olaylar (Events)](#olaylar-events)
 - [Kenar Durumları (Edge Cases)](#kenar-durumları-edge-cases)
 - [İlgili Dosya ve Klasör Yapısı](#ilgili-dosya-ve-klasör-yapısı)
+ - [Mimariler, Desenler, Prensipler](#mimariler-desenler-prensipler)
 
 ---
 
@@ -187,6 +188,14 @@ app/
 ```
 
 ---
+
+## Mimariler, Desenler, Prensipler
+
+- Panel değil API-odaklı akış: Sepet işlemleri büyük oranda API üzerinden yürür; panel sadece gözlem/analitik.
+- Servis/Strateji ayrımı: `CartService` (iş akışı) + Strategy (guest/auth) net ayrım.
+- VO kullanımı: `CartSummary`, tutarlı dönüş ve kolay test.
+- Performans: Özet caching (timestamp bazlı), eager loading.
+- Hata yönetimi: Validasyon hataları kullanıcı-dostu JSON; transaction güvenliği.
 
 ### Notlar
 
