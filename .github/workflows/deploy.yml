@@ -71,12 +71,17 @@ jobs:
           sed -i '/^THROTTLE_LOGIN_ATTEMPTS=/d' .env; echo "THROTTLE_LOGIN_ATTEMPTS=10000" >> .env
           sed -i '/^THROTTLE_LOGIN_DECAY=/d' .env; echo "THROTTLE_LOGIN_DECAY=600" >> .env
           
-          # API Rate Limiting - Genel API sınırları (isteğe bağlı, şu an kullanılmıyor)
-          sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=100000" >> .env
-          sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=600" >> .env
+          # API Rate Limiting - Çok yüksek limitler (Vue app için)
+          sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=500000" >> .env
+          sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=50000" >> .env
           
-          # API Security Settings - Development için security middleware'i daha esnek yap
+          # API Security Settings - Development modda neredeyse unlimited
           sed -i '/^API_REQUEST_LIMIT=/d' .env; echo "API_REQUEST_LIMIT=100000" >> .env
+          sed -i '/^API_SECURITY_ENABLED=/d' .env; echo "API_SECURITY_ENABLED=false" >> .env
+          sed -i '/^DISABLE_API_SECURITY=/d' .env; echo "DISABLE_API_SECURITY=true" >> .env
+          sed -i '/^API_HIGH_LIMITS=/d' .env; echo "API_HIGH_LIMITS=true" >> .env
+          sed -i '/^API_UNLIMITED_MODE=/d' .env; echo "API_UNLIMITED_MODE=true" >> .env
+          sed -i '/^SUSPICIOUS_ACTIVITY_DETECTION=/d' .env; echo "SUSPICIOUS_ACTIVITY_DETECTION=false" >> .env
           
           # Laravel cache temizle ve yeniden oluştur
           php artisan config:clear

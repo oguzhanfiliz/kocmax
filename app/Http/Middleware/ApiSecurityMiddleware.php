@@ -78,8 +78,11 @@ class ApiSecurityMiddleware
         $ip = $request->ip();
         $userAgent = $request->userAgent();
         
-        // Skip security checks in development environment
-        if (app()->environment('local') || config('app.debug')) {
+        // Skip security checks completely in development or when disabled
+        if (app()->environment('local') || 
+            config('app.debug') || 
+            config('security.development_overrides.disable_security_checks', false) ||
+            config('security.development_overrides.unlimited_mode', false)) {
             return false;
         }
         
@@ -88,8 +91,9 @@ class ApiSecurityMiddleware
         $requestCount = Cache::get($requestKey, 0);
         Cache::put($requestKey, $requestCount + 1, 300); // 5 minutes
         
-        // Configurable limits based on environment
-        $requestLimit = config('security.api_request_limit', 500); // Increased default limit
+        // Much higher limits for development vs production
+        $baseLimit = config('security.api_request_limit', 500);
+        $requestLimit = app()->environment('local') ? 50000 : $baseLimit; // Çok yüksek development limiti
         
         // Suspicious patterns
         $suspiciousPatterns = [

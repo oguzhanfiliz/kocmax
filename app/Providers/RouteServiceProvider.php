@@ -24,29 +24,34 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Standard API rate limiting - tightened for security
+        // Dynamic rate limiting based on environment - Development'ta çok yüksek limitler
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+            $limit = app()->environment('local') ? 10000 : 100; // Development vs Production
+            return Limit::perMinute($limit)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Stricter rate limiting for sensitive operations
+        // Authentication rate limiting - development'ta yüksek limit
         RateLimiter::for('auth', function (Request $request) {
-            return Limit::perMinute(10)->by($request->ip());
+            $limit = app()->environment('local') ? 1000 : 50; // Development vs Production  
+            return Limit::perMinute($limit)->by($request->ip());
         });
 
-        // Very strict rate limiting for checkout operations
+        // Checkout rate limiting - development'ta unlimited benzeri
         RateLimiter::for('checkout', function (Request $request) {
-            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+            $limit = app()->environment('local') ? 5000 : 10; // Development vs Production
+            return Limit::perMinute($limit)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Rate limiting for campaign and coupon operations
+        // Campaign rate limiting - development'ta yüksek limit
         RateLimiter::for('campaigns', function (Request $request) {
-            return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+            $limit = app()->environment('local') ? 2000 : 30; // Development vs Production
+            return Limit::perMinute($limit)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Public API rate limiting (ürünler, kategoriler için)
+        // Public API rate limiting (ürünler, kategoriler için) - Development'ta çok yüksek
         RateLimiter::for('public', function (Request $request) {
-            return Limit::perMinute(100)->by($request->ip())->response(function () {
+            $limit = app()->environment('local') ? 15000 : 200; // Development vs Production
+            return Limit::perMinute($limit)->by($request->ip())->response(function () {
                 return response()->json([
                     'error' => 'Rate limit exceeded',
                     'message' => 'Çok fazla istek gönderiyorsunuz. Lütfen bir dakika bekleyin.',
@@ -55,9 +60,10 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
-        // Authenticated users için daha yüksek limit
+        // Authenticated users için çok yüksek limit - Development'ta neredeyse unlimited
         RateLimiter::for('authenticated', function (Request $request) {
-            return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
+            $limit = app()->environment('local') ? 50000 : 1000; // Development vs Production
+            return Limit::perMinute($limit)->by($request->user()?->id ?: $request->ip());
         });
 
         $this->routes(function () {
