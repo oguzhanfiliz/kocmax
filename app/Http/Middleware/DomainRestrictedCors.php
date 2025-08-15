@@ -28,7 +28,7 @@ class DomainRestrictedCors
         
         // Origin header yoksa (direct API call) devam et
         if (!$origin) {
-            return $next($request);
+            return $this->addCorsHeaders($next($request), '*');
         }
 
         $allowedDomains = config('cors.allowed_domains', []);
@@ -52,14 +52,22 @@ class DomainRestrictedCors
     private function isDomainAllowed(string $domain, array $allowedDomains): bool
     {
         foreach ($allowedDomains as $allowedDomain) {
+            // URL'den sadece domain kısmını çıkar (http:// https:// prefix'lerini temizle)
+            $cleanDomain = parse_url($allowedDomain, PHP_URL_HOST) ?: $allowedDomain;
+            
             // Exact match
+            if ($domain === $cleanDomain) {
+                return true;
+            }
+            
+            // Port ile birlikte kontrol et
             if ($domain === $allowedDomain) {
                 return true;
             }
             
             // Wildcard subdomain check (*.example.com)
-            if (str_starts_with($allowedDomain, '*.')) {
-                $baseDomain = substr($allowedDomain, 2);
+            if (str_starts_with($cleanDomain, '*.')) {
+                $baseDomain = substr($cleanDomain, 2);
                 if (str_ends_with($domain, $baseDomain)) {
                     return true;
                 }

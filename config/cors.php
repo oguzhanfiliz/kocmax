@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => env('CORS_ALLOWED_ORIGINS') ? 
-        explode(',', env('CORS_ALLOWED_ORIGINS')) : 
+        array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS'))) : 
         ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'],
 
     'allowed_origins_patterns' => [
@@ -61,7 +61,7 @@ return [
     */
 
     'allowed_domains' => array_filter(
-        explode(',', env('ALLOWED_DOMAINS', 'localhost:3000,127.0.0.1:3000,localhost:8080'))
+        array_map('trim', explode(',', env('ALLOWED_DOMAINS', 'localhost:3000,127.0.0.1:3000,localhost:5173')))
     ),
 
     /*
@@ -73,10 +73,12 @@ return [
     |
     */
 
-    'production_domains' => [
-        'yourdomain.com',
-        'www.yourdomain.com',
-        '*.yourdomain.com', // Subdomains
-    ],
+    // Production domains için .env'den oku, yoksa default değerler
+    'production_domains' => env('PRODUCTION_DOMAINS') ? 
+        array_map('trim', explode(',', env('PRODUCTION_DOMAINS'))) : [
+            'b2bb2c.mutfakyapim.net',
+            'www.b2bb2c.mutfakyapim.net',
+            '*.mutfakyapim.net',
+        ],
 
 ];

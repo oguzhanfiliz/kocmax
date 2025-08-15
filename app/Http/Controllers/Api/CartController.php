@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * @OA\Tag(
  *     name="Cart",
- *     description="Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları"
+ *     description="Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları - Protected endpoints (Authentication required)"
  * )
  */
 class CartController extends Controller
@@ -38,7 +38,7 @@ class CartController extends Controller
      * @OA\Get(
      *      path="/api/v1/cart",
      *      operationId="getCart",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Kullanıcının mevcut sepetini görüntüle",
      *      description="Giriş yapmış veya misafir kullanıcının sepetini para birimi dönüştürme seçeneğiyle getirir",
      *      @OA\Parameter(
@@ -105,7 +105,7 @@ class CartController extends Controller
      * @OA\Post(
      *      path="/api/v1/cart/items",
      *      operationId="addItemToCart",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Sepete ürün ekle",
      *      description="Kullanıcının sepetine bir ürün varyantı ekleyin",
      *      @OA\RequestBody(
@@ -177,7 +177,7 @@ class CartController extends Controller
      * @OA\Put(
      *      path="/api/v1/cart/items/{item}",
      *      operationId="updateCartItem",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Sepetteki ürün miktarını güncelle",
      *      description="Mevcut bir sepet öğesinin miktarını güncelleyin",
      *      @OA\Parameter(
@@ -247,7 +247,7 @@ class CartController extends Controller
      * @OA\Delete(
      *      path="/api/v1/cart/items/{item}",
      *      operationId="removeCartItem",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Ürünü sepetten kaldır",
      *      description="Kullanıcının sepetinden bir ürünü kaldırın",
      *      @OA\Parameter(
@@ -309,7 +309,7 @@ class CartController extends Controller
      * @OA\Delete(
      *      path="/api/v1/cart",
      *      operationId="clearCart",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Tüm sepeti temizle",
      *      description="Kullanıcının sepetindeki tüm ürünleri kaldırın",
      *      @OA\Response(
@@ -359,7 +359,7 @@ class CartController extends Controller
      * @OA\Get(
      *      path="/api/v1/cart/summary",
      *      operationId="getCartSummary",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Sepet özetini al",
      *      description="Fiyatlandırma bilgileriyle sepet özetini alın",
      *      @OA\Response(
@@ -400,7 +400,7 @@ class CartController extends Controller
      * @OA\Put(
      *      path="/api/v1/cart/refresh-pricing",
      *      operationId="refreshCartPricing",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Sepet fiyatlarını yenile",
      *      description="Mevcut sepetteki ürünlerin fiyatlarını güncel değerlerle yenileyin",
      *      @OA\Response(
@@ -451,7 +451,7 @@ class CartController extends Controller
      * @OA\Post(
      *      path="/api/v1/cart/migrate",
      *      operationId="migrateGuestCart",
-     *      tags={"Cart"},
+     *      tags={"Cart", "Protected API"},
      *      summary="Misafir sepetini kimliği doğrulanmış kullanıcıya taşı",
      *      description="Ürünleri misafir sepetinden kimliği doğrulanmış kullanıcı sepetine aktarın",
      *      security={{ "sanctum": {} }},

@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 /**
  * @OA\Tag(
  *     name="Products",
- *     description="Ürün kataloğu ve arama API uç noktaları"
+ *     description="Ürün kataloğu ve arama API uç noktaları - Public endpoints (Authentication not required)"
  * )
  */
 class ProductController extends Controller
@@ -33,9 +33,10 @@ class ProductController extends Controller
      * @OA\Get(
      *     path="/api/v1/products",
      *     operationId="getProducts",
-     *     tags={"Products"},
-     *     summary="Filtreleme ve arama ile ürün listesini al",
-     *     description="Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür",
+     *     tags={"Products", "Public API"},
+     *     summary="Filtreleme ve arama ile ürün listesini al (Public)",
+     *     description="Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Authentication gerektirmez, guest pricing kullanır. Production'da domain koruması aktiftir.",
+     *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
@@ -150,6 +151,16 @@ class ProductController extends Controller
      *         response=422,
      *         description="Doğrulama hatası",
      *         @OA\JsonContent(ref="#/components/schemas/ValidationError")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Domain not allowed (production only)",
+     *         @OA\JsonContent(ref="#/components/responses/DomainNotAllowed")
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Rate limit exceeded (100 req/min for public endpoints)",
+     *         @OA\JsonContent(ref="#/components/responses/RateLimitExceeded")
      *     )
      * )
      */
@@ -273,9 +284,10 @@ class ProductController extends Controller
      * @OA\Get(
      *     path="/api/v1/products/{id}",
      *     operationId="getProduct",
-     *     tags={"Products"},
-     *     summary="Tek ürün ayrıntılarını al",
-     *     description="Belirli bir ürün hakkında ayrıntılı bilgi döndürür",
+     *     tags={"Products", "Public API"},
+     *     summary="Tek ürün ayrıntılarını al (Public)",
+     *     description="Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Authentication gerektirmez, guest pricing kullanır.",
+     *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -303,6 +315,16 @@ class ProductController extends Controller
      *         response=404,
      *         description="Ürün bulunamadı",
      *         @OA\JsonContent(ref="#/components/schemas/Error")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Domain not allowed (production only)",
+     *         @OA\JsonContent(ref="#/components/responses/DomainNotAllowed")
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Rate limit exceeded",
+     *         @OA\JsonContent(ref="#/components/responses/RateLimitExceeded")
      *     )
      * )
      */
@@ -332,9 +354,10 @@ class ProductController extends Controller
      * @OA\Get(
      *     path="/api/v1/products/search-suggestions",
      *     operationId="getProductSuggestions",
-     *     tags={"Products"},
-     *     summary="Arama önerilerini al",
-     *     description="Kısmi girdiye göre arama önerilerini döndürür",
+     *     tags={"Products", "Public API"},
+     *     summary="Arama önerilerini al (Public)",
+     *     description="Kısmi girdiye göre arama önerilerini döndürür. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="q",
      *         in="query",
@@ -437,9 +460,10 @@ class ProductController extends Controller
      * @OA\Get(
      *     path="/api/v1/products/filters",
      *     operationId="getProductFilters",
-     *     tags={"Products"},
-     *     summary="Mevcut filtreleri al",
-     *     description="Ürünler için mevcut tüm filtre seçeneklerini döndürür",
+     *     tags={"Products", "Public API"},
+     *     summary="Mevcut filtreleri al (Public)",
+     *     description="Ürünler için mevcut tüm filtre seçeneklerini döndürür. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="İstek başarıyla tamamlandı",

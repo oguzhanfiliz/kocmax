@@ -15,7 +15,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 /**
  * @OA\Tag(
  *     name="Categories",
- *     description="Kategori yönetimi API uç noktaları"
+ *     description="Kategori yönetimi API uç noktaları - Public endpoints (Authentication not required)"
  * )
  */
 class CategoryController extends Controller
@@ -24,9 +24,10 @@ class CategoryController extends Controller
      * @OA\Get(
      *     path="/api/v1/categories",
      *     operationId="getCategories",
-     *     tags={"Categories"},
-     *     summary="Kategorileri listele",
-     *     description="Aktif kategorileri hiyerarşik yapıda getirir",
+     *     tags={"Categories", "Public API"},
+     *     summary="Kategorileri listele (Public)",
+     *     description="Aktif kategorileri hiyerarşik yapıda getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="parent_id",
      *         in="query",
