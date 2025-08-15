@@ -50,4 +50,33 @@ return [
 
     'supports_credentials' => true, // Required for Sanctum
 
+    /*
+    |--------------------------------------------------------------------------
+    | Domain-based API Protection
+    |--------------------------------------------------------------------------
+    |
+    | Domain koruması için izin verilen domain listesi
+    | Wildcard subdomain desteklenir: *.example.com
+    |
+    */
+
+    'allowed_domains' => array_filter(
+        explode(',', env('ALLOWED_DOMAINS', 'localhost:3000,127.0.0.1:3000,localhost:8080'))
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Production Domains
+    |--------------------------------------------------------------------------
+    |
+    | Production'da kullanılacak domain listesi
+    |
+    */
+
+    'production_domains' => [
+        'yourdomain.com',
+        'www.yourdomain.com',
+        '*.yourdomain.com', // Subdomains
+    ],
+
 ];

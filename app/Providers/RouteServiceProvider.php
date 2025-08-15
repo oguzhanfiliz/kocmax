@@ -44,6 +44,22 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Public API rate limiting (ürünler, kategoriler için)
+        RateLimiter::for('public', function (Request $request) {
+            return Limit::perMinute(100)->by($request->ip())->response(function () {
+                return response()->json([
+                    'error' => 'Rate limit exceeded',
+                    'message' => 'Çok fazla istek gönderiyorsunuz. Lütfen bir dakika bekleyin.',
+                    'retry_after' => 60
+                ], 429);
+            });
+        });
+
+        // Authenticated users için daha yüksek limit
+        RateLimiter::for('authenticated', function (Request $request) {
+            return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

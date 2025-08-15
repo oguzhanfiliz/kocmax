@@ -61,6 +61,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Domain Protection Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Domain bazlı API koruması aktif/pasif kontrolü
+    | Development'de false, production'da true olmalı
+    |
+    */
+
+    'domain_protection_enabled' => env('DOMAIN_PROTECTION_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

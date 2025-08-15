@@ -56,3 +56,131 @@ Eklenen süre sebepleri:
 - + Multi-currency sistemi (+1 hafta)
 - + Gelişmiş kampanya sistemi (+1 hafta)
 - - Kargo entegrasyonu (-1 hafta)
+
+---
+
+## 🚀 KURULUM
+
+### Gereksinimler
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- MySQL 8.0
+- Docker & Docker Compose (isteğe bağlı)
+
+### Hızlı Başlangıç
+
+#### 1. Projeyi İndir
+```bash
+git clone <repository-url>
+cd B2B-B2C-main
+```
+
+#### 2. Bağımlılıkları Yükle
+```bash
+composer install
+npm install
+```
+
+#### 3. Ortam Dosyasını Hazırla
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+#### 4. Docker ile Veritabanı (Önerilen)
+```bash
+docker-compose up -d
+```
+
+Bu komut başlatır:
+- MySQL 8.0 (Port: 3306)
+- phpMyAdmin (http://localhost:8081)
+
+#### 5. Veritabanını Hazırla
+```bash
+# MySQL için .env dosyasını güncelle:
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=user
+DB_PASSWORD=password
+
+# Migrationları çalıştır ve test verilerini yükle
+php artisan migrate:fresh --seed
+```
+
+#### 6. Frontend Derle
+```bash
+npm run dev
+```
+
+#### 7. Sunucuyu Başlat
+```bash
+php artisan serve
+```
+
+Uygulama http://localhost:8000 adresinde çalışacak.
+
+### Admin Panel Erişimi
+- URL: http://localhost:8000/admin
+- Test kullanıcısı: `php artisan make:test-user` komutuyla oluşturulabilir
+
+### Önemli Komutlar
+
+#### Geliştirme
+```bash
+php artisan serve                    # Geliştirme sunucusu
+npm run dev                         # Frontend geliştirme modu
+php artisan migrate:fresh --seed    # Veritabanını sıfırla ve test verisi yükle
+php artisan test                    # Testleri çalıştır
+```
+
+#### Fiyatlandırma Sistemi
+```bash
+php artisan exchange:update         # Döviz kurlarını güncelle
+php artisan make:test-user          # Test kullanıcıları oluştur
+```
+
+#### Kod Kalitesi
+```bash
+./vendor/bin/pint                   # Kod formatla (Laravel Pint)
+php artisan test --coverage        # Test kapsamı raporu
+```
+
+### Docker Olmadan Kurulum
+
+MySQL'i manuel kurulum:
+```bash
+# MySQL 8.0 kur ve çalıştır
+# Veritabanı oluştur: laravel
+# .env dosyasında DB bilgilerini güncelle
+
+# Devam et:
+php artisan migrate:fresh --seed
+php artisan serve
+```
+
+### Sorun Giderme
+
+#### Cache Temizleme
+```bash
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+#### Composer Sorunları
+```bash
+composer dump-autoload
+composer install --no-cache
+```
+
+#### Node.js Sorunları
+```bash
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+```
