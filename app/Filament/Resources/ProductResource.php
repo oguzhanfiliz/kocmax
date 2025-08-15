@@ -357,7 +357,6 @@ class ProductResource extends Resource
     {
         // Bellek kullanımını logla
         $memoryBefore = memory_get_usage();
-        \Log::info('ProductResource Query - Memory Before: ' . self::formatBytes($memoryBefore));
         
         // Check if we're on the edit page to load full data
         $isEditPage = request()->route() && 
@@ -387,8 +386,6 @@ class ProductResource extends Resource
         }
             
         $memoryAfter = memory_get_usage();
-        \Log::info('ProductResource Query - Memory After: ' . self::formatBytes($memoryAfter));
-        \Log::info('ProductResource Query - Memory Diff: ' . self::formatBytes($memoryAfter - $memoryBefore));
         
         return $query;
     }
