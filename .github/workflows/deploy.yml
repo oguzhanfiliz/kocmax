@@ -75,6 +75,9 @@ jobs:
           sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=1000" >> .env
           sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=60" >> .env
           
+          # API Security Settings - Development için security middleware'i daha esnek yap
+          sed -i '/^API_REQUEST_LIMIT=/d' .env; echo "API_REQUEST_LIMIT=1000" >> .env
+          
           # Laravel cache temizle ve yeniden oluştur
           php artisan config:clear
           php artisan route:clear

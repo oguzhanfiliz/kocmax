@@ -78,15 +78,23 @@ class ApiSecurityMiddleware
         $ip = $request->ip();
         $userAgent = $request->userAgent();
         
+        // Skip security checks in development environment
+        if (app()->environment('local') || config('app.debug')) {
+            return false;
+        }
+        
         // Track request frequency per IP
         $requestKey = "api_requests:$ip";
         $requestCount = Cache::get($requestKey, 0);
         Cache::put($requestKey, $requestCount + 1, 300); // 5 minutes
         
+        // Configurable limits based on environment
+        $requestLimit = config('security.api_request_limit', 500); // Increased default limit
+        
         // Suspicious patterns
         $suspiciousPatterns = [
             // Too many requests in short time (more than rate limiter allows)
-            $requestCount > 100, // 100 requests in 5 minutes
+            $requestCount > $requestLimit,
             
             // Suspicious user agents
             empty($userAgent),
