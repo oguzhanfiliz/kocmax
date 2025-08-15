@@ -88,14 +88,21 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        // Rate limiting
-        $throttleKey = 'login:' . $request->ip();
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            return response()->json([
-                'success' => false,
-                'message' => "Çok fazla giriş denemesi. Lütfen {$seconds} saniye sonra tekrar deneyin."
-            ], 429);
+        // Rate limiting - configurable via .env
+        $isRateLimitingEnabled = config('auth.rate_limiting_enabled', true);
+        $maxAttempts = config('auth.login_max_attempts', 20); // Increased from 5 to 20
+        $decayMinutes = config('auth.login_decay_minutes', 60); // 60 minutes instead of default
+        
+        if ($isRateLimitingEnabled) {
+            $throttleKey = 'login:' . $request->ip();
+            if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+                $seconds = RateLimiter::availableIn($throttleKey);
+                return response()->json([
+                    'success' => false,
+                    'message' => "Çok fazla giriş denemesi. Lütfen {$seconds} saniye sonra tekrar deneyin.",
+                    'retry_after' => $seconds
+                ], 429);
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -105,7 +112,9 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            RateLimiter::hit($throttleKey);
+            if ($isRateLimitingEnabled) {
+                RateLimiter::hit($throttleKey, $decayMinutes * 60);
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'Doğrulama başarısız',
@@ -116,7 +125,9 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (!Auth::attempt($credentials)) {
-            RateLimiter::hit($throttleKey);
+            if ($isRateLimitingEnabled) {
+                RateLimiter::hit($throttleKey, $decayMinutes * 60);
+            }
             return response()->json([
                 'success' => false,
                 'message' => 'Geçersiz giriş bilgileri'
@@ -160,7 +171,9 @@ class AuthController extends Controller
         $user->update(['last_login_at' => now()]);
 
         // Clear rate limiter on successful login
-        RateLimiter::clear($throttleKey);
+        if ($isRateLimitingEnabled) {
+            RateLimiter::clear($throttleKey);
+        }
 
         return response()->json([
             'success' => true,

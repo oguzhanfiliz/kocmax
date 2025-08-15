@@ -66,12 +66,23 @@ jobs:
           # Key generate
           php artisan key:generate --force --no-interaction
 
+          # Rate Limiting Settings - Development friendly (Production'da bu değerler daha sıkı olabilir)
+          sed -i '/^RATE_LIMITING_ENABLED=/d' .env; echo "RATE_LIMITING_ENABLED=false" >> .env
+          sed -i '/^THROTTLE_LOGIN_ATTEMPTS=/d' .env; echo "THROTTLE_LOGIN_ATTEMPTS=100" >> .env
+          sed -i '/^THROTTLE_LOGIN_DECAY=/d' .env; echo "THROTTLE_LOGIN_DECAY=60" >> .env
+          
+          # API Rate Limiting - Genel API sınırları (isteğe bağlı, şu an kullanılmıyor)
+          sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=1000" >> .env
+          sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=60" >> .env
+          
           # Laravel cache temizle ve yeniden oluştur
           php artisan config:clear
-          php artisan config:cache
           php artisan route:clear
-          php artisan route:cache
+          php artisan cache:clear
           php artisan view:clear
+          
+          # Cache oluştur (config hariç development'ta)
+          php artisan route:cache
           php artisan view:cache
           
           # Database migrations çalıştır (eğer varsa)

@@ -114,6 +114,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiting
+    |--------------------------------------------------------------------------
+    |
+    | Configure rate limiting for authentication endpoints.
+    | Set rate_limiting_enabled to false for development environments.
+    |
+    */
+
+    'rate_limiting_enabled' => env('RATE_LIMITING_ENABLED', true),
+    'login_max_attempts' => env('THROTTLE_LOGIN_ATTEMPTS', 20),
+    'login_decay_minutes' => env('THROTTLE_LOGIN_DECAY', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Email Verification
     |--------------------------------------------------------------------------
     |
