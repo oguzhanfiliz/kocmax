@@ -49,6 +49,8 @@ jobs:
           sed -i 's/^APP_DEBUG=.*/APP_DEBUG=true/' .env
           sed -i 's/^CORS_ALLOWED_ORIGINS=.*/CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,https://b2bb2c.mutfakyapim.net,http://b2bb2c.mutfakyapim.net"/' .env
           sed -i 's/^SANCTUM_STATEFUL_DOMAINS=.*/SANCTUM_STATEFUL_DOMAINS="localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,127.0.0.1:8001,::1,b2bb2c.mutfakyapim.net"/' .env
+          sed -i 's/^DOMAIN_PROTECTION_ENABLED=.*/DOMAIN_PROTECTION_ENABLED=false/' .env
+          sed -i 's/^ALLOWED_DOMAINS=.*/ALLOWED_DOMAINS="localhost:3000,localhost:5173,127.0.0.1:3000,https://b2bb2c.mutfakyapim.net,http://b2bb2c.mutfakyapim.net"/' .env
           
           # Debug true kalacak, değiştirme
           # Composer dependencies güncelle
