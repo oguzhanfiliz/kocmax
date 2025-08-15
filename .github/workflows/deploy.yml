@@ -68,15 +68,15 @@ jobs:
 
           # Rate Limiting Settings - Development friendly (Production'da bu değerler daha sıkı olabilir)
           sed -i '/^RATE_LIMITING_ENABLED=/d' .env; echo "RATE_LIMITING_ENABLED=false" >> .env
-          sed -i '/^THROTTLE_LOGIN_ATTEMPTS=/d' .env; echo "THROTTLE_LOGIN_ATTEMPTS=100" >> .env
-          sed -i '/^THROTTLE_LOGIN_DECAY=/d' .env; echo "THROTTLE_LOGIN_DECAY=60" >> .env
+          sed -i '/^THROTTLE_LOGIN_ATTEMPTS=/d' .env; echo "THROTTLE_LOGIN_ATTEMPTS=10000" >> .env
+          sed -i '/^THROTTLE_LOGIN_DECAY=/d' .env; echo "THROTTLE_LOGIN_DECAY=600" >> .env
           
           # API Rate Limiting - Genel API sınırları (isteğe bağlı, şu an kullanılmıyor)
-          sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=1000" >> .env
-          sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=60" >> .env
+          sed -i '/^API_RATE_LIMIT=/d' .env; echo "API_RATE_LIMIT=100000" >> .env
+          sed -i '/^API_RATE_LIMIT_PER_MINUTE=/d' .env; echo "API_RATE_LIMIT_PER_MINUTE=600" >> .env
           
           # API Security Settings - Development için security middleware'i daha esnek yap
-          sed -i '/^API_REQUEST_LIMIT=/d' .env; echo "API_REQUEST_LIMIT=1000" >> .env
+          sed -i '/^API_REQUEST_LIMIT=/d' .env; echo "API_REQUEST_LIMIT=100000" >> .env
           
           # Laravel cache temizle ve yeniden oluştur
           php artisan config:clear
