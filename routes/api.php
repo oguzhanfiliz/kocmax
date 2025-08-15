@@ -117,7 +117,7 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
 | Product API Routes (Public with Domain Protection)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/products')->middleware(['domain.cors', 'throttle:public'])->group(function () {
+Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
     // Public product catalog routes (guest pricing)
     Route::get('/', [ProductController::class, 'index'])->name('api.products.index');
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
@@ -130,7 +130,7 @@ Route::prefix('v1/products')->middleware(['domain.cors', 'throttle:public'])->gr
 | Category API Routes (Public with Domain Protection)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/categories')->middleware(['domain.cors', 'throttle:public'])->group(function () {
+Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
     // Public category navigation routes
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::get('/tree', [CategoryController::class, 'tree'])->name('api.categories.tree');
