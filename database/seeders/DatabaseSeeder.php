@@ -15,13 +15,16 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Database seeding başlıyor...');
         
         $seeders = [
-            'Sistem ayarları' => [
-                SettingSeeder::class,
-                MigrateConfigSettingsSeeder::class,
-            ],
             'İzin sistemi' => [
                 PermissionSeeder::class,
                 PermissionSeederForAdminRole::class,
+            ],
+            'Kullanıcılar' => [
+                UserSeeder::class,
+            ],
+            'Sistem ayarları' => [
+                SettingSeeder::class,
+                MigrateConfigSettingsSeeder::class,
             ],
             'Temel veriler' => [
                 CurrencySeeder::class,
@@ -33,8 +36,7 @@ class DatabaseSeeder extends Seeder
                 CustomerPricingTierSeeder::class,
                 PricingRuleSeeder::class,
             ],
-            'Kullanıcılar ve ürünler' => [
-                UserSeeder::class,
+            'Ürünler ve işlemler' => [
                 ProductSeeder::class,
                 DealerApplicationSeeder::class,
                 ProductReviewSeeder::class,
