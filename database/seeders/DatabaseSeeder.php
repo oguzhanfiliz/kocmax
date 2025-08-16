@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Database seeding başlıyor...');
         
         $seeders = [
+            'Sistem ayarları' => [
+                SettingSeeder::class,
+                MigrateConfigSettingsSeeder::class,
+            ],
             'İzin sistemi' => [
                 PermissionSeeder::class,
                 PermissionSeederForAdminRole::class,
@@ -50,6 +54,7 @@ class DatabaseSeeder extends Seeder
         
         $this->command->info('🎉 Tüm seeder işlemleri başarıyla tamamlandı!');
         $this->command->info('📊 Sistem özeti:');
+        $this->command->info('   ⚙️  Sistem ayarları: ' . \App\Models\Setting::count());
         $this->command->info('   👥 Kullanıcılar: ' . \App\Models\User::count());
         $this->command->info('   🏢 Müşteri seviyeleri: ' . \App\Models\CustomerPricingTier::count());
         $this->command->info('   📋 Fiyat kuralları: ' . \App\Models\PricingRule::count());

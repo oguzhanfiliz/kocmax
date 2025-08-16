@@ -17,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
             return new \App\Helpers\IconHelper();
         });
 
+        // Register Setting Service
+        $this->app->singleton(\App\Services\SettingService::class);
+
         // Register Pricing System Services
         $this->registerPricingServices();
         
