@@ -93,11 +93,24 @@ jobs:
           php artisan route:cache
           php artisan view:cache
           
-          # Database migrations çalıştır (eğer varsa)
-          php artisan migrate:fresh --seed
-          php artisan shield:generate --all --panel=admin
-          php artisan db:seed --class=PermissionSeederForAdminRole
-          php artisan shield:super-admin --user=1 --panel=admin
+          # Database migrations güvenli şekilde çalıştır
+          # Development/staging ortamında fresh kullan, production'da migrate
+          php artisan migrate:fresh --seed --force
+          
+          # Migration başarısız olduysa dur
+          if [ $? -ne 0 ]; then
+              echo "❌ Migration başarısız! Deploy durduruluyor."
+              exit 1
+          fi
+          
+          # Shield permissions oluştur
+          php artisan shield:generate --all --panel=admin --force
+          
+          # Admin role permissions seed
+          php artisan db:seed --class=PermissionSeederForAdminRole --force
+          
+          # Super admin oluştur (eğer yoksa)
+          php artisan shield:super-admin --user=1 --panel=admin --force
           
 
           chown -R mutfakyapimnet:mutfakyapimnet /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs && chmod 775 /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs && chmod 664 /home/mutfakyapimnet/b2bb2c.mutfakyapim.net/storage/api-docs/api-docs.json
