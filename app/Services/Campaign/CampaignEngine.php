@@ -160,7 +160,14 @@ class CampaignEngine
     public function clearCache(): void
     {
         if ($this->cachingEnabled) {
-            Cache::tags(['campaigns'])->flush();
+            if (Cache::supportsTags()) {
+                Cache::tags(['campaigns'])->flush();
+            } else {
+                // Fallback: clear specific campaign cache keys
+                Cache::forget('campaigns.active');
+                Cache::forget('campaigns.rules');
+                // Clear additional specific keys if needed
+            }
         }
     }
 

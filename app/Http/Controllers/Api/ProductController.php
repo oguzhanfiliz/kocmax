@@ -285,12 +285,28 @@ class ProductController extends Controller
             $customerInfo['user']?->id
         );
         
-        $products = $this->customerTypeDetector->isSmartPricingEnabled() && config('features.smart_pricing_cache_enabled') 
-            ? Cache::tags(['products', $customerInfo['type']])
-                ->remember($cacheKey, config('features.smart_pricing_cache_ttl', 300), function() use ($query, $perPage) {
+        // 🚀 Smart caching with cache tagging support check
+        $shouldUseCache = $this->customerTypeDetector->isSmartPricingEnabled() 
+            && config('features.smart_pricing_cache_enabled');
+        
+        if ($shouldUseCache) {
+            $cacheTtl = config('features.smart_pricing_cache_ttl', 300);
+            
+            if (Cache::supportsTags()) {
+                // Use cache tags if available (Redis/Memcached)
+                $products = Cache::tags(['products', $customerInfo['type']])
+                    ->remember($cacheKey, $cacheTtl, function() use ($query, $perPage) {
+                        return $query->paginate($perPage);
+                    });
+            } else {
+                // Fallback to simple caching without tags (File/Database cache)
+                $products = Cache::remember($cacheKey, $cacheTtl, function() use ($query, $perPage) {
                     return $query->paginate($perPage);
-                })
-            : $query->paginate($perPage);
+                });
+            }
+        } else {
+            $products = $query->paginate($perPage);
+        }
 
         return ProductResource::collection($products)->additional([
             'message' => 'Ürünler başarıyla getirildi',
