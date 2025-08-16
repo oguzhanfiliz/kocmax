@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'api_request_limit' => env('API_REQUEST_LIMIT', app()->environment('local') ? 10000 : 500),
+    'api_request_limit' => env('API_REQUEST_LIMIT', env('APP_ENV') === 'local' ? 10000 : 500),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,8 +39,8 @@ return [
     |
     */
 
-    'enabled' => env('API_SECURITY_ENABLED', !app()->environment('local')),
-    'strict_mode' => env('API_SECURITY_STRICT_MODE', app()->environment('production')),
+    'enabled' => env('API_SECURITY_ENABLED', env('APP_ENV') !== 'local'),
+    'strict_mode' => env('API_SECURITY_STRICT_MODE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
@@ -52,7 +52,7 @@ return [
     */
 
     'suspicious_activity' => [
-        'enabled' => env('SUSPICIOUS_ACTIVITY_DETECTION', !app()->environment('local')),
+        'enabled' => env('SUSPICIOUS_ACTIVITY_DETECTION', env('APP_ENV') !== 'local'),
         'temporary_blacklist_duration' => 3600, // 1 saat
         'request_tracking_duration' => 300, // 5 dakika
     ],
@@ -67,8 +67,8 @@ return [
     */
 
     'development_overrides' => [
-        'disable_security_checks' => env('DISABLE_API_SECURITY', app()->environment('local')),
-        'high_limits' => env('API_HIGH_LIMITS', app()->environment('local')),
+        'disable_security_checks' => env('DISABLE_API_SECURITY', env('APP_ENV') === 'local'),
+        'high_limits' => env('API_HIGH_LIMITS', env('APP_ENV') === 'local'),
         'unlimited_mode' => env('API_UNLIMITED_MODE', false),
     ],
 ];
