@@ -34,7 +34,7 @@ jobs:
           # Git pull - ignore local changes and force sync with remote
           git fetch origin
           git reset --hard origin/main
-     
+          git pull origin main --force
           
           # .env dosyasını kopyala
           cp .env.production .env
