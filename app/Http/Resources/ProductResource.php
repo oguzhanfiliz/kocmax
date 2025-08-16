@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Services\MultiCurrencyPricingService;
+use App\Services\Pricing\CustomerTypeDetectorService;
 
 /**
  * @OA\Schema(
@@ -50,20 +51,26 @@ use App\Services\MultiCurrencyPricingService;
 class ProductResource extends JsonResource
 {
     private MultiCurrencyPricingService $pricingService;
+    private CustomerTypeDetectorService $customerTypeDetector;
 
     public function __construct($resource)
     {
         parent::__construct($resource);
         $this->pricingService = app(MultiCurrencyPricingService::class);
+        $this->customerTypeDetector = app(CustomerTypeDetectorService::class);
     }
 
     public function toArray($request): array
     {
+        // Get context from app container
         $currency = app()->bound('api_currency') ? app('api_currency') : 'TRY';
+        $customerInfo = app()->bound('api_customer_info') ? app('api_customer_info') : [
+            'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
+        ];
+        $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : false;
 
-        // Calculate price in requested currency
-        $originalPrice = (float) $this->base_price;
-        $convertedPrice = $this->pricingService->convertPrice($originalPrice, 'TRY', $currency);
+        // 🎯 Smart Pricing Calculation
+        $pricingData = $this->calculateSmartPricing($currency, $customerInfo, $smartPricingEnabled);
 
         return [
             'id' => $this->id,
@@ -77,12 +84,18 @@ class ProductResource extends JsonResource
             'is_featured' => (bool) $this->is_featured,
             'is_bestseller' => (bool) $this->is_bestseller,
             'sort_order' => $this->sort_order,
+            
+            // 🔥 Enhanced pricing information
+            'pricing' => $pricingData,
+            
+            // Legacy compatibility (will use "your_price" when smart pricing enabled)
             'price' => [
-                'original' => $originalPrice,
-                'converted' => $convertedPrice,
+                'original' => $pricingData['base_price'],
+                'converted' => $pricingData['your_price'],
                 'currency' => $currency,
-                'formatted' => $this->formatPrice($convertedPrice, $currency),
+                'formatted' => $pricingData['your_price_formatted'],
             ],
+            
             'images' => $this->whenLoaded('images', fn() => 
                 $this->images->map(fn($image) => [
                     'id' => $image->id,
@@ -104,6 +117,55 @@ class ProductResource extends JsonResource
             ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * 🎯 Smart pricing calculation based on customer type
+     */
+    private function calculateSmartPricing(string $currency, array $customerInfo, bool $smartPricingEnabled): array
+    {
+        $basePrice = (float) $this->base_price;
+        $user = $customerInfo['user'];
+        
+        // Base currency conversion
+        $basePriceConverted = $this->pricingService->convertPrice($basePrice, 'TRY', $currency);
+        
+        if (!$smartPricingEnabled) {
+            // Legacy mode - just return base price
+            return [
+                'base_price' => $basePriceConverted,
+                'your_price' => $basePriceConverted,
+                'your_price_formatted' => $this->formatPrice($basePriceConverted, $currency),
+                'currency' => $currency,
+                'price_type' => 'Liste Fiyatı',
+                'discount_percentage' => 0.0,
+                'discount_amount' => 0.0,
+                'savings_amount' => 0.0,
+                'smart_pricing_enabled' => false,
+            ];
+        }
+        
+        // 🔥 Smart Pricing Logic
+        $discountPercentage = $this->customerTypeDetector->getDiscountPercentage($user);
+        $discountAmount = $basePriceConverted * ($discountPercentage / 100);
+        $yourPrice = $basePriceConverted - $discountAmount;
+        $priceType = $this->customerTypeDetector->getTypeLabel($customerInfo['type']);
+        
+        return [
+            'base_price' => $basePriceConverted,
+            'your_price' => $yourPrice,
+            'your_price_formatted' => $this->formatPrice($yourPrice, $currency),
+            'base_price_formatted' => $this->formatPrice($basePriceConverted, $currency),
+            'currency' => $currency,
+            'price_type' => $priceType,
+            'customer_type' => $customerInfo['type'],
+            'discount_percentage' => $discountPercentage,
+            'discount_amount' => $discountAmount,
+            'savings_amount' => $discountAmount,
+            'smart_pricing_enabled' => true,
+            'is_dealer_price' => $customerInfo['is_dealer'],
+            'pricing_tier' => $user?->pricingTier?->name,
         ];
     }
 

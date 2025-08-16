@@ -41,8 +41,8 @@ class Kernel extends HttpKernel
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\ForceJsonResponse::class,
-            \App\Http\Middleware\ApiSecurityMiddleware::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            // \App\Http\Middleware\ApiSecurityMiddleware::class, // Development için devre dışı
+            // \Illuminate\Routing\Middleware\ThrottleRequests::class.':api', // Rate limiting devre dışı
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\CurrencyMiddleware::class,
         ],
@@ -59,6 +59,7 @@ class Kernel extends HttpKernel
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
+        'auth.optional' => \App\Http\Middleware\OptionalAuth::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,

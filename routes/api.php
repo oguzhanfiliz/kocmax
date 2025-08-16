@@ -114,15 +114,20 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Product API Routes (Public with Domain Protection)
+| Product API Routes (Public with Optional Auth for Smart Pricing)
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Public product catalog routes (guest pricing)
-    Route::get('/', [ProductController::class, 'index'])->name('api.products.index');
+    // 🎯 Smart Pricing: Optional authentication - if user is logged in, show personalized prices
+    // Public product catalog routes with optional auth middleware
+    Route::get('/', [ProductController::class, 'index'])
+         ->middleware('auth.optional')->name('api.products.index');
+    Route::get('/{product}', [ProductController::class, 'show'])
+         ->middleware('auth.optional')->name('api.products.show');
+         
+    // These routes remain fully public (no auth needed)
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
-    Route::get('/{product}', [ProductController::class, 'show'])->name('api.products.show');
 });
 
 /*

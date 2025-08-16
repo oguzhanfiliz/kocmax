@@ -10,9 +10,11 @@ use App\Http\Resources\ProductDetailResource;
 use App\Models\Product;
 use App\Models\Category;
 use App\Services\MultiCurrencyPricingService;
+use App\Services\Pricing\CustomerTypeDetectorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @OA\Tag(
@@ -23,10 +25,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class ProductController extends Controller
 {
     private MultiCurrencyPricingService $pricingService;
+    private CustomerTypeDetectorService $customerTypeDetector;
 
-    public function __construct(MultiCurrencyPricingService $pricingService)
-    {
+    public function __construct(
+        MultiCurrencyPricingService $pricingService,
+        CustomerTypeDetectorService $customerTypeDetector
+    ) {
         $this->pricingService = $pricingService;
+        $this->customerTypeDetector = $customerTypeDetector;
     }
 
     /**
@@ -182,6 +188,12 @@ class ProductController extends Controller
             'currency' => 'nullable|in:TRY,USD,EUR',
         ]);
 
+        // 🎯 Smart Pricing: Detect customer type (optional auth)
+        $customerInfo = $this->customerTypeDetector->detectFromRequest($request);
+        
+        // Set context for resource transformation
+        $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
+
         $query = Product::with(['variants', 'categories', 'images'])
             ->where('is_active', true);
 
@@ -265,11 +277,20 @@ class ProductController extends Controller
         }
 
         $perPage = min($validated['per_page'] ?? 20, 100);
-        $products = $query->paginate($perPage);
-
-        // Set currency context for resource transformation
-        $currency = $validated['currency'] ?? 'TRY';
-        app()->instance('api_currency', $currency);
+        
+        // 🚀 Smart caching based on customer type
+        $cacheKey = $this->customerTypeDetector->getCacheKey(
+            'products.list.' . md5(serialize($validated)),
+            $customerInfo['type'],
+            $customerInfo['user']?->id
+        );
+        
+        $products = $this->customerTypeDetector->isSmartPricingEnabled() && config('features.smart_pricing_cache_enabled') 
+            ? Cache::tags(['products', $customerInfo['type']])
+                ->remember($cacheKey, config('features.smart_pricing_cache_ttl', 300), function() use ($query, $perPage) {
+                    return $query->paginate($perPage);
+                })
+            : $query->paginate($perPage);
 
         return ProductResource::collection($products)->additional([
             'message' => 'Ürünler başarıyla getirildi',
@@ -277,6 +298,7 @@ class ProductController extends Controller
                 'applied' => array_filter($validated),
                 'available' => $this->getAvailableFilters(),
             ],
+            'pricing_info' => $this->getPricingInfo($customerInfo),
         ]);
     }
 
@@ -334,8 +356,11 @@ class ProductController extends Controller
             'currency' => 'nullable|in:TRY,USD,EUR',
         ]);
 
-        $currency = $validated['currency'] ?? 'TRY';
-        app()->instance('api_currency', $currency);
+        // 🎯 Smart Pricing: Detect customer type for detailed product
+        $customerInfo = $this->customerTypeDetector->detectFromRequest($request);
+        
+        // Set context for detailed resource transformation
+        $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
 
         $product->load([
             'variants.images', 
@@ -347,6 +372,7 @@ class ProductController extends Controller
 
         return (new ProductDetailResource($product))->additional([
             'message' => 'Ürün detayları başarıyla getirildi',
+            'pricing_info' => $this->getPricingInfo($customerInfo),
         ]);
     }
 
@@ -543,6 +569,46 @@ class ProductController extends Controller
                 ['value' => 'female', 'label' => 'Kadın'],
                 ['value' => 'unisex', 'label' => 'Unisex'],
             ],
+        ];
+    }
+
+    /**
+     * Set context for resource transformation (smart pricing)
+     */
+    private function setResourceContext(string $currency, array $customerInfo): void
+    {
+        // Currency context
+        app()->instance('api_currency', $currency);
+        
+        // Customer context for smart pricing
+        app()->instance('api_customer_info', $customerInfo);
+        app()->instance('api_customer_type', $customerInfo['type']);
+        app()->instance('api_authenticated_user', $customerInfo['user']);
+        
+        // Feature flags
+        app()->instance('api_smart_pricing_enabled', $this->customerTypeDetector->isSmartPricingEnabled());
+    }
+    
+    /**
+     * Get pricing information for API response
+     */
+    private function getPricingInfo(array $customerInfo): array
+    {
+        $user = $customerInfo['user'];
+        $discount = $this->customerTypeDetector->getDiscountPercentage($user);
+        
+        return [
+            'customer_type' => $customerInfo['type'],
+            'type_label' => $this->customerTypeDetector->getTypeLabel($customerInfo['type']),
+            'is_authenticated' => $customerInfo['is_authenticated'],
+            'is_dealer' => $customerInfo['is_dealer'],
+            'discount_percentage' => $discount,
+            'pricing_tier' => $user?->pricingTier ? [
+                'id' => $user->pricingTier->id,
+                'name' => $user->pricingTier->name,
+                'discount' => $user->pricingTier->discount_percentage,
+            ] : null,
+            'smart_pricing_enabled' => $this->customerTypeDetector->isSmartPricingEnabled(),
         ];
     }
 }

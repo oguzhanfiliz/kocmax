@@ -93,7 +93,7 @@ class ApiSecurityMiddleware
         
         // Much higher limits for development vs production
         $baseLimit = config('security.api_request_limit', 500);
-        $requestLimit = app()->environment('local') ? 50000 : $baseLimit; // Çok yüksek development limiti
+        $requestLimit = app()->environment('local') ? 999999 : $baseLimit; // Development için sınırsız
         
         // Suspicious patterns
         $suspiciousPatterns = [
