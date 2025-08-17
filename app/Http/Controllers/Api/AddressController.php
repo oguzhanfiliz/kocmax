@@ -35,6 +35,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Adresler başarıyla getirildi",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/AddressResource")),
      *             @OA\Property(property="message", type="string", example="Adresler başarıyla getirildi")
      *         )
@@ -64,6 +65,7 @@ class AddressController extends Controller
                           ->get();
 
         return response()->json([
+            'success' => true,
             'data' => AddressResource::collection($addresses),
             'message' => 'Adresler başarıyla getirildi'
         ]);
@@ -103,6 +105,7 @@ class AddressController extends Controller
      *         response=201,
      *         description="Adres başarıyla oluşturuldu",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
      *             @OA\Property(property="message", type="string", example="Adres başarıyla oluşturuldu")
      *         )
@@ -145,6 +148,7 @@ class AddressController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'data' => new AddressResource($address),
             'message' => 'Adres başarıyla oluşturuldu'
         ], 201);
@@ -169,6 +173,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Adres başarıyla getirildi",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
      *             @OA\Property(property="message", type="string", example="Adres başarıyla getirildi")
      *         )
@@ -182,11 +187,13 @@ class AddressController extends Controller
         // Ensure user can only access their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
+                'success' => false,
                 'message' => 'Adres bulunamadı'
             ], 404);
         }
 
         return response()->json([
+            'success' => true,
             'data' => new AddressResource($address),
             'message' => 'Adres başarıyla getirildi'
         ]);
@@ -232,6 +239,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Adres başarıyla güncellendi",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
      *             @OA\Property(property="message", type="string", example="Adres başarıyla güncellendi")
      *         )
@@ -246,6 +254,7 @@ class AddressController extends Controller
         // Ensure user can only update their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
+                'success' => false,
                 'message' => 'Adres bulunamadı'
             ], 404);
         }
@@ -284,6 +293,7 @@ class AddressController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'data' => new AddressResource($address->fresh()),
             'message' => 'Adres başarıyla güncellendi'
         ]);
@@ -308,6 +318,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Adres başarıyla silindi",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Adres başarıyla silindi")
      *         )
      *     ),
@@ -320,6 +331,7 @@ class AddressController extends Controller
         // Ensure user can only delete their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
+                'success' => false,
                 'message' => 'Adres bulunamadı'
             ], 404);
         }
@@ -327,6 +339,7 @@ class AddressController extends Controller
         $address->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Adres başarıyla silindi'
         ]);
     }
@@ -350,6 +363,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Varsayılan teslimat adresi başarıyla ayarlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
      *             @OA\Property(property="message", type="string", example="Varsayılan teslimat adresi başarıyla ayarlandı")
      *         )
@@ -360,6 +374,7 @@ class AddressController extends Controller
      *         response=422,
      *         description="Adres teslimat için kullanılamaz",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Bu adres teslimat için kullanılamaz")
      *         )
      *     )
@@ -370,6 +385,7 @@ class AddressController extends Controller
         // Ensure user can only modify their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
+                'success' => false,
                 'message' => 'Adres bulunamadı'
             ], 404);
         }
@@ -377,6 +393,7 @@ class AddressController extends Controller
         // Check if address can be used for shipping
         if (!in_array($address->type, ['shipping', 'both'])) {
             return response()->json([
+                'success' => false,
                 'message' => 'Bu adres teslimat için kullanılamaz'
             ], 422);
         }
@@ -384,6 +401,7 @@ class AddressController extends Controller
         $address->setAsDefaultShipping();
 
         return response()->json([
+            'success' => true,
             'data' => new AddressResource($address->fresh()),
             'message' => 'Varsayılan teslimat adresi başarıyla ayarlandı'
         ]);
@@ -408,6 +426,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Varsayılan fatura adresi başarıyla ayarlandı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/AddressResource"),
      *             @OA\Property(property="message", type="string", example="Varsayılan fatura adresi başarıyla ayarlandı")
      *         )
@@ -418,6 +437,7 @@ class AddressController extends Controller
      *         response=422,
      *         description="Adres fatura için kullanılamaz",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Bu adres fatura için kullanılamaz")
      *         )
      *     )
@@ -428,6 +448,7 @@ class AddressController extends Controller
         // Ensure user can only modify their own addresses
         if ($address->user_id !== $request->user()->id) {
             return response()->json([
+                'success' => false,
                 'message' => 'Adres bulunamadı'
             ], 404);
         }
@@ -435,6 +456,7 @@ class AddressController extends Controller
         // Check if address can be used for billing
         if (!in_array($address->type, ['billing', 'both'])) {
             return response()->json([
+                'success' => false,
                 'message' => 'Bu adres fatura için kullanılamaz'
             ], 422);
         }
@@ -442,6 +464,7 @@ class AddressController extends Controller
         $address->setAsDefaultBilling();
 
         return response()->json([
+            'success' => true,
             'data' => new AddressResource($address->fresh()),
             'message' => 'Varsayılan fatura adresi başarıyla ayarlandı'
         ]);
@@ -459,6 +482,7 @@ class AddressController extends Controller
      *         response=200,
      *         description="Varsayılan adresler başarıyla getirildi",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object", description="Varsayılan adresler",
      *                 @OA\Property(property="shipping", ref="#/components/schemas/AddressResource", nullable=true, description="Varsayılan teslimat adresi"),
      *                 @OA\Property(property="billing", ref="#/components/schemas/AddressResource", nullable=true, description="Varsayılan fatura adresi")
@@ -476,6 +500,7 @@ class AddressController extends Controller
         $defaultBilling = $user->defaultBillingAddress();
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'shipping' => $defaultShipping ? new AddressResource($defaultShipping) : null,
                 'billing' => $defaultBilling ? new AddressResource($defaultBilling) : null,
