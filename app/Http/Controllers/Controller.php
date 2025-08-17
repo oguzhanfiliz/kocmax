@@ -63,6 +63,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     schema="ValidationError",
  *     type="object",
  *     title="Validation Error Response",
+ *     @OA\Property(property="success", type="boolean", example=false),
  *     @OA\Property(property="message", type="string", example="The given data was invalid."),
  *     @OA\Property(property="errors", type="object",
  *         @OA\Property(property="field_name", type="array", @OA\Items(type="string", example="This field is required."))
@@ -82,6 +83,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     response="Unauthenticated",
  *     description="Authentication required",
  *     @OA\JsonContent(
+ *         @OA\Property(property="success", type="boolean", example=false),
  *         @OA\Property(property="message", type="string", example="Unauthenticated"),
  *         @OA\Property(property="error", type="string", example="Authentication required to access this resource")
  *     )
@@ -97,6 +99,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     response="NotFound",
  *     description="Resource not found",
  *     @OA\JsonContent(
+ *         @OA\Property(property="success", type="boolean", example=false),
  *         @OA\Property(property="message", type="string", example="Resource not found")
  *     )
  * )
@@ -105,6 +108,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     response="ServerError",
  *     description="Internal server error",
  *     @OA\JsonContent(
+ *         @OA\Property(property="success", type="boolean", example=false),
  *         @OA\Property(property="message", type="string", example="Internal server error"),
  *         @OA\Property(property="error", type="string", example="An unexpected error occurred")
  *     )
@@ -114,6 +118,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     response="RateLimitExceeded",
  *     description="Rate limit exceeded",
  *     @OA\JsonContent(
+ *         @OA\Property(property="success", type="boolean", example=false),
  *         @OA\Property(property="error", type="string", example="Rate limit exceeded"),
  *         @OA\Property(property="message", type="string", example="Çok fazla istek gönderiyorsunuz. Lütfen bir dakika bekleyin."),
  *         @OA\Property(property="retry_after", type="integer", example=60)
@@ -124,6 +129,7 @@ use Illuminate\Routing\Controller as BaseController;
  *     response="DomainNotAllowed",
  *     description="Domain not allowed (production only)",
  *     @OA\JsonContent(
+ *         @OA\Property(property="success", type="boolean", example=false),
  *         @OA\Property(property="error", type="string", example="Domain not allowed"),
  *         @OA\Property(property="message", type="string", example="Bu domain API erişimi için yetkilendirilmemiş."),
  *         @OA\Property(property="allowed_domains", type="array", @OA\Items(type="string"))

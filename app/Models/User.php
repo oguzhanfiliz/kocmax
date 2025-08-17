@@ -27,6 +27,8 @@ class User extends Authenticatable implements FilamentUser
         'email', // User's email address | Kullanıcının e-posta adresi
         'password', // User's password | Kullanıcının şifresi
         'phone', // User's phone number | Kullanıcının telefon numarası
+        'date_of_birth', // User's date of birth | Kullanıcının doğum tarihi
+        'gender', // User's gender | Kullanıcının cinsiyeti
         'position', // User's position in the company | Kullanıcının şirketteki pozisyonu
         'bio', // A short biography of the user | Kullanıcının kısa biyografisi
         'avatar', // URL to the user's avatar image | Kullanıcının avatar resminin URL'si
@@ -71,6 +73,7 @@ class User extends Authenticatable implements FilamentUser
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'date_of_birth' => 'date',
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
         'is_approved_dealer' => 'boolean',

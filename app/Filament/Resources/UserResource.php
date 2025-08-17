@@ -70,6 +70,17 @@ class UserResource extends Resource
                             ->label('Telefon')
                             ->tel()
                             ->maxLength(255),
+                        Forms\Components\DatePicker::make('date_of_birth')
+                            ->label('Doğum Tarihi')
+                            ->nullable(),
+                        Forms\Components\Select::make('gender')
+                            ->label('Cinsiyet')
+                            ->options([
+                                'male' => 'Erkek',
+                                'female' => 'Kadın',
+                                'other' => 'Diğer',
+                            ])
+                            ->nullable(),
                         Forms\Components\TextInput::make('position')
                             ->label('Pozisyon')
                             ->maxLength(255),
@@ -209,6 +220,21 @@ class UserResource extends Resource
                     ->label('E-posta')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('date_of_birth')
+                    ->label('Doğum Tarihi')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('gender')
+                    ->label('Cinsiyet')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'male' => 'Erkek',
+                        'female' => 'Kadın',
+                        'other' => 'Diğer',
+                        default => $state
+                    })
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('company_name')
                     ->label('Şirket Adı')
                     ->searchable()

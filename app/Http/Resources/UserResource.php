@@ -13,8 +13,7 @@ use OpenApi\Annotations as OA;
  *     title="User Resource",
  *     description="User resource representation",
  *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="first_name", type="string", example="John"),
- *     @OA\Property(property="last_name", type="string", example="Doe"),
+ *     @OA\Property(property="name", type="string", example="John Doe"),
  *     @OA\Property(property="email", type="string", format="email", example="john.doe@example.com"),
  *     @OA\Property(property="phone", type="string", nullable=true, example="+90 555 123 4567"),
  *     @OA\Property(property="date_of_birth", type="string", format="date", nullable=true, example="1990-01-01"),
@@ -46,8 +45,7 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'first_name' => $this->first_name,
-            'last_name' => $this->last_name,
+            'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
@@ -69,6 +67,25 @@ class UserResource extends JsonResource
                     'discount_percentage' => $this->pricingTier->discount_percentage,
                 ] : null;
             }),
+            
+            // Address information
+            'addresses' => $this->whenLoaded('addresses', function () {
+                return AddressResource::collection($this->addresses);
+            }),
+            'default_shipping_address' => $this->when(
+                $this->relationLoaded('addresses'),
+                function () {
+                    $defaultShipping = $this->addresses->where('is_default_shipping', true)->first();
+                    return $defaultShipping ? new AddressResource($defaultShipping) : null;
+                }
+            ),
+            'default_billing_address' => $this->when(
+                $this->relationLoaded('addresses'),
+                function () {
+                    $defaultBilling = $this->addresses->where('is_default_billing', true)->first();
+                    return $defaultBilling ? new AddressResource($defaultBilling) : null;
+                }
+            ),
             
             // Notification preferences
             'notification_preferences' => $this->notification_preferences ?? [

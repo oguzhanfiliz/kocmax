@@ -30,6 +30,7 @@ class UserController extends Controller
      *         response=200,
      *         description="Profil başarıyla alındı",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/UserResource"),
      *             @OA\Property(property="message", type="string", example="Profil başarıyla alındı")
      *         )
@@ -39,9 +40,10 @@ class UserController extends Controller
      */
     public function profile(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load(['addresses', 'pricingTier']);
         
         return response()->json([
+            'success' => true,
             'data' => new UserResource($user),
             'message' => 'Profil başarıyla alındı'
         ]);
@@ -58,8 +60,7 @@ class UserController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="first_name", type="string", maxLength=255, example="John"),
-     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe"),
+     *             @OA\Property(property="name", type="string", maxLength=255, example="John Doe"),
      *             @OA\Property(property="email", type="string", format="email", example="john.doe@example.com"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+90 555 123 4567"),
      *             @OA\Property(property="date_of_birth", type="string", format="date", example="1990-01-01"),
@@ -77,8 +78,9 @@ class UserController extends Controller
      *         response=200,
      *         description="Profile updated successfully",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", ref="#/components/schemas/UserResource"),
-     *             @OA\Property(property="message", type="string", example="Profile updated successfully")
+     *             @OA\Property(property="message", type="string", example="Profil başarıyla güncellendi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -90,8 +92,7 @@ class UserController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'first_name' => ['sometimes', 'string', 'max:255'],
-            'last_name' => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'date_of_birth' => ['sometimes', 'nullable', 'date'],
@@ -113,8 +114,9 @@ class UserController extends Controller
         $user->update($validated);
 
         return response()->json([
+            'success' => true,
             'data' => new UserResource($user->fresh()),
-            'message' => 'Profile updated successfully'
+            'message' => 'Profil başarıyla güncellendi'
         ]);
     }
 
@@ -139,11 +141,22 @@ class UserController extends Controller
      *         response=200,
      *         description="Password changed successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Password changed successfully")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Şifre başarıyla değiştirildi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
-     *     @OA\Response(response=422, ref="#/components/responses/ValidationError")
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error or current password is incorrect",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Mevcut şifre yanlış"),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="current_password", type="array", @OA\Items(type="string", example="Mevcut şifre yanlış"))
+     *             )
+     *         )
+     *     )
      * )
      */
     public function changePassword(Request $request)
@@ -158,9 +171,10 @@ class UserController extends Controller
         // Verify current password
         if (!Hash::check($validated['current_password'], $user->password)) {
             return response()->json([
-                'message' => 'The provided current password is incorrect',
+                'success' => false,
+                'message' => 'Mevcut şifre yanlış',
                 'errors' => [
-                    'current_password' => ['The current password is incorrect']
+                    'current_password' => ['Mevcut şifre yanlış']
                 ]
             ], 422);
         }
@@ -171,7 +185,8 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Password changed successfully'
+            'success' => true,
+            'message' => 'Şifre başarıyla değiştirildi'
         ]);
     }
 
@@ -201,10 +216,11 @@ class UserController extends Controller
      *         response=200,
      *         description="Avatar uploaded successfully",
      *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="avatar_url", type="string", example="https://example.com/storage/avatars/user123.jpg")
      *             ),
-     *             @OA\Property(property="message", type="string", example="Avatar uploaded successfully")
+     *             @OA\Property(property="message", type="string", example="Avatar başarıyla yüklendi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -230,12 +246,86 @@ class UserController extends Controller
         $user->update(['avatar' => $path]);
 
         return response()->json([
+            'success' => true,
             'data' => [
                 'avatar_url' => Storage::disk('public')->url($path)
             ],
-            'message' => 'Avatar uploaded successfully'
+            'message' => 'Avatar başarıyla yüklendi'
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/users/avatar",
+     *     summary="Kullanıcı avatarı yükle (alternatif endpoint)",
+     *     description="Kimliği doğrulanmış kullanıcı için yeni bir profil resmi yükleyin - /upload-avatar ile aynı işlevi görür",
+     *     operationId="uploadAvatarAlternative",
+     *     tags={"Users"},
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="avatar",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Avatar image file (max 2MB, formats: jpg, jpeg, png, gif)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Avatar uploaded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="avatar_url", type="string", example="https://example.com/storage/avatars/user123.jpg")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Avatar başarıyla yüklendi")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
+     *     @OA\Response(response=422, ref="#/components/responses/ValidationError")
+     * )
+     * 
+     * @OA\Put(
+     *     path="/api/v1/users/avatar",
+     *     summary="Kullanıcı avatarını güncelle (RESTful)",
+     *     description="Kimliği doğrulanmış kullanıcının profil resmini güncelleyin - RESTful yaklaşım",
+     *     operationId="updateAvatar",
+     *     tags={"Users"},
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="avatar",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Avatar image file (max 2MB, formats: jpg, jpeg, png, gif)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Avatar updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="avatar_url", type="string", example="https://example.com/storage/avatars/user123.jpg")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Avatar başarıyla yüklendi")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
+     *     @OA\Response(response=422, ref="#/components/responses/ValidationError")
+     * )
 
     /**
      * @OA\Delete(
@@ -249,11 +339,19 @@ class UserController extends Controller
      *         response=200,
      *         description="Avatar deleted successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Avatar deleted successfully")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Avatar başarıyla silindi")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
-     *     @OA\Response(response=404, description="Avatar not found")
+     *     @OA\Response(
+     *         response=404,
+     *         description="Avatar not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Silinecek avatar bulunamadı")
+     *         )
+     *     )
      * )
      */
     public function deleteAvatar(Request $request)
@@ -262,7 +360,8 @@ class UserController extends Controller
 
         if (!$user->avatar) {
             return response()->json([
-                'message' => 'No avatar found to delete'
+                'success' => false,
+                'message' => 'Silinecek avatar bulunamadı'
             ], 404);
         }
 
@@ -273,7 +372,8 @@ class UserController extends Controller
         $user->update(['avatar' => null]);
 
         return response()->json([
-            'message' => 'Avatar deleted successfully'
+            'success' => true,
+            'message' => 'Avatar başarıyla silindi'
         ]);
     }
 
@@ -301,7 +401,8 @@ class UserController extends Controller
      *                     @OA\Property(property="discount_percentage", type="number", format="float")
      *                 )
      *             ),
-     *             @OA\Property(property="message", type="string", example="Dealer status retrieved successfully")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Bayi durumu başarıyla alındı")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated")
@@ -312,6 +413,7 @@ class UserController extends Controller
         $user = $request->user();
         
         return response()->json([
+            'success' => true,
             'data' => [
                 'is_dealer' => $user->is_dealer,
                 'is_approved_dealer' => $user->is_approved_dealer,
@@ -324,7 +426,7 @@ class UserController extends Controller
                     'discount_percentage' => $user->pricingTier->discount_percentage
                 ] : null
             ],
-            'message' => 'Dealer status retrieved successfully'
+            'message' => 'Bayi durumu başarıyla alındı'
         ]);
     }
 
@@ -354,7 +456,8 @@ class UserController extends Controller
      *         response=200,
      *         description="Dealer application submitted successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Dealer application submitted successfully. We will review your application within 3-5 business days.")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Bayi başvurunuz başarıyla gönderildi. Başvurunuz 3-5 iş günü içinde değerlendirilecektir.")
      *         )
      *     ),
      *     @OA\Response(response=401, ref="#/components/responses/Unauthenticated"),
@@ -363,7 +466,8 @@ class UserController extends Controller
      *         response=409,
      *         description="Application already submitted",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="You have already submitted a dealer application")
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Zaten bir bayi başvurunuz bulunmaktadır")
      *         )
      *     )
      * )
@@ -375,7 +479,8 @@ class UserController extends Controller
         // Check if user already has a pending or approved application
         if ($user->is_dealer || $user->dealer_application_date) {
             return response()->json([
-                'message' => 'You have already submitted a dealer application'
+                'success' => false,
+                'message' => 'Zaten bir bayi başvurunuz bulunmaktadır'
             ], 409);
         }
 
@@ -405,7 +510,8 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Dealer application submitted successfully. We will review your application within 3-5 business days.'
+            'success' => true,
+            'message' => 'Bayi başvurunuz başarıyla gönderildi. Başvurunuz 3-5 iş günü içinde değerlendirilecektir.'
         ]);
     }
 

@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "B2B/B2C E-Commerce API Documentation",
-        "description": "Comprehensive API for B2B and B2C e-commerce platform with multi-currency support, dealer management, and advanced product catalog.",
+        "description": "Comprehensive API for B2B and B2C e-commerce platform with multi-currency support, dealer management, advanced product catalog, and domain-based security. The API provides both public endpoints (for catalog browsing) and protected endpoints (for user-specific operations).",
         "contact": {
             "name": "API Support Team",
             "email": "support@mutfakyapim.net"
@@ -11,16 +11,16 @@
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"
         },
-        "version": "1.0.0"
+        "version": "2.0.0"
     },
     "servers": [
         {
             "url": "https://b2bb2c.mutfakyapim.net",
-            "description": "Production API Server"
+            "description": "Production API Server (Domain-protected)"
         },
         {
             "url": "http://127.0.0.1:8000",
-            "description": "Development API Server"
+            "description": "Development API Server (Open access)"
         }
     ],
     "paths": {
@@ -1666,7 +1666,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/campaigns/{campaign}": {
@@ -1840,7 +1845,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/campaigns/{campaign}/validate": {
@@ -2033,7 +2043,8 @@
         "/api/v1/cart": {
             "get": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Kullanıcının mevcut sepetini görüntüle",
                 "description": "Giriş yapmış veya misafir kullanıcının sepetini para birimi dönüştürme seçeneğiyle getirir",
@@ -2102,7 +2113,8 @@
             },
             "delete": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Tüm sepeti temizle",
                 "description": "Kullanıcının sepetindeki tüm ürünleri kaldırın",
@@ -2120,7 +2132,8 @@
         "/api/v1/cart/items": {
             "post": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Sepete ürün ekle",
                 "description": "Kullanıcının sepetine bir ürün varyantı ekleyin",
@@ -2196,7 +2209,8 @@
         "/api/v1/cart/items/{item}": {
             "put": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Sepetteki ürün miktarını güncelle",
                 "description": "Mevcut bir sepet öğesinin miktarını güncelleyin",
@@ -2243,7 +2257,8 @@
             },
             "delete": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Ürünü sepetten kaldır",
                 "description": "Kullanıcının sepetinden bir ürünü kaldırın",
@@ -2272,7 +2287,8 @@
         "/api/v1/cart/summary": {
             "get": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Sepet özetini al",
                 "description": "Fiyatlandırma bilgileriyle sepet özetini alın",
@@ -2290,7 +2306,8 @@
         "/api/v1/cart/refresh-pricing": {
             "put": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Sepet fiyatlarını yenile",
                 "description": "Mevcut sepetteki ürünlerin fiyatlarını güncel değerlerle yenileyin",
@@ -2308,7 +2325,8 @@
         "/api/v1/cart/migrate": {
             "post": {
                 "tags": [
-                    "Cart"
+                    "Cart",
+                    "Protected API"
                 ],
                 "summary": "Misafir sepetini kimliği doğrulanmış kullanıcıya taşı",
                 "description": "Ürünleri misafir sepetinden kimliği doğrulanmış kullanıcı sepetine aktarın",
@@ -2334,10 +2352,11 @@
         "/api/v1/categories": {
             "get": {
                 "tags": [
-                    "Categories"
+                    "Categories",
+                    "Public API"
                 ],
-                "summary": "Kategorileri listele",
-                "description": "Aktif kategorileri hiyerarşik yapıda getirir",
+                "summary": "Kategorileri listele (Public)",
+                "description": "Aktif kategorileri hiyerarşik yapıda getirir. Authentication gerektirmez.",
                 "operationId": "getCategories",
                 "parameters": [
                     {
@@ -2396,7 +2415,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -2439,7 +2458,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -2497,7 +2516,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -2552,7 +2571,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -3859,10 +3878,11 @@
         "/api/v1/products": {
             "get": {
                 "tags": [
-                    "Products"
+                    "Products",
+                    "Public API"
                 ],
-                "summary": "Filtreleme ve arama ile ürün listesini al",
-                "description": "Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür",
+                "summary": "Filtreleme ve arama ile ürün listesini al (Public)",
+                "description": "Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Authentication gerektirmez, guest pricing kullanır. Production'da domain koruması aktiftir.",
                 "operationId": "getProducts",
                 "parameters": [
                     {
@@ -4085,17 +4105,43 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Domain not allowed (production only)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded (100 req/min for public endpoints)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/products/{id}": {
             "get": {
                 "tags": [
-                    "Products"
+                    "Products",
+                    "Public API"
                 ],
-                "summary": "Tek ürün ayrıntılarını al",
-                "description": "Belirli bir ürün hakkında ayrıntılı bilgi döndürür",
+                "summary": "Tek ürün ayrıntılarını al (Public)",
+                "description": "Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Authentication gerektirmez, guest pricing kullanır.",
                 "operationId": "getProduct",
                 "parameters": [
                     {
@@ -4154,17 +4200,43 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Domain not allowed (production only)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/products/search-suggestions": {
             "get": {
                 "tags": [
-                    "Products"
+                    "Products",
+                    "Public API"
                 ],
-                "summary": "Arama önerilerini al",
-                "description": "Kısmi girdiye göre arama önerilerini döndürür",
+                "summary": "Arama önerilerini al (Public)",
+                "description": "Kısmi girdiye göre arama önerilerini döndürür. Authentication gerektirmez.",
                 "operationId": "getProductSuggestions",
                 "parameters": [
                     {
@@ -4256,16 +4328,22 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/products/filters": {
             "get": {
                 "tags": [
-                    "Products"
+                    "Products",
+                    "Public API"
                 ],
-                "summary": "Mevcut filtreleri al",
-                "description": "Ürünler için mevcut tüm filtre seçeneklerini döndürür",
+                "summary": "Mevcut filtreleri al (Public)",
+                "description": "Ürünler için mevcut tüm filtre seçeneklerini döndürür. Authentication gerektirmez.",
                 "operationId": "getProductFilters",
                 "responses": {
                     "200": {
@@ -4343,7 +4421,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/users/profile": {
@@ -4361,6 +4444,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "data": {
                                             "$ref": "#/components/schemas/UserResource"
                                         },
@@ -4397,15 +4484,10 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "first_name": {
+                                    "name": {
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "John"
-                                    },
-                                    "last_name": {
-                                        "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Doe"
+                                        "example": "John Doe"
                                     },
                                     "email": {
                                         "type": "string",
@@ -4471,12 +4553,16 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "data": {
                                             "$ref": "#/components/schemas/UserResource"
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Profile updated successfully"
+                                            "example": "Profil başarıyla güncellendi"
                                         }
                                     },
                                     "type": "object"
@@ -4545,9 +4631,13 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Password changed successfully"
+                                            "example": "Şifre başarıyla değiştirildi"
                                         }
                                     },
                                     "type": "object"
@@ -4559,7 +4649,36 @@
                         "$ref": "#/components/responses/Unauthenticated"
                     },
                     "422": {
-                        "$ref": "#/components/responses/ValidationError"
+                        "description": "Validation error or current password is incorrect",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Mevcut şifre yanlış"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "current_password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Mevcut şifre yanlış"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4601,6 +4720,10 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "data": {
                                             "properties": {
                                                 "avatar_url": {
@@ -4612,7 +4735,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Avatar uploaded successfully"
+                                            "example": "Avatar başarıyla yüklendi"
                                         }
                                     },
                                     "type": "object"
@@ -4635,6 +4758,140 @@
             }
         },
         "/api/v1/users/avatar": {
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Kullanıcı avatarını güncelle (RESTful)",
+                "description": "Kimliği doğrulanmış kullanıcının profil resmini güncelleyin - RESTful yaklaşım",
+                "operationId": "updateAvatar",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "avatar": {
+                                        "description": "Avatar image file (max 2MB, formats: jpg, jpeg, png, gif)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Avatar updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "avatar_url": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/storage/avatars/user123.jpg"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Avatar başarıyla yüklendi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Kullanıcı avatarı yükle (alternatif endpoint)",
+                "description": "Kimliği doğrulanmış kullanıcı için yeni bir profil resmi yükleyin - /upload-avatar ile aynı işlevi görür",
+                "operationId": "uploadAvatarAlternative",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "avatar": {
+                                        "description": "Avatar image file (max 2MB, formats: jpg, jpeg, png, gif)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Avatar uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "avatar_url": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/storage/avatars/user123.jpg"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Avatar başarıyla yüklendi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Users"
@@ -4649,9 +4906,13 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Avatar deleted successfully"
+                                            "example": "Avatar başarıyla silindi"
                                         }
                                     },
                                     "type": "object"
@@ -4663,7 +4924,24 @@
                         "$ref": "#/components/responses/Unauthenticated"
                     },
                     "404": {
-                        "description": "Avatar not found"
+                        "description": "Avatar not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Silinecek avatar bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -4737,9 +5015,13 @@
                                             },
                                             "type": "object"
                                         },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Dealer status retrieved successfully"
+                                            "example": "Bayi durumu başarıyla alındı"
                                         }
                                     },
                                     "type": "object"
@@ -4832,9 +5114,13 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Dealer application submitted successfully. We will review your application within 3-5 business days."
+                                            "example": "Bayi başvurunuz başarıyla gönderildi. Başvurunuz 3-5 iş günü içinde değerlendirilecektir."
                                         }
                                     },
                                     "type": "object"
@@ -4854,9 +5140,13 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "You have already submitted a dealer application"
+                                            "example": "Zaten bir bayi başvurunuz bulunmaktadır"
                                         }
                                     },
                                     "type": "object"
@@ -5462,6 +5752,10 @@
             "ValidationError": {
                 "title": "Validation Error Response",
                 "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
                     "message": {
                         "type": "string",
                         "example": "The given data was invalid."
@@ -6347,13 +6641,9 @@
                         "type": "integer",
                         "example": 1
                     },
-                    "first_name": {
+                    "name": {
                         "type": "string",
-                        "example": "John"
-                    },
-                    "last_name": {
-                        "type": "string",
-                        "example": "Doe"
+                        "example": "John Doe"
                     },
                     "email": {
                         "type": "string",
@@ -6605,6 +6895,10 @@
                     "application/json": {
                         "schema": {
                             "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
                                 "message": {
                                     "type": "string",
                                     "example": "Unauthenticated"
@@ -6635,6 +6929,10 @@
                     "application/json": {
                         "schema": {
                             "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
                                 "message": {
                                     "type": "string",
                                     "example": "Resource not found"
@@ -6651,6 +6949,10 @@
                     "application/json": {
                         "schema": {
                             "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
                                 "message": {
                                     "type": "string",
                                     "example": "Internal server error"
@@ -6664,13 +6966,77 @@
                         }
                     }
                 }
+            },
+            "RateLimitExceeded": {
+                "description": "Rate limit exceeded",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
+                                "error": {
+                                    "type": "string",
+                                    "example": "Rate limit exceeded"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Çok fazla istek gönderiyorsunuz. Lütfen bir dakika bekleyin."
+                                },
+                                "retry_after": {
+                                    "type": "integer",
+                                    "example": 60
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "DomainNotAllowed": {
+                "description": "Domain not allowed (production only)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
+                                "error": {
+                                    "type": "string",
+                                    "example": "Domain not allowed"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Bu domain API erişimi için yetkilendirilmemiş."
+                                },
+                                "allowed_domains": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
             }
         },
         "securitySchemes": {
             "sanctum": {
+                "type": "http",
+                "description": "Bearer token for authenticated endpoints (Authorization: Bearer {token})",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            },
+            "domain_protection": {
                 "type": "apiKey",
-                "description": "Enter token in format (Bearer {token})",
-                "name": "Authorization",
+                "description": "Domain-based protection via Origin header (configured domains only in production)",
+                "name": "Origin",
                 "in": "header"
             }
         }
@@ -6690,11 +7056,11 @@
         },
         {
             "name": "Cart",
-            "description": "Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları"
+            "description": "Alışveriş sepeti yönetimi ve sepet işlemleri API uç noktaları - Protected endpoints (Authentication required)"
         },
         {
             "name": "Categories",
-            "description": "Kategori yönetimi API uç noktaları"
+            "description": "Kategori yönetimi API uç noktaları - Public endpoints (Authentication not required)"
         },
         {
             "name": "Coupons",
@@ -6710,7 +7076,7 @@
         },
         {
             "name": "Products",
-            "description": "Ürün kataloğu ve arama API uç noktaları"
+            "description": "Ürün kataloğu ve arama API uç noktaları - Public endpoints (Authentication not required)"
         },
         {
             "name": "Users",
@@ -6719,6 +7085,14 @@
         {
             "name": "Wishlist",
             "description": "Kullanıcı istek listesi yönetimi API uç noktaları"
+        },
+        {
+            "name": "Public API",
+            "description": "Public endpoints (no authentication required) - domain protection applies in production"
+        },
+        {
+            "name": "Protected API",
+            "description": "Authenticated endpoints requiring Bearer token"
         }
     ]
 }

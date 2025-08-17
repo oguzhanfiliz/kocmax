@@ -160,6 +160,8 @@ Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
     
     // Avatar management
     Route::post('/upload-avatar', [UserController::class, 'uploadAvatar'])->name('api.users.upload-avatar');
+    Route::put('/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.update-avatar'); // RESTful alias
+    Route::post('/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.post-avatar'); // Frontend compatibility
     Route::delete('/avatar', [UserController::class, 'deleteAvatar'])->name('api.users.delete-avatar');
     
     // Dealer application management
@@ -173,6 +175,9 @@ Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1/addresses')->middleware('auth:sanctum')->group(function () {
+    // Default address management (must come before parametric routes)
+    Route::get('/defaults', [AddressController::class, 'getDefaults'])->name('api.addresses.defaults');
+    
     // Address CRUD operations
     Route::get('/', [AddressController::class, 'index'])->name('api.addresses.index');
     Route::post('/', [AddressController::class, 'store'])->name('api.addresses.store');
@@ -180,8 +185,7 @@ Route::prefix('v1/addresses')->middleware('auth:sanctum')->group(function () {
     Route::put('/{address}', [AddressController::class, 'update'])->name('api.addresses.update');
     Route::delete('/{address}', [AddressController::class, 'destroy'])->name('api.addresses.destroy');
     
-    // Default address management
-    Route::get('/defaults', [AddressController::class, 'getDefaults'])->name('api.addresses.defaults');
+    // Address default management
     Route::post('/{address}/set-default-shipping', [AddressController::class, 'setDefaultShipping'])->name('api.addresses.set-default-shipping');
     Route::post('/{address}/set-default-billing', [AddressController::class, 'setDefaultBilling'])->name('api.addresses.set-default-billing');
 });
