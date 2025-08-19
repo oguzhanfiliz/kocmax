@@ -314,7 +314,7 @@ class GeneralSettingResource extends Resource
                     })
                     ->placeholder('—')
                     ->visible(function ($record) {
-                        return $record->type !== 'image';
+                        return $record?->type !== 'image';
                     }),
                 
                 Tables\Columns\ImageColumn::make('value')
@@ -322,7 +322,7 @@ class GeneralSettingResource extends Resource
                     ->square()
                     ->size(60)
                     ->visible(function ($record) {
-                        return $record->type === 'image';
+                        return $record?->type === 'image';
                     }),
 
                 Tables\Columns\TextColumn::make('type')

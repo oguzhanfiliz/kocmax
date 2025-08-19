@@ -4469,6 +4469,530 @@
                 ]
             }
         },
+        "/api/v1/settings": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Genel site ayarlarını al",
+                "description": "Frontend için gerekli tüm genel ayarları getirir (sadece herkese açık ayarlar)",
+                "operationId": "getSettings",
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "query",
+                        "description": "Belirli bir grup ayarlarını filtrele",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "contact",
+                                "company",
+                                "social",
+                                "ui",
+                                "notification"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ayarlar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "site_title": {
+                                                    "type": "string",
+                                                    "example": "B2B/B2C E-Ticaret"
+                                                },
+                                                "site_description": {
+                                                    "type": "string",
+                                                    "example": "İş güvenliği ürünleri"
+                                                },
+                                                "contact_phone": {
+                                                    "type": "string",
+                                                    "example": "+90 555 123 4567"
+                                                },
+                                                "contact_email": {
+                                                    "type": "string",
+                                                    "example": "info@site.com"
+                                                },
+                                                "company_name": {
+                                                    "type": "string",
+                                                    "example": "ABC Şirketi"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ayarlar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/settings/grouped": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Gruplara göre ayarları al",
+                "description": "Ayarları gruplara göre organize edilmiş şekilde getirir",
+                "operationId": "getGroupedSettings",
+                "responses": {
+                    "200": {
+                        "description": "Gruplu ayarlar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "general": {
+                                                    "properties": {
+                                                        "site_title": {
+                                                            "type": "string",
+                                                            "example": "B2B/B2C E-Ticaret"
+                                                        },
+                                                        "site_description": {
+                                                            "type": "string",
+                                                            "example": "İş güvenliği ürünleri"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "contact": {
+                                                    "properties": {
+                                                        "contact_phone": {
+                                                            "type": "string",
+                                                            "example": "+90 555 123 4567"
+                                                        },
+                                                        "contact_email": {
+                                                            "type": "string",
+                                                            "example": "info@site.com"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "company": {
+                                                    "properties": {
+                                                        "company_name": {
+                                                            "type": "string",
+                                                            "example": "ABC Şirketi"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Gruplu ayarlar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/settings/{key}": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Belirli bir ayarı al",
+                "description": "Verilen anahtara göre belirli bir ayar değerini getirir",
+                "operationId": "getSetting",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "Ayar anahtarı",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "site_title"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ayar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "key": {
+                                                    "type": "string",
+                                                    "example": "site_title"
+                                                },
+                                                "value": {
+                                                    "type": "string",
+                                                    "example": "B2B/B2C E-Ticaret"
+                                                },
+                                                "group": {
+                                                    "type": "string",
+                                                    "example": "general"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ayar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ayar bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ayar bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/settings/essential": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Temel site bilgilerini al",
+                "description": "Frontend için kritik olan temel site bilgilerini hızlı şekilde getirir",
+                "operationId": "getEssentialSettings",
+                "responses": {
+                    "200": {
+                        "description": "Temel ayarlar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "site": {
+                                                    "properties": {
+                                                        "title": {
+                                                            "type": "string",
+                                                            "example": "B2B/B2C E-Ticaret"
+                                                        },
+                                                        "description": {
+                                                            "type": "string",
+                                                            "example": "İş güvenliği ürünleri"
+                                                        },
+                                                        "logo": {
+                                                            "type": "string",
+                                                            "example": "/images/logo.png"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "contact": {
+                                                    "properties": {
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "+90 555 123 4567"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "info@site.com"
+                                                        },
+                                                        "address": {
+                                                            "type": "string",
+                                                            "example": "İstanbul, Türkiye"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "company": {
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "ABC Şirketi"
+                                                        },
+                                                        "tax_number": {
+                                                            "type": "string",
+                                                            "example": "1234567890"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Temel ayarlar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/sliders": {
+            "get": {
+                "tags": [
+                    "Slider"
+                ],
+                "summary": "Aktif slider'ları listele",
+                "description": "Ana sayfa için aktif slider'ları sıralı şekilde getirir",
+                "operationId": "getSliders",
+                "responses": {
+                    "200": {
+                        "description": "Slider'lar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Yeni Koleksiyon"
+                                                    },
+                                                    "image_url": {
+                                                        "type": "string",
+                                                        "example": "/storage/sliders/slider-1.jpg"
+                                                    },
+                                                    "button_text": {
+                                                        "type": "string",
+                                                        "example": "Şimdi Keşfet"
+                                                    },
+                                                    "button_link": {
+                                                        "type": "string",
+                                                        "example": "/products"
+                                                    },
+                                                    "text_fields": {
+                                                        "properties": {
+                                                            "text_1": {
+                                                                "type": "string",
+                                                                "example": "İş Güvenliği"
+                                                            },
+                                                            "text_2": {
+                                                                "type": "string",
+                                                                "example": "En İyi Fiyatlar"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Slider'lar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/sliders/{id}": {
+            "get": {
+                "tags": [
+                    "Slider"
+                ],
+                "summary": "Belirli bir slider'ı getir",
+                "description": "ID'ye göre belirli bir slider'ın detaylarını getirir",
+                "operationId": "getSlider",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Slider ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Slider başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Yeni Koleksiyon"
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "/storage/sliders/slider-1.jpg"
+                                                },
+                                                "button_text": {
+                                                    "type": "string",
+                                                    "example": "Şimdi Keşfet"
+                                                },
+                                                "button_link": {
+                                                    "type": "string",
+                                                    "example": "/products"
+                                                },
+                                                "text_fields": {
+                                                    "properties": {
+                                                        "text_1": {
+                                                            "type": "string",
+                                                            "example": "İş Güvenliği"
+                                                        },
+                                                        "text_2": {
+                                                            "type": "string",
+                                                            "example": "En İyi Fiyatlar"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "sort_order": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-08-19T15:03:32.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-08-19T15:03:32.000000Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Slider başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Slider bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Slider bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
         "/api/v1/users/profile": {
             "get": {
                 "tags": [
@@ -7117,6 +7641,14 @@
         {
             "name": "Products",
             "description": "Ürün kataloğu ve arama API uç noktaları - Public endpoints (Authentication not required)"
+        },
+        {
+            "name": "Settings",
+            "description": "Site ayarları API uç noktaları"
+        },
+        {
+            "name": "Slider",
+            "description": "Ana sayfa slider API uç noktaları"
         },
         {
             "name": "Users",

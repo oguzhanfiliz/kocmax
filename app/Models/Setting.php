@@ -98,7 +98,7 @@ class Setting extends Model
             'integer' => (int) $value,
             'float' => (float) $value,
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-            'array', 'json' => json_decode($value, true),
+            'array', 'json' => json_decode($value, true) ?: [],
             default => $value,
         };
     }

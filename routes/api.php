@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SliderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -236,4 +238,30 @@ Route::prefix('v1/coupons')->middleware('auth:sanctum')->group(function () {
     Route::get('/public', [CouponController::class, 'publicCoupons'])->name('api.coupons.public');
     Route::post('/apply', [CouponController::class, 'apply'])->name('api.coupons.apply');
     Route::get('/my-coupons', [CouponController::class, 'myCoupons'])->name('api.coupons.my-coupons');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Settings API Routes (Public with Domain Protection)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/settings')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Public settings routes - accessible by frontend without authentication
+    Route::get('/', [SettingController::class, 'index'])->name('api.settings.index');
+    Route::get('/grouped', [SettingController::class, 'grouped'])->name('api.settings.grouped');
+    Route::get('/essential', [SettingController::class, 'essential'])->name('api.settings.essential');
+    Route::get('/{key}', [SettingController::class, 'show'])->name('api.settings.show')
+          ->where('key', '[a-zA-Z0-9_\-]+');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Slider API Routes (Public with Domain Protection)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/sliders')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Public slider routes - accessible by frontend without authentication
+    Route::get('/', [SliderController::class, 'index'])->name('api.sliders.index');
+    Route::get('/{slider}', [SliderController::class, 'show'])->name('api.sliders.show')
+          ->where('slider', '[0-9]+');
 });
