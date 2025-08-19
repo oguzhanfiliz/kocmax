@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\SettingResource\Pages;
+namespace App\Filament\Resources\GeneralSettingResource\Pages;
 
-use App\Filament\Resources\SettingResource;
+use App\Filament\Resources\GeneralSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditSetting extends EditRecord
+class EditGeneralSetting extends EditRecord
 {
-    protected static string $resource = SettingResource::class;
+    protected static string $resource = GeneralSettingResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -20,7 +20,7 @@ class EditSetting extends EditRecord
     
     public function getTitle(): string
     {
-        return 'Geliştirici Ayarı Düzenle';
+        return 'Genel Ayar Düzenle';
     }
     
     protected function getRedirectUrl(): string

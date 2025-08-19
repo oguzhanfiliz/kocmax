@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Filament\Resources\SettingResource\Pages;
+namespace App\Filament\Resources\GeneralSettingResource\Pages;
 
-use App\Filament\Resources\SettingResource;
+use App\Filament\Resources\GeneralSettingResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListSettings extends ListRecords
+class ListGeneralSettings extends ListRecords
 {
-    protected static string $resource = SettingResource::class;
+    protected static string $resource = GeneralSettingResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\CreateAction::make()
-                ->label('Yeni Geliştirici Ayarı')
+                ->label('Yeni Ayar')
                 ->icon('heroicon-o-plus')
                 ->color('primary'),
         ];
@@ -22,11 +22,11 @@ class ListSettings extends ListRecords
     
     public function getTitle(): string
     {
-        return 'Geliştirici Ayarları';
+        return 'Genel Ayarlar';
     }
     
     public function getHeading(): string
     {
-        return 'Teknik ayarlar - Dikkatli kullanın!';
+        return 'Site ve iletişim ayarlarınızı buradan yönetebilirsiniz';
     }
 }

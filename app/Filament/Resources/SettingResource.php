@@ -19,19 +19,26 @@ class SettingResource extends Resource
 {
     protected static ?string $model = Setting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static ?string $navigationIcon = 'heroicon-o-code-bracket';
     
-    protected static ?string $navigationLabel = 'Ayarlar';
+    protected static ?string $navigationLabel = 'Geliştirici Ayarları';
     
-    protected static ?string $modelLabel = 'Ayar';
+    protected static ?string $modelLabel = 'Geliştirici Ayarı';
     
-    protected static ?string $pluralModelLabel = 'Ayarlar';
+    protected static ?string $pluralModelLabel = 'Geliştirici Ayarları';
     
     protected static ?string $navigationGroup = 'Sistem Yönetimi';
     
     protected static ?int $navigationSort = 99;
     
     protected static ?string $recordTitleAttribute = 'label';
+
+    // Only show technical/developer settings
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereNotIn('group', ['general', 'contact', 'company', 'social', 'ui', 'notification']);
+    }
 
     public static function form(Form $form): Form
     {
@@ -73,16 +80,16 @@ class SettingResource extends Resource
                                 Forms\Components\Select::make('group')
                                     ->label('Grup')
                                     ->options([
-                                        'pricing' => '💰 Fiyatlandırma',
-                                        'campaign' => '🎯 Kampanyalar',
-                                        'system' => '⚙️ Sistem',
-                                        'payment' => '💳 Ödeme',
-                                        'shipping' => '🚚 Kargo',
-                                        'notification' => '🔔 Bildirimler',
-                                        'ui' => '🎨 Arayüz',
-                                        'security' => '🔒 Güvenlik',
-                                        'api' => '🔗 API',
-                                        'general' => '📋 Genel',
+                                        'pricing' => 'Fiyatlandırma',
+                                        'campaign' => 'Kampanyalar',
+                                        'system' => 'Sistem',
+                                        'payment' => 'Ödeme',
+                                        'shipping' => 'Kargo',
+                                        'security' => 'Güvenlik',
+                                        'api' => 'API',
+                                        'development' => 'Geliştirme',
+                                        'integration' => 'Entegrasyon',
+                                        'other' => 'Diğer',
                                     ])
                                     ->default('general')
                                     ->searchable()
@@ -92,12 +99,12 @@ class SettingResource extends Resource
                                 Forms\Components\Select::make('type')
                                     ->label('Veri Tipi')
                                     ->options([
-                                        'string' => '📝 Metin',
-                                        'integer' => '🔢 Sayı (Tam)',
-                                        'float' => '🔢 Sayı (Ondalık)',
-                                        'boolean' => '✅ Evet/Hayır',
-                                        'array' => '📄 Dizi',
-                                        'json' => '🗃️ JSON',
+                                        'string' => 'Metin',
+                                        'integer' => 'Sayı (Tam)',
+                                        'float' => 'Sayı (Ondalık)',
+                                        'boolean' => 'Evet/Hayır',
+                                        'array' => 'Dizi',
+                                        'json' => 'JSON',
                                     ])
                                     ->default('string')
                                     ->required()
@@ -171,17 +178,17 @@ class SettingResource extends Resource
                     ->badge()
                     ->formatStateUsing(function ($state) {
                         return match ($state) {
-                            'pricing' => '💰 Fiyatlandırma',
-                            'campaign' => '🎯 Kampanyalar',
-                            'system' => '⚙️ Sistem',
-                            'payment' => '💳 Ödeme',
-                            'shipping' => '🚚 Kargo',
-                            'notification' => '🔔 Bildirimler',
-                            'ui' => '🎨 Arayüz',
-                            'security' => '🔒 Güvenlik',
-                            'api' => '🔗 API',
-                            'general' => '📋 Genel',
-                            default => '❓ ' . ucfirst($state ?? 'Diğer')
+                            'pricing' => 'Fiyatlandırma',
+                            'campaign' => 'Kampanyalar',
+                            'system' => 'Sistem',
+                            'payment' => 'Ödeme',
+                            'shipping' => 'Kargo',
+                            'security' => 'Güvenlik',
+                            'api' => 'API',
+                            'development' => 'Geliştirme',
+                            'integration' => 'Entegrasyon',
+                            'other' => 'Diğer',
+                            default => ucfirst($state ?? 'Diğer')
                         };
                     })
                     ->color(function ($state) {
@@ -217,12 +224,12 @@ class SettingResource extends Resource
                     ->badge()
                     ->formatStateUsing(function ($state) {
                         return match ($state) {
-                            'string' => '📝 Metin',
-                            'integer' => '🔢 Sayı',
-                            'float' => '🔢 Ondalık',
-                            'boolean' => '✅ Boolean',
-                            'array' => '📄 Dizi',
-                            'json' => '🗃️ JSON',
+                            'string' => 'Metin',
+                            'integer' => 'Sayı',
+                            'float' => 'Ondalık',
+                            'boolean' => 'Boolean',
+                            'array' => 'Dizi',
+                            'json' => 'JSON',
                             default => ucfirst($state)
                         };
                     })
@@ -272,16 +279,16 @@ class SettingResource extends Resource
                 Tables\Filters\SelectFilter::make('group')
                     ->label('Grup')
                     ->options([
-                        'pricing' => '💰 Fiyatlandırma',
-                        'campaign' => '🎯 Kampanyalar',
-                        'system' => '⚙️ Sistem',
-                        'payment' => '💳 Ödeme',
-                        'shipping' => '🚚 Kargo',
-                        'notification' => '🔔 Bildirimler',
-                        'ui' => '🎨 Arayüz',
-                        'security' => '🔒 Güvenlik',
-                        'api' => '🔗 API',
-                        'general' => '📋 Genel',
+                        'pricing' => 'Fiyatlandırma',
+                        'campaign' => 'Kampanyalar',
+                        'system' => 'Sistem',
+                        'payment' => 'Ödeme',
+                        'shipping' => 'Kargo',
+                        'security' => 'Güvenlik',
+                        'api' => 'API',
+                        'development' => 'Geliştirme',
+                        'integration' => 'Entegrasyon',
+                        'other' => 'Diğer',
                     ]),
                     
                 Tables\Filters\SelectFilter::make('type')
