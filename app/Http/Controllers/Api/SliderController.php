@@ -167,13 +167,13 @@ class SliderController extends Controller
      */
     private function transformTextFields(?array $textFields): ?array
     {
-        if (!$textFields) {
+        if (!$textFields || !is_array($textFields)) {
             return null;
         }
 
         $transformed = [];
         foreach ($textFields as $field) {
-            if (isset($field['key']) && isset($field['value'])) {
+            if (is_array($field) && isset($field['key']) && isset($field['value'])) {
                 $transformed[$field['key']] = $field['value'];
             }
         }
