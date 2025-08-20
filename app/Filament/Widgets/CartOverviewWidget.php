@@ -15,18 +15,26 @@ class CartOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $activeCarts = Cart::where('updated_at', '>=', now()->subHours(24))->count();
-        $abandonedCarts = Cart::whereBetween('updated_at', [now()->subWeek(), now()->subHours(24)])->count();
-        $totalCartValue = Cart::where('updated_at', '>=', now()->subDay())->sum('total_amount');
-        
-        // Cart conversion rate (carts converted to orders in last 30 days)
-        $cartsWithOrders = DB::table('carts')
-            ->join('orders', 'carts.id', '=', 'orders.cart_id')
-            ->where('orders.created_at', '>=', now()->subDays(30))
-            ->count();
-        
-        $totalCartsLast30Days = Cart::where('created_at', '>=', now()->subDays(30))->count();
-        $conversionRate = $totalCartsLast30Days > 0 ? ($cartsWithOrders / $totalCartsLast30Days) * 100 : 0;
+        try {
+            $activeCarts = Cart::where('updated_at', '>=', now()->subHours(24))->count();
+            $abandonedCarts = Cart::whereBetween('updated_at', [now()->subWeek(), now()->subHours(24)])->count();
+            $totalCartValue = Cart::where('updated_at', '>=', now()->subDay())->sum('total_amount') ?? 0;
+            
+            // Cart conversion rate (carts converted to orders in last 30 days)
+            $cartsWithOrders = DB::table('carts')
+                ->join('orders', 'carts.id', '=', 'orders.cart_id')
+                ->where('orders.created_at', '>=', now()->subDays(30))
+                ->count();
+            
+            $totalCartsLast30Days = Cart::where('created_at', '>=', now()->subDays(30))->count();
+            $conversionRate = $totalCartsLast30Days > 0 ? ($cartsWithOrders / $totalCartsLast30Days) * 100 : 0;
+        } catch (\Exception $e) {
+            // Hata durumunda varsayılan değerler
+            $activeCarts = 0;
+            $abandonedCarts = 0;
+            $totalCartValue = 0;
+            $conversionRate = 0;
+        }
 
         return [
             Stat::make('Aktif Sepetler (24s)', $activeCarts)

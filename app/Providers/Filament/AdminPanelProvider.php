@@ -57,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
                 'Ürün Yönetimi',
                 'Fiyatlandırma', 
                 'Bayi Yönetimi',
+                'İçerik Yönetimi',
                 'Sistem',
                 'Genel Ayarlar'
             ]);

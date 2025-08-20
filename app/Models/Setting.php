@@ -148,8 +148,20 @@ class Setting extends Model
     public static function getValue(string $key, mixed $default = null): mixed
     {
         return Cache::remember("setting_{$key}", 3600, function () use ($key, $default) {
-            $setting = static::where('key', $key)->first();
-            return $setting?->value ?? $default;
+            try {
+                $setting = static::where('key', $key)->first();
+                $value = $setting?->value ?? $default;
+                
+                // Ensure array values are properly formatted
+                if (is_array($value)) {
+                    return $value;
+                }
+                
+                return $value;
+            } catch (\Exception $e) {
+                \Log::warning("Error getting setting {$key}: " . $e->getMessage());
+                return $default;
+            }
         });
     }
 
