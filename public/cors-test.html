@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>CORS Test for Storage Images</h1>
+    
+    <h2>1. Essential Settings API Test:</h2>
+    <button onclick="testAPI()">Test Settings API</button>
+    <pre id="api-result"></pre>
+    
+    <h2>2. Storage Image Test:</h2>
+    <img id="test-image" style="max-width: 200px; border: 2px solid red;" />
+    <button onclick="testImage()">Test Storage Image</button>
+    <pre id="image-result"></pre>
+    
+    <h2>3. Fetch Image Test:</h2>
+    <button onclick="testFetchImage()">Test Fetch Storage Image</button>
+    <pre id="fetch-result"></pre>
+
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/settings/essential', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('api-result').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        function testImage() {
+            const img = document.getElementById('test-image');
+            img.onload = () => {
+                document.getElementById('image-result').textContent = 'Image loaded successfully! ✅';
+                img.style.border = '2px solid green';
+            };
+            img.onerror = () => {
+                document.getElementById('image-result').textContent = 'Image failed to load ❌';
+                img.style.border = '2px solid red';
+            };
+            img.src = 'http://127.0.0.1:8000/storage/sliders/01K31EG54G3WM1RR1MBMHNC2XE.png';
+        }
+        
+        async function testFetchImage() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/storage/sliders/01K31EG54G3WM1RR1MBMHNC2XE.png');
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById('fetch-result').innerHTML = 
+                        `Fetch successful! ✅<br>Status: ${response.status}<br>Size: ${blob.size} bytes<br><img src="${url}" style="max-width: 100px;">`;
+                } else {
+                    document.getElementById('fetch-result').textContent = `Fetch failed: ${response.status} ${response.statusText} ❌`;
+                }
+            } catch (error) {
+                document.getElementById('fetch-result').textContent = 'Fetch error: ' + error.message + ' ❌';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -55,7 +55,7 @@ class SliderController extends Controller
                     return [
                         'id' => $slider->id,
                         'title' => $slider->title,
-                        'image_url' => $slider->image_url,
+                        'image_url' => $this->getFullImageUrl($slider->image_url),
                         'button_text' => $slider->button_text,
                         'button_link' => $slider->button_link,
                         'text_fields' => $slider->text_fields ? $this->transformTextFields($slider->text_fields) : null,
@@ -142,7 +142,7 @@ class SliderController extends Controller
                 'data' => [
                     'id' => $slider->id,
                     'title' => $slider->title,
-                    'image_url' => $slider->image_url,
+                    'image_url' => $this->getFullImageUrl($slider->image_url),
                     'button_text' => $slider->button_text,
                     'button_link' => $slider->button_link,
                     'text_fields' => $slider->text_fields ? $this->transformTextFields($slider->text_fields) : null,
@@ -179,5 +179,38 @@ class SliderController extends Controller
         }
 
         return $transformed ?: null;
+    }
+
+    /**
+     * Get full URL for slider images
+     */
+    private function getFullImageUrl(?string $imagePath): ?string
+    {
+        if (!$imagePath) {
+            return null;
+        }
+
+        // Eğer zaten tam URL ise olduğu gibi döndür
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return $imagePath;
+        }
+
+        // Storage path ise tam URL oluştur
+        if (str_starts_with($imagePath, 'storage/') || str_starts_with($imagePath, '/storage/')) {
+            return url($imagePath);
+        }
+
+        // Public path ise tam URL oluştur
+        if (str_starts_with($imagePath, '/')) {
+            return url($imagePath);
+        }
+
+        // Eğer sadece dosya adıysa (FileUpload'dan geliyorsa) sliders altında
+        if (!str_contains($imagePath, '/')) {
+            return url('storage/sliders/' . $imagePath);
+        }
+
+        // Diğer relatif path'ler için storage
+        return url('storage/' . $imagePath);
     }
 }

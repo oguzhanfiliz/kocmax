@@ -245,7 +245,7 @@ Route::prefix('v1/coupons')->middleware('auth:sanctum')->group(function () {
 | Settings API Routes (Public with Domain Protection)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/settings')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+Route::prefix('v1/settings')->middleware(['api', 'throttle:public'])->group(function () {
     // Public settings routes - accessible by frontend without authentication
     Route::get('/', [SettingController::class, 'index'])->name('api.settings.index');
     Route::get('/grouped', [SettingController::class, 'grouped'])->name('api.settings.grouped');

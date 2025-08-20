@@ -54,9 +54,10 @@ class GeneralSettingResource extends Resource
                                     ->maxLength(255)
                                     ->placeholder('örn: Site Başlığı')
                                     ->prefixIcon('heroicon-o-tag')
-                                    ->reactive()
-                                    ->afterStateUpdated(function (string $context, $state, Forms\Set $set) {
-                                        if ($context === 'create' && $state) {
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        // Sadece yeni kayıt oluştururken ve key alanı boşsa otomatik doldur
+                                        if ($state && !$get('key')) {
                                             $set('key', \Str::snake(strtolower($state)));
                                         }
                                     }),
@@ -115,7 +116,7 @@ class GeneralSettingResource extends Resource
                         Forms\Components\Group::make()
                             ->schema([
                                 // Logo ve favicon için resim yükleme
-                                Forms\Components\FileUpload::make('value')
+                                Forms\Components\FileUpload::make('image_value')
                                     ->label('Resim Yükle')
                                     ->image()
                                     ->directory('settings/images')
@@ -128,9 +129,17 @@ class GeneralSettingResource extends Resource
                                     ->maxSize(2048) // 2MB
                                     ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'])
                                     ->helperText('PNG, JPG, GIF veya WebP formatında yükleyebilirsiniz (Max: 2MB)')
-                                    ->visible(function (Forms\Get $get) {
-                                        return $get('type') === 'image' || in_array($get('key'), ['site_logo', 'site_favicon']);
+                                    ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                        if (is_array($state) && !empty($state)) {
+                                            $set('value', $state[0]);
+                                        }
                                     })
+                                    ->visible(function (Forms\Get $get) {
+                                        $type = $get('type');
+                                        $key = $get('key');
+                                        return $type === 'image' || in_array($key, ['site_logo', 'site_favicon']);
+                                    })
+                                    ->dehydrated(false)
                                     ->columnSpanFull(),
 
                                 // Renk seçici için
@@ -138,7 +147,8 @@ class GeneralSettingResource extends Resource
                                     ->label('Renk Seç')
                                     ->helperText('Tema renginizi seçin')
                                     ->visible(function (Forms\Get $get) {
-                                        return in_array($get('key'), ['theme_color', 'primary_color', 'accent_color']);
+                                        $key = $get('key');
+                                        return $key && in_array($key, ['theme_color', 'primary_color', 'accent_color']);
                                     }),
 
                                 // Boolean değerler için toggle
@@ -148,7 +158,9 @@ class GeneralSettingResource extends Resource
                                     ->offColor('gray')
                                     ->helperText('Bu özelliği etkinleştirin veya devre dışı bırakın')
                                     ->visible(function (Forms\Get $get) {
-                                        return $get('type') === 'boolean' || in_array($get('key'), ['enable_dark_mode', 'enable_notifications']);
+                                        $type = $get('type');
+                                        $key = $get('key');
+                                        return $type === 'boolean' || ($key && in_array($key, ['enable_dark_mode', 'enable_notifications']));
                                     }),
 
                                 // Sayısal değerler için
@@ -158,7 +170,8 @@ class GeneralSettingResource extends Resource
                                     ->minValue(0)
                                     ->helperText('Pozitif sayı giriniz')
                                     ->visible(function (Forms\Get $get) {
-                                        return $get('type') === 'integer';
+                                        $type = $get('type');
+                                        return $type === 'integer';
                                     }),
 
                                 // URL alanları için
@@ -170,7 +183,8 @@ class GeneralSettingResource extends Resource
                                     ->helperText('Tam URL giriniz (https:// ile başlamalı)')
                                     ->visible(function (Forms\Get $get) {
                                         $key = $get('key');
-
+                                        if (!$key) return false;
+                                        
                                         return str_contains($key, 'social_') || str_contains($key, 'url') || str_contains($key, 'website');
                                     }),
 
@@ -183,6 +197,7 @@ class GeneralSettingResource extends Resource
                                     ->helperText('Geçerli e-posta adresi giriniz')
                                     ->visible(function (Forms\Get $get) {
                                         $key = $get('key');
+                                        if (!$key) return false;
 
                                         return str_contains($key, 'email') || str_contains($key, '_mail');
                                     }),
@@ -196,6 +211,7 @@ class GeneralSettingResource extends Resource
                                     ->helperText('Ülke kodu ile birlikte giriniz')
                                     ->visible(function (Forms\Get $get) {
                                         $key = $get('key');
+                                        if (!$key) return false;
 
                                         return str_contains($key, 'phone') || str_contains($key, 'whatsapp') || str_contains($key, 'tel');
                                     }),
@@ -208,6 +224,7 @@ class GeneralSettingResource extends Resource
                                     ->helperText('Uzun açıklamalar için')
                                     ->visible(function (Forms\Get $get) {
                                         $key = $get('key');
+                                        if (!$key) return false;
 
                                         return in_array($key, ['site_description', 'working_hours', 'contact_address', 'copyright_text'])
                                             || str_contains($key, 'description')
@@ -223,6 +240,8 @@ class GeneralSettingResource extends Resource
                                     ->visible(function (Forms\Get $get) {
                                         $key = $get('key') ?? '';
                                         $type = $get('type') ?? 'string';
+
+                                        if (!$key) return false;
 
                                         // Eğer yukarıdaki özel alanların hiçbiri değilse normal text input göster
                                         return ! in_array($key, ['site_logo', 'site_favicon', 'theme_color', 'primary_color', 'accent_color'])
@@ -304,7 +323,11 @@ class GeneralSettingResource extends Resource
                     ->label('Ayar Adı')
                     ->searchable()
                     ->sortable()
-                    ->weight(FontWeight::SemiBold),
+                    ->weight(FontWeight::SemiBold)
+                    ->badge()
+                    ->icon(fn ($record) => $record->isEssential() ? 'heroicon-o-shield-check' : null)
+                    ->color(fn ($record) => $record->isEssential() ? 'success' : null)
+                    ->description(fn ($record) => $record->isEssential() ? 'Sistem Ayarı' : null),
 
                 Tables\Columns\TextColumn::make('value')
                     ->label('Değer')
@@ -403,11 +426,22 @@ class GeneralSettingResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
                     ->tooltip('Sil')
-                    ->requiresConfirmation(),
+                    ->requiresConfirmation()
+                    ->visible(fn ($record) => !$record->isEssential())
+                    ->modalDescription(fn ($record) => $record->isEssential() 
+                        ? 'Bu ayar sistem için gereklidir ve silinemez.' 
+                        : 'Bu ayarı silmek istediğinizden emin misiniz?'
+                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function ($records) {
+                            $essentialSettings = $records->filter(fn($record) => $record->isEssential());
+                            if ($essentialSettings->isNotEmpty()) {
+                                throw new \Exception("Essential settings cannot be deleted: " . $essentialSettings->pluck('key')->join(', '));
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('group')

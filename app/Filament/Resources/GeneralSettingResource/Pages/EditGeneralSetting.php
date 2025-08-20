@@ -37,6 +37,11 @@ class EditGeneralSetting extends EditRecord
         $setting->makeVisible(['value']);
         $data['value'] = $setting->value; // Accessor'dan değeri al
         
+        // Resim türü için image_value alanını doldur
+        if ($setting->type === 'image' && $setting->getRawOriginal('value')) {
+            $data['image_value'] = [$setting->getRawOriginal('value')];
+        }
+        
         return $data;
     }
     

@@ -38,6 +38,17 @@ class Setting extends Model
         'updated_at' => 'datetime',
     ];
 
+    /**
+     * Essential settings that should never be deleted.
+     */
+    public const ESSENTIAL_SETTINGS = [
+        'site_title', 'site_description', 'site_logo', 'site_favicon',
+        'contact_phone', 'contact_email', 'contact_address',
+        'company_name', 'company_tax_number',
+        'social_facebook', 'social_twitter', 'social_instagram', 'social_linkedin',
+        'theme_color', 'enable_dark_mode'
+    ];
+
     protected $hidden = [
         'value', // Value accessor'la kontrol edilecek
     ];
@@ -48,6 +59,14 @@ class Setting extends Model
     protected static function boot(): void
     {
         parent::boot();
+
+        // Essential ayarların silinmesini engelle
+        static::deleting(function (Setting $setting): bool {
+            if (in_array($setting->key, self::ESSENTIAL_SETTINGS)) {
+                throw new \Exception("Essential setting '{$setting->key}' cannot be deleted.");
+            }
+            return true;
+        });
 
         // Cache'i temizle
         static::saved(function (Setting $setting): void {
@@ -222,5 +241,49 @@ class Setting extends Model
     public function scopeGroup($query, string $group)
     {
         return $query->where('group', $group);
+    }
+
+    /**
+     * Check if this setting is essential.
+     */
+    public function isEssential(): bool
+    {
+        return in_array($this->key, self::ESSENTIAL_SETTINGS);
+    }
+
+    /**
+     * Create essential settings if they don't exist.
+     */
+    public static function createEssentialSettings(): void
+    {
+        $essentialSettings = [
+            ['key' => 'site_title', 'label' => 'Site Başlığı', 'value' => 'E-Ticaret Sitesi', 'type' => 'string', 'group' => 'general'],
+            ['key' => 'site_description', 'label' => 'Site Açıklaması', 'value' => 'Modern e-ticaret platformu', 'type' => 'string', 'group' => 'general'],
+            ['key' => 'site_logo', 'label' => 'Site Logosu', 'value' => '', 'type' => 'image', 'group' => 'general'],
+            ['key' => 'site_favicon', 'label' => 'Site Favicon', 'value' => '/images/favicon.ico', 'type' => 'image', 'group' => 'general'],
+            ['key' => 'contact_phone', 'label' => 'İletişim Telefonu', 'value' => '', 'type' => 'string', 'group' => 'contact'],
+            ['key' => 'contact_email', 'label' => 'İletişim E-posta', 'value' => '', 'type' => 'string', 'group' => 'contact'],
+            ['key' => 'contact_address', 'label' => 'İletişim Adresi', 'value' => '', 'type' => 'string', 'group' => 'contact'],
+            ['key' => 'company_name', 'label' => 'Şirket Adı', 'value' => '', 'type' => 'string', 'group' => 'company'],
+            ['key' => 'company_tax_number', 'label' => 'Vergi Numarası', 'value' => '', 'type' => 'string', 'group' => 'company'],
+            ['key' => 'social_facebook', 'label' => 'Facebook URL', 'value' => '', 'type' => 'string', 'group' => 'social'],
+            ['key' => 'social_twitter', 'label' => 'Twitter URL', 'value' => '', 'type' => 'string', 'group' => 'social'],
+            ['key' => 'social_instagram', 'label' => 'Instagram URL', 'value' => '', 'type' => 'string', 'group' => 'social'],
+            ['key' => 'social_linkedin', 'label' => 'LinkedIn URL', 'value' => '', 'type' => 'string', 'group' => 'social'],
+            ['key' => 'theme_color', 'label' => 'Tema Rengi', 'value' => '#3b82f6', 'type' => 'string', 'group' => 'ui'],
+            ['key' => 'enable_dark_mode', 'label' => 'Koyu Tema', 'value' => false, 'type' => 'boolean', 'group' => 'ui'],
+        ];
+
+        foreach ($essentialSettings as $settingData) {
+            self::firstOrCreate(
+                ['key' => $settingData['key']],
+                array_merge($settingData, [
+                    'description' => "Essential setting: {$settingData['label']}",
+                    'is_public' => true,
+                    'created_by' => 1,
+                    'updated_by' => 1,
+                ])
+            );
+        }
     }
 }

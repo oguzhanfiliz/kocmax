@@ -62,7 +62,8 @@ class SettingController extends Controller
 
             // Transform to key-value pairs
             $data = $settings->mapWithKeys(function (Setting $setting) {
-                return [$setting->key => $setting->value];
+                $value = $setting->type === 'image' ? $this->getFullImageUrl($setting->value) : $setting->value;
+                return [$setting->key => $value];
             })->toArray();
 
             return response()->json([
@@ -119,7 +120,8 @@ class SettingController extends Controller
             // Group by category
             $grouped = $settings->groupBy('group')->map(function ($groupSettings) {
                 return $groupSettings->mapWithKeys(function (Setting $setting) {
-                    return [$setting->key => $setting->value];
+                    $value = $setting->type === 'image' ? $this->getFullImageUrl($setting->value) : $setting->value;
+                    return [$setting->key => $value];
                 });
             });
 
@@ -192,7 +194,7 @@ class SettingController extends Controller
                 'success' => true,
                 'data' => [
                     'key' => $setting->key,
-                    'value' => $setting->value,
+                    'value' => $setting->type === 'image' ? $this->getFullImageUrl($setting->value) : $setting->value,
                     'group' => $setting->group,
                     'label' => $setting->label,
                     'description' => $setting->description,
@@ -272,8 +274,8 @@ class SettingController extends Controller
                 'site' => [
                     'title' => $settings['site_title'] ?? 'E-Ticaret',
                     'description' => $settings['site_description'] ?? '',
-                    'logo' => $settings['site_logo'] ?? null,
-                    'favicon' => $settings['site_favicon'] ?? null,
+                    'logo' => $this->getFullImageUrl($settings['site_logo'] ?? null),
+                    'favicon' => $this->getFullImageUrl($settings['site_favicon'] ?? null),
                 ],
                 'contact' => [
                     'phone' => $settings['contact_phone'] ?? null,
@@ -309,5 +311,38 @@ class SettingController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get full URL for image settings
+     */
+    private function getFullImageUrl(?string $imagePath): ?string
+    {
+        if (!$imagePath) {
+            return null;
+        }
+
+        // Eğer zaten tam URL ise olduğu gibi döndür
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return $imagePath;
+        }
+
+        // Storage path ise tam URL oluştur
+        if (str_starts_with($imagePath, 'storage/') || str_starts_with($imagePath, '/storage/')) {
+            return url($imagePath);
+        }
+
+        // Public path ise tam URL oluştur
+        if (str_starts_with($imagePath, '/')) {
+            return url($imagePath);
+        }
+
+        // Eğer sadece dosya adıysa (FileUpload'dan geliyorsa) settings/images altında
+        if (!str_contains($imagePath, '/')) {
+            return url('storage/settings/images/' . $imagePath);
+        }
+
+        // Diğer relatif path'ler için storage
+        return url('storage/' . $imagePath);
     }
 }

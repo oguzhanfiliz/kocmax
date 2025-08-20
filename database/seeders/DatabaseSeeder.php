@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             'Sistem ayarları' => [
                 SettingSeeder::class,
                 MigrateConfigSettingsSeeder::class,
+                EssentialSettingsSeeder::class,
             ],
             'Temel veriler' => [
                 CurrencySeeder::class,
