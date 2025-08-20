@@ -2460,6 +2460,72 @@
                 ]
             }
         },
+        "/api/v1/categories/menu": {
+            "get": {
+                "tags": [
+                    "Categories",
+                    "Public API"
+                ],
+                "summary": "Menü kategorilerini getir (Public)",
+                "description": "Menüde gösterilmek üzere işaretlenmiş kategorileri hiyerarşik yapıda getirir. Authentication gerektirmez.",
+                "operationId": "getMenuCategories",
+                "parameters": [
+                    {
+                        "name": "with_children",
+                        "in": "query",
+                        "description": "Alt kategorileri de dahil et",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    {
+                        "name": "include_non_root",
+                        "in": "query",
+                        "description": "Kök olmayan (parent_id dolu) menü kategorilerini de düz liste olarak dahil et",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Menü kategorileri başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Menü kategorileri başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Category"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
         "/api/v1/categories/tree": {
             "get": {
                 "tags": [
@@ -6614,6 +6680,10 @@
                         "type": "boolean",
                         "example": true
                     },
+                    "is_in_menu": {
+                        "type": "boolean",
+                        "example": true
+                    },
                     "parent_id": {
                         "type": "integer",
                         "example": null,
@@ -6698,6 +6768,19 @@
                     "products_count": {
                         "type": "integer",
                         "example": 10
+                    },
+                    "icon": {
+                        "type": "string",
+                        "example": "heroicon-o-shield-check",
+                        "nullable": true
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "is_in_menu": {
+                        "type": "boolean",
+                        "example": true
                     }
                 },
                 "type": "object"

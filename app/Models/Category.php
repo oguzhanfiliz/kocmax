@@ -22,6 +22,7 @@ class Category extends Model
         'parent_id',
         'sort_order',
         'is_active',
+        'is_in_menu',
         'meta_title',
         'meta_description',
         'meta_keywords',
@@ -29,6 +30,7 @@ class Category extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_in_menu' => 'boolean',
         'sort_order' => 'integer',
         'parent_id' => 'integer',
     ];
@@ -58,7 +60,17 @@ class Category extends Model
     public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id')
-            ->select(['id', 'name', 'slug', 'parent_id', 'sort_order', 'is_active']);
+            ->select([
+                'id',
+                'name',
+                'slug',
+                'parent_id',
+                'sort_order',
+                'is_active',
+                'icon',
+                'is_featured',
+                'is_in_menu',
+            ]);
     }
 
     public function products(): BelongsToMany
@@ -76,6 +88,11 @@ class Category extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeInMenu($query)
+    {
+        return $query->where('is_in_menu', true);
     }
 
     public function scopeParents($query)

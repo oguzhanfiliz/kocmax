@@ -36,6 +36,8 @@ class CategoryFactory extends Factory
             'description' => $this->faker->paragraph,
             'parent_id' => null, // Varsayılan olarak ana kategori
             'is_active' => $this->faker->boolean(90), // %90 ihtimalle aktif
+            'is_in_menu' => $this->faker->boolean(50),
+            'is_featured' => $this->faker->boolean(20),
         ];
     }
 }

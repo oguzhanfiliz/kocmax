@@ -84,6 +84,76 @@ class CategoryController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/v1/categories/menu",
+     *     operationId="getMenuCategories",
+     *     tags={"Categories", "Public API"},
+     *     summary="Menü kategorilerini getir (Public)",
+     *     description="Menüde gösterilmek üzere işaretlenmiş kategorileri hiyerarşik yapıda getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="with_children",
+     *         in="query",
+     *         description="Alt kategorileri de dahil et",
+     *         required=false,
+     *         @OA\Schema(type="boolean", default=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="include_non_root",
+     *         in="query",
+     *         description="Kök olmayan (parent_id dolu) menü kategorilerini de düz liste olarak dahil et",
+     *         required=false,
+     *         @OA\Schema(type="boolean", default=false)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Menü kategorileri başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Menü kategorileri başarıyla getirildi"),
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Category"))
+     *         )
+     *     )
+     * )
+     */
+    public function menu(Request $request): JsonResponse
+    {
+        $withChildren = $request->boolean('with_children', true);
+        $includeNonRoot = $request->boolean('include_non_root', false);
+
+        $query = Category::query()
+            ->where('is_active', true)
+            ->where('is_in_menu', true)
+            ->orderBy('sort_order')
+            ->orderBy('name');
+
+        // Varsayılan: sadece kök kategoriler
+        if (! $includeNonRoot) {
+            $query->whereNull('parent_id');
+
+            if ($withChildren) {
+                $query->with(['children' => function ($childQuery) {
+                    $childQuery->where('is_active', true)
+                              ->where('is_in_menu', true)
+                              ->orderBy('sort_order')
+                              ->orderBy('name');
+                }]);
+            }
+        } else {
+            // Düz liste modunda children yükleme yapma (duplikasyon olmaması için)
+            $withChildren = false;
+        }
+
+        $categories = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Menü kategorileri başarıyla getirildi',
+            'data' => CategoryResource::collection($categories)
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/v1/categories/tree",
      *     operationId="getCategoryTree",
      *     tags={"Categories"},

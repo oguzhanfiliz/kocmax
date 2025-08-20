@@ -103,6 +103,10 @@ class CategoryResource extends Resource
                         Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')
                             ->default(true),
+                        Forms\Components\Toggle::make('is_in_menu')
+                            ->label('Menüye Ekle')
+                            ->helperText('Bu kategoriyi ana menüde göstermek için işaretleyin')
+                            ->default(false),
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Sıralama')
                             ->numeric()
@@ -134,6 +138,13 @@ class CategoryResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Durum')
                     ->boolean(),
+                Tables\Columns\IconColumn::make('is_in_menu')
+                    ->label('Menüde')
+                    ->boolean()
+                    ->trueIcon('heroicon-m-bars-3')
+                    ->falseIcon('heroicon-m-minus')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Ürün Sayısı')
                     ->counts('products')
@@ -150,6 +161,8 @@ class CategoryResource extends Resource
                     ->preload(),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Durum'),
+                Tables\Filters\TernaryFilter::make('is_in_menu')
+                    ->label('Menüde Gösterim'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

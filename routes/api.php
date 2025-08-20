@@ -140,6 +140,7 @@ Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public
 Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
     // Public category navigation routes
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
+    Route::get('/menu', [CategoryController::class, 'menu'])->name('api.categories.menu');
     Route::get('/tree', [CategoryController::class, 'tree'])->name('api.categories.tree');
     Route::get('/breadcrumb/{id}', [CategoryController::class, 'breadcrumb'])->name('api.categories.breadcrumb')
           ->where('id', '[0-9]+');
