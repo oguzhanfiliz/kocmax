@@ -2526,6 +2526,64 @@
                 ]
             }
         },
+        "/api/v1/categories/featured": {
+            "get": {
+                "tags": [
+                    "Categories",
+                    "Public API"
+                ],
+                "summary": "Öne çıkarılan kategorileri getir (Public)",
+                "description": "Öne çıkarılan olarak işaretlenmiş kategorileri resimlerle birlikte getirir. Authentication gerektirmez.",
+                "operationId": "getFeaturedCategories",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maksimum kategori sayısı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 20,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Öne çıkarılan kategoriler başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Öne çıkarılan kategoriler başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Category"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
         "/api/v1/categories/tree": {
             "get": {
                 "tags": [
@@ -3317,11 +3375,24 @@
         "/api/v1/currencies": {
             "get": {
                 "tags": [
-                    "Currency"
+                    "Currencies",
+                    "Public API"
                 ],
-                "summary": "Desteklenen para birimlerini listele",
-                "description": "Sistemde desteklenen tüm para birimlerini ve güncel döviz kurlarını getirir",
+                "summary": "Para birimlerini listele (Public)",
+                "description": "Aktif para birimlerini listeler. Authentication gerektirmez.",
                 "operationId": "getCurrencies",
+                "parameters": [
+                    {
+                        "name": "active_only",
+                        "in": "query",
+                        "description": "Sadece aktif para birimlerini getir",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Para birimleri başarıyla getirildi",
@@ -3330,54 +3401,18 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Para birimleri başarıyla getirildi"
+                                        },
                                         "data": {
-                                            "description": "Para birimi verileri",
-                                            "properties": {
-                                                "currencies": {
-                                                    "description": "Desteklenen para birimleri",
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "code": {
-                                                                "description": "Para birimi kodu",
-                                                                "type": "string",
-                                                                "example": "USD"
-                                                            },
-                                                            "name": {
-                                                                "description": "Para birimi adı",
-                                                                "type": "string",
-                                                                "example": "US Dollar"
-                                                            },
-                                                            "symbol": {
-                                                                "description": "Para birimi sembolü",
-                                                                "type": "string",
-                                                                "example": "$"
-                                                            },
-                                                            "exchange_rate": {
-                                                                "description": "Döviz kuru (TRY bazında)",
-                                                                "type": "number",
-                                                                "example": 29.85
-                                                            },
-                                                            "is_default": {
-                                                                "description": "Varsayılan para birimi mi",
-                                                                "type": "boolean",
-                                                                "example": false
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "default_currency": {
-                                                    "description": "Varsayılan para birimi kodu",
-                                                    "type": "string",
-                                                    "example": "TRY"
-                                                }
-                                            },
-                                            "type": "object"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Currency"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -3385,40 +3420,84 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/currencies/default": {
+            "get": {
+                "tags": [
+                    "Currencies",
+                    "Public API"
+                ],
+                "summary": "Varsayılan para birimini getir (Public)",
+                "description": "Sistemin varsayılan para birimini getirir. Authentication gerektirmez.",
+                "operationId": "getDefaultCurrency",
+                "responses": {
+                    "200": {
+                        "description": "Varsayılan para birimi başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Varsayılan para birimi başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Currency"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Varsayılan para birimi bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Varsayılan para birimi bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/currencies/rates": {
             "get": {
                 "tags": [
-                    "Currency"
+                    "Currencies",
+                    "Public API"
                 ],
-                "summary": "Döviz kurlarını getir",
-                "description": "Belirtilen kaynak para biriminden hedef para birimlerine güncel döviz kurlarını getirir",
+                "summary": "Döviz kurlarını getir (Public)",
+                "description": "Tüm aktif para birimlerinin döviz kurlarını getirir. Authentication gerektirmez.",
                 "operationId": "getExchangeRates",
-                "parameters": [
-                    {
-                        "name": "base",
-                        "in": "query",
-                        "description": "Kaynak para birimi kodu (varsayılan: TRY)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "TRY",
-                            "example": "TRY"
-                        }
-                    },
-                    {
-                        "name": "currencies",
-                        "in": "query",
-                        "description": "Hedef para birimleri (virgülle ayrılmış, örn: USD,EUR,GBP)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "USD,EUR,GBP"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Döviz kurları başarıyla getirildi",
@@ -3427,38 +3506,43 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Döviz kurları başarıyla getirildi"
+                                        },
                                         "data": {
-                                            "description": "Döviz kuru verileri",
                                             "properties": {
                                                 "base_currency": {
-                                                    "description": "Kaynak para birimi",
                                                     "type": "string",
                                                     "example": "TRY"
                                                 },
+                                                "last_updated": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-08T10:30:00Z"
+                                                },
                                                 "rates": {
-                                                    "description": "Hedef para birimlerine dönüşüm kurları",
                                                     "properties": {
                                                         "USD": {
-                                                            "description": "USD döviz kuru",
                                                             "type": "number",
-                                                            "example": 0.0335
+                                                            "format": "float",
+                                                            "example": 0.034
                                                         },
                                                         "EUR": {
-                                                            "description": "EUR döviz kuru",
                                                             "type": "number",
-                                                            "example": 0.0309
+                                                            "format": "float",
+                                                            "example": 0.031
+                                                        },
+                                                        "GBP": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 0.027
                                                         }
                                                     },
                                                     "type": "object"
-                                                },
-                                                "timestamp": {
-                                                    "description": "Kur güncellenme zamanı",
-                                                    "type": "string",
-                                                    "format": "date-time"
                                                 }
                                             },
                                             "type": "object"
@@ -3469,16 +3553,22 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/currencies/convert": {
             "post": {
                 "tags": [
-                    "Currency"
+                    "Currencies",
+                    "Public API"
                 ],
-                "summary": "Para birimi dönüştür",
-                "description": "Belirtilen tutarı kaynak para biriminden hedef para birimine güncel kurlarla dönüştürür",
+                "summary": "Para birimi çevirme (Public)",
+                "description": "Belirtilen miktarı bir para biriminden diğerine çevirir. Authentication gerektirmez.",
                 "operationId": "convertCurrency",
                 "requestBody": {
                     "required": true,
@@ -3492,9 +3582,10 @@
                                 ],
                                 "properties": {
                                     "amount": {
-                                        "description": "Dönüştürülecek miktar",
+                                        "description": "Çevrilecek miktar",
                                         "type": "number",
-                                        "example": 100
+                                        "format": "float",
+                                        "example": 100.5
                                     },
                                     "from": {
                                         "description": "Kaynak para birimi kodu",
@@ -3514,53 +3605,48 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Para birimi dönüştürme işlemi başarıyla tamamlandı",
+                        "description": "Para birimi çevirme başarılı",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "description": "İşlem durumu",
                                             "type": "boolean",
                                             "example": true
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Para birimi çevirme başarılı"
+                                        },
                                         "data": {
-                                            "description": "Dönüştürme sonuç verileri",
                                             "properties": {
                                                 "original_amount": {
-                                                    "description": "Orijinal miktar",
                                                     "type": "number",
-                                                    "example": 100
+                                                    "format": "float",
+                                                    "example": 100.5
                                                 },
-                                                "original_currency": {
-                                                    "description": "Orijinal para birimi",
+                                                "converted_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 3.42
+                                                },
+                                                "from_currency": {
                                                     "type": "string",
                                                     "example": "TRY"
                                                 },
-                                                "converted_amount": {
-                                                    "description": "Dönüştürülen miktar",
-                                                    "type": "number",
-                                                    "example": 3.35
-                                                },
-                                                "converted_currency": {
-                                                    "description": "Dönüştürülen para birimi",
+                                                "to_currency": {
                                                     "type": "string",
                                                     "example": "USD"
                                                 },
                                                 "exchange_rate": {
-                                                    "description": "Kullanılan döviz kuru",
                                                     "type": "number",
-                                                    "example": 0.0335
+                                                    "format": "float",
+                                                    "example": 0.034
                                                 },
-                                                "formatted_original": {
-                                                    "description": "Formatlanmış orijinal tutar",
+                                                "converted_at": {
                                                     "type": "string",
-                                                    "example": "₺100.00"
-                                                },
-                                                "formatted_converted": {
-                                                    "description": "Formatlanmış dönüştürülmüş tutar",
-                                                    "type": "string",
-                                                    "example": "$3.35"
+                                                    "format": "date-time",
+                                                    "example": "2025-01-08T10:30:00Z"
                                                 }
                                             },
                                             "type": "object"
@@ -3571,10 +3657,128 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Geçersiz istek",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Geçersiz para birimi kodu"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
-                        "description": "Geçersiz veri hatası"
+                        "description": "Validasyon hatası",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validasyon hatası"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/currencies/{code}": {
+            "get": {
+                "tags": [
+                    "Currencies",
+                    "Public API"
+                ],
+                "summary": "Para birimi detayını getir (Public)",
+                "description": "Belirtilen para birimi koduna ait detayları getirir. Authentication gerektirmez.",
+                "operationId": "getCurrency",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "Para birimi kodu (3 karakter)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "USD"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Para birimi detayı başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Para birimi başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Currency"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Para birimi bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Para birimi bulunamadı"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
             }
         },
         "/api/v1/orders": {
@@ -4847,6 +5051,73 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Temel ayarlar başarıyla getirildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/settings/features": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Site özellik listesini al",
+                "description": "Ana sayfada gösterilecek site özelliklerini (ücretsiz teslimat, güvenli ödeme vb.) getirir",
+                "operationId": "getFeatures",
+                "responses": {
+                    "200": {
+                        "description": "Site özellikleri başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Ücretsiz Teslimat"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Tüm siparişlerde"
+                                                    },
+                                                    "icon": {
+                                                        "type": "string",
+                                                        "example": "<svg>...</svg>"
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Site özellikleri başarıyla getirildi"
                                         }
                                     },
                                     "type": "object"
@@ -6829,6 +7100,63 @@
                 },
                 "type": "object"
             },
+            "Currency": {
+                "title": "Currency",
+                "description": "Currency data",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "description": "3 karakterli para birimi kodu",
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "name": {
+                        "description": "Para birimi adı",
+                        "type": "string",
+                        "example": "US Dollar"
+                    },
+                    "symbol": {
+                        "description": "Para birimi sembolü",
+                        "type": "string",
+                        "example": "$"
+                    },
+                    "exchange_rate": {
+                        "description": "TRY cinsinden döviz kuru",
+                        "type": "number",
+                        "format": "float",
+                        "example": 29.45
+                    },
+                    "is_default": {
+                        "description": "Varsayılan para birimi mi?",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "is_active": {
+                        "description": "Aktif durumda mı?",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "formatted_rate": {
+                        "description": "Formatlanmış kur bilgisi",
+                        "type": "string",
+                        "example": "1 USD = 29.45 TRY"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
             "OrderItem": {
                 "title": "Order Item",
                 "description": "Order item data",
@@ -7714,8 +8042,8 @@
             "description": "İndirim kuponları yönetimi API uç noktaları"
         },
         {
-            "name": "Currency",
-            "description": "Para birimi ve döviz kuru API uç noktaları"
+            "name": "Currencies",
+            "description": "Para birimi yönetimi API uç noktaları - Public endpoints (Authentication not required)"
         },
         {
             "name": "Orders",

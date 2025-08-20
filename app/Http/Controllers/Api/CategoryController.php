@@ -154,6 +154,52 @@ class CategoryController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/v1/categories/featured",
+     *     operationId="getFeaturedCategories",
+     *     tags={"Categories", "Public API"},
+     *     summary="Öne çıkarılan kategorileri getir (Public)",
+     *     description="Öne çıkarılan olarak işaretlenmiş kategorileri resimlerle birlikte getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Maksimum kategori sayısı",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, maximum=20, default=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Öne çıkarılan kategoriler başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Öne çıkarılan kategoriler başarıyla getirildi"),
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Category"))
+     *         )
+     *     )
+     * )
+     */
+    public function featured(Request $request): JsonResponse
+    {
+        $limit = min((int) $request->input('limit', 10), 20);
+
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->where('is_featured', true)
+            ->withCount('products')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Öne çıkarılan kategoriler başarıyla getirildi',
+            'data' => CategoryResource::collection($categories)
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/v1/categories/tree",
      *     operationId="getCategoryTree",
      *     tags={"Categories"},

@@ -99,7 +99,12 @@ class CategoryResource extends Resource
                         Forms\Components\FileUpload::make('image')
                             ->label('Kategori Görseli')
                             ->image()
-                            ->imageEditor(),
+                            ->imageEditor()
+                            ->directory('categories')
+                            ->helperText('Kategori için ana görsel'),
+                        Forms\Components\TextInput::make('icon')
+                            ->label('İkon')
+                            ->helperText('Heroicon veya FontAwesome ikon adı (ör: heroicon-o-home)'),
                         Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')
                             ->default(true),
@@ -107,11 +112,15 @@ class CategoryResource extends Resource
                             ->label('Menüye Ekle')
                             ->helperText('Bu kategoriyi ana menüde göstermek için işaretleyin')
                             ->default(false),
+                        Forms\Components\Toggle::make('is_featured')
+                            ->label('Öne Çıkarılan')
+                            ->helperText('Bu kategoriyi öne çıkarılan kategoriler arasında göster')
+                            ->default(false),
                         Forms\Components\TextInput::make('sort_order')
                             ->label('Sıralama')
                             ->numeric()
                             ->default(0),
-                    ]),
+                    ])->columns(2),
                 
                 Section::make('SEO Ayarları')
                     ->schema([
@@ -127,6 +136,11 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image')
+                    ->label('Görsel')
+                    ->circular()
+                    ->size(40)
+                    ->defaultImageUrl('/images/placeholder-category.png'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Kategori Adı')
                     ->searchable()
@@ -136,7 +150,7 @@ class CategoryResource extends Resource
                     ->sortable()
                     ->placeholder('-'),
                 Tables\Columns\IconColumn::make('is_active')
-                    ->label('Durum')
+                    ->label('Aktif')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_in_menu')
                     ->label('Menüde')
@@ -144,6 +158,13 @@ class CategoryResource extends Resource
                     ->trueIcon('heroicon-m-bars-3')
                     ->falseIcon('heroicon-m-minus')
                     ->trueColor('success')
+                    ->falseColor('gray'),
+                Tables\Columns\IconColumn::make('is_featured')
+                    ->label('Öne Çıkarılan')
+                    ->boolean()
+                    ->trueIcon('heroicon-m-star')
+                    ->falseIcon('heroicon-m-star')
+                    ->trueColor('warning')
                     ->falseColor('gray'),
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Ürün Sayısı')
@@ -163,6 +184,8 @@ class CategoryResource extends Resource
                     ->label('Durum'),
                 Tables\Filters\TernaryFilter::make('is_in_menu')
                     ->label('Menüde Gösterim'),
+                Tables\Filters\TernaryFilter::make('is_featured')
+                    ->label('Öne Çıkarılan'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

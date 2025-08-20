@@ -19,10 +19,12 @@ class Category extends Model
         'slug',
         'description',
         'image',
+        'icon',
         'parent_id',
         'sort_order',
         'is_active',
         'is_in_menu',
+        'is_featured',
         'meta_title',
         'meta_description',
         'meta_keywords',
@@ -31,6 +33,7 @@ class Category extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'is_in_menu' => 'boolean',
+        'is_featured' => 'boolean',
         'sort_order' => 'integer',
         'parent_id' => 'integer',
     ];
@@ -93,6 +96,11 @@ class Category extends Model
     public function scopeInMenu($query)
     {
         return $query->where('is_in_menu', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 
     public function scopeParents($query)
@@ -178,6 +186,24 @@ class Category extends Model
         }
         
         return $breadcrumb->implode(' > ');
+    }
+
+    /**
+     * Get image URL accessor
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        // If it's already a full URL, return as is
+        if (str_starts_with($this->image, 'http')) {
+            return $this->image;
+        }
+
+        // Otherwise, prepend storage URL
+        return asset('storage/' . $this->image);
     }
 
     /**

@@ -141,6 +141,7 @@ Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:publ
     // Public category navigation routes
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::get('/menu', [CategoryController::class, 'menu'])->name('api.categories.menu');
+    Route::get('/featured', [CategoryController::class, 'featured'])->name('api.categories.featured');
     Route::get('/tree', [CategoryController::class, 'tree'])->name('api.categories.tree');
     Route::get('/breadcrumb/{id}', [CategoryController::class, 'breadcrumb'])->name('api.categories.breadcrumb')
           ->where('id', '[0-9]+');
@@ -148,6 +149,21 @@ Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:publ
           ->where('id', '[0-9]+');
     Route::get('/{id}/products', [CategoryController::class, 'products'])->name('api.categories.products')
           ->where('id', '[0-9]+');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Currency API Routes (Public)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/currencies')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Public currency routes
+    Route::get('/', [CurrencyController::class, 'index'])->name('api.currencies.index');
+    Route::get('/default', [CurrencyController::class, 'default'])->name('api.currencies.default');
+    Route::get('/rates', [CurrencyController::class, 'rates'])->name('api.currencies.rates');
+    Route::post('/convert', [CurrencyController::class, 'convert'])->name('api.currencies.convert');
+    Route::get('/{code}', [CurrencyController::class, 'show'])->name('api.currencies.show')
+          ->where('code', '[A-Z]{3}');
 });
 
 /*
@@ -251,6 +267,7 @@ Route::prefix('v1/settings')->middleware(['api', 'throttle:public'])->group(func
     Route::get('/', [SettingController::class, 'index'])->name('api.settings.index');
     Route::get('/grouped', [SettingController::class, 'grouped'])->name('api.settings.grouped');
     Route::get('/essential', [SettingController::class, 'essential'])->name('api.settings.essential');
+    Route::get('/features', [SettingController::class, 'features'])->name('api.settings.features');
     Route::get('/{key}', [SettingController::class, 'show'])->name('api.settings.show')
           ->where('key', '[a-zA-Z0-9_\-]+');
 });

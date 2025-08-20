@@ -5,182 +5,217 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\CurrencyConversionService;
-use App\Services\MultiCurrencyPricingService;
+use App\Http\Resources\CurrencyResource;
+use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @OA\Tag(
- *     name="Currency",
- *     description="Para birimi ve döviz kuru API uç noktaları"
+ *     name="Currencies",
+ *     description="Para birimi yönetimi API uç noktaları - Public endpoints (Authentication not required)"
  * )
  */
 class CurrencyController extends Controller
 {
-    public function __construct(
-        private CurrencyConversionService $currencyService,
-        private MultiCurrencyPricingService $multiCurrencyPricingService
-    ) {}
-
     /**
      * @OA\Get(
-     *      path="/api/v1/currencies",
-     *      operationId="getCurrencies",
-     *      tags={"Currency"},
-     *      summary="Desteklenen para birimlerini listele",
-     *      description="Sistemde desteklenen tüm para birimlerini ve güncel döviz kurlarını getirir",
-     *      @OA\Response(
-     *          response=200,
-     *          description="Para birimleri başarıyla getirildi",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
-     *              @OA\Property(property="data", type="object", description="Para birimi verileri",
-     *                  @OA\Property(property="currencies", type="array", description="Desteklenen para birimleri",
-     *                      @OA\Items(type="object",
-     *                          @OA\Property(property="code", type="string", example="USD", description="Para birimi kodu"),
-     *                          @OA\Property(property="name", type="string", example="US Dollar", description="Para birimi adı"),
-     *                          @OA\Property(property="symbol", type="string", example="$", description="Para birimi sembolü"),
-     *                          @OA\Property(property="exchange_rate", type="number", example=29.85, description="Döviz kuru (TRY bazında)"),
-     *                          @OA\Property(property="is_default", type="boolean", example=false, description="Varsayılan para birimi mi")
-     *                      )
-     *                  ),
-     *                  @OA\Property(property="default_currency", type="string", example="TRY", description="Varsayılan para birimi kodu")
-     *              )
-     *          )
-     *      )
+     *     path="/api/v1/currencies",
+     *     operationId="getCurrencies",
+     *     tags={"Currencies", "Public API"},
+     *     summary="Para birimlerini listele (Public)",
+     *     description="Aktif para birimlerini listeler. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="active_only",
+     *         in="query",
+     *         description="Sadece aktif para birimlerini getir",
+     *         required=false,
+     *         @OA\Schema(type="boolean", default=true)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Para birimleri başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Para birimleri başarıyla getirildi"),
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Currency"))
+     *         )
+     *     )
      * )
      */
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        try {
-            $currencies = $this->multiCurrencyPricingService->getAvailableCurrencies();
-            $defaultCurrency = collect($currencies)->firstWhere('is_default', true)['code'] ?? 'TRY';
+        $query = Currency::query()->orderBy('is_default', 'desc')->orderBy('code');
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'currencies' => $currencies,
-                    'default_currency' => $defaultCurrency,
-                    'last_updated' => now()->toISOString()
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Para birimleri getirilemedi',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($request->boolean('active_only', true)) {
+            $query->where('is_active', true);
         }
+
+        $currencies = $query->get();
+
+        return CurrencyResource::collection($currencies);
     }
 
     /**
      * @OA\Get(
-     *      path="/api/v1/currencies/rates",
-     *      operationId="getExchangeRates",
-     *      tags={"Currency"},
-     *      summary="Döviz kurlarını getir",
-     *      description="Belirtilen kaynak para biriminden hedef para birimlerine güncel döviz kurlarını getirir",
-     *      @OA\Parameter(
-     *          name="base",
-     *          description="Kaynak para birimi kodu (varsayılan: TRY)",
-     *          required=false,
-     *          in="query",
-     *          @OA\Schema(type="string", default="TRY", example="TRY")
-     *      ),
-     *      @OA\Parameter(
-     *          name="currencies",
-     *          description="Hedef para birimleri (virgülle ayrılmış, örn: USD,EUR,GBP)",
-     *          required=false,
-     *          in="query",
-     *          @OA\Schema(type="string", example="USD,EUR,GBP")
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Döviz kurları başarıyla getirildi",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
-     *              @OA\Property(property="data", type="object", description="Döviz kuru verileri",
-     *                  @OA\Property(property="base_currency", type="string", example="TRY", description="Kaynak para birimi"),
-     *                  @OA\Property(property="rates", type="object", description="Hedef para birimlerine dönüşüm kurları",
-     *                      @OA\Property(property="USD", type="number", example=0.0335, description="USD döviz kuru"),
-     *                      @OA\Property(property="EUR", type="number", example=0.0309, description="EUR döviz kuru")
-     *                  ),
-     *                  @OA\Property(property="timestamp", type="string", format="date-time", description="Kur güncellenme zamanı")
-     *              )
-     *          )
-     *      )
+     *     path="/api/v1/currencies/default",
+     *     operationId="getDefaultCurrency",
+     *     tags={"Currencies", "Public API"},
+     *     summary="Varsayılan para birimini getir (Public)",
+     *     description="Sistemin varsayılan para birimini getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Varsayılan para birimi başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Varsayılan para birimi başarıyla getirildi"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Currency")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Varsayılan para birimi bulunamadı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Varsayılan para birimi bulunamadı")
+     *         )
+     *     )
      * )
      */
-    public function rates(Request $request): JsonResponse
+    public function default(): JsonResponse
     {
-        try {
-            $baseCurrency = $request->get('base', 'TRY');
-            $targetCurrencies = $request->get('currencies');
-            
-            if ($targetCurrencies) {
-                $targetCurrencies = explode(',', $targetCurrencies);
-            } else {
-                $targetCurrencies = ['USD', 'EUR', 'GBP'];
-            }
+        $defaultCurrency = Currency::getDefault();
 
-            $rates = $this->multiCurrencyPricingService->getExchangeRates($targetCurrencies, $baseCurrency);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'base_currency' => $baseCurrency,
-                    'rates' => $rates,
-                    'timestamp' => now()->toISOString()
-                ]
-            ]);
-
-        } catch (\Exception $e) {
+        if (!$defaultCurrency) {
             return response()->json([
                 'success' => false,
-                'message' => 'Döviz kurları getirilemedi',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Varsayılan para birimi bulunamadı'
+            ], 404);
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Varsayılan para birimi başarıyla getirildi',
+            'data' => new CurrencyResource($defaultCurrency)
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/currencies/rates",
+     *     operationId="getExchangeRates",
+     *     tags={"Currencies", "Public API"},
+     *     summary="Döviz kurlarını getir (Public)",
+     *     description="Tüm aktif para birimlerinin döviz kurlarını getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Döviz kurları başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Döviz kurları başarıyla getirildi"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="base_currency", type="string", example="TRY"),
+     *                 @OA\Property(property="last_updated", type="string", format="date-time", example="2025-01-08T10:30:00Z"),
+     *                 @OA\Property(
+     *                     property="rates",
+     *                     type="object",
+     *                     @OA\Property(property="USD", type="number", format="float", example=0.034),
+     *                     @OA\Property(property="EUR", type="number", format="float", example=0.031),
+     *                     @OA\Property(property="GBP", type="number", format="float", example=0.027)
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function rates(): JsonResponse
+    {
+        $currencies = Currency::where('is_active', true)->get();
+        $defaultCurrency = $currencies->where('is_default', true)->first();
+
+        if (!$defaultCurrency) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Varsayılan para birimi bulunamadı'
+            ], 404);
+        }
+
+        $rates = [];
+        foreach ($currencies as $currency) {
+            if (!$currency->is_default) {
+                $rates[$currency->code] = (float) $currency->exchange_rate;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Döviz kurları başarıyla getirildi',
+            'data' => [
+                'base_currency' => $defaultCurrency->code,
+                'last_updated' => $currencies->max('updated_at'),
+                'rates' => $rates
+            ]
+        ]);
     }
 
     /**
      * @OA\Post(
-     *      path="/api/v1/currencies/convert",
-     *      operationId="convertCurrency",
-     *      tags={"Currency"},
-     *      summary="Para birimi dönüştür",
-     *      description="Belirtilen tutarı kaynak para biriminden hedef para birimine güncel kurlarla dönüştürür",
-     *      @OA\RequestBody(
-     *          required=true,
-     *          @OA\JsonContent(
-     *              required={"amount", "from", "to"},
-     *              @OA\Property(property="amount", type="number", example=100.00, description="Dönüştürülecek miktar"),
-     *              @OA\Property(property="from", type="string", example="TRY", description="Kaynak para birimi kodu"),
-     *              @OA\Property(property="to", type="string", example="USD", description="Hedef para birimi kodu")
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Para birimi dönüştürme işlemi başarıyla tamamlandı",
-     *          @OA\JsonContent(
-     *              @OA\Property(property="success", type="boolean", example=true, description="İşlem durumu"),
-     *              @OA\Property(property="data", type="object", description="Dönüştürme sonuç verileri",
-     *                  @OA\Property(property="original_amount", type="number", example=100.00, description="Orijinal miktar"),
-     *                  @OA\Property(property="original_currency", type="string", example="TRY", description="Orijinal para birimi"),
-     *                  @OA\Property(property="converted_amount", type="number", example=3.35, description="Dönüştürülen miktar"),
-     *                  @OA\Property(property="converted_currency", type="string", example="USD", description="Dönüştürülen para birimi"),
-     *                  @OA\Property(property="exchange_rate", type="number", example=0.0335, description="Kullanılan döviz kuru"),
-     *                  @OA\Property(property="formatted_original", type="string", example="₺100.00", description="Formatlanmış orijinal tutar"),
-     *                  @OA\Property(property="formatted_converted", type="string", example="$3.35", description="Formatlanmış dönüştürülmüş tutar")
-     *              )
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response=422,
-     *          description="Geçersiz veri hatası"
-     *      )
+     *     path="/api/v1/currencies/convert",
+     *     operationId="convertCurrency",
+     *     tags={"Currencies", "Public API"},
+     *     summary="Para birimi çevirme (Public)",
+     *     description="Belirtilen miktarı bir para biriminden diğerine çevirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"amount", "from", "to"},
+     *             @OA\Property(property="amount", type="number", format="float", example=100.50, description="Çevrilecek miktar"),
+     *             @OA\Property(property="from", type="string", example="TRY", description="Kaynak para birimi kodu"),
+     *             @OA\Property(property="to", type="string", example="USD", description="Hedef para birimi kodu")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Para birimi çevirme başarılı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Para birimi çevirme başarılı"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="original_amount", type="number", format="float", example=100.50),
+     *                 @OA\Property(property="converted_amount", type="number", format="float", example=3.42),
+     *                 @OA\Property(property="from_currency", type="string", example="TRY"),
+     *                 @OA\Property(property="to_currency", type="string", example="USD"),
+     *                 @OA\Property(property="exchange_rate", type="number", format="float", example=0.034),
+     *                 @OA\Property(property="converted_at", type="string", format="date-time", example="2025-01-08T10:30:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Geçersiz istek",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Geçersiz para birimi kodu")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validasyon hatası",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validasyon hatası"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
      * )
      */
     public function convert(Request $request): JsonResponse
@@ -188,37 +223,102 @@ class CurrencyController extends Controller
         $request->validate([
             'amount' => 'required|numeric|min:0',
             'from' => 'required|string|size:3',
-            'to' => 'required|string|size:3'
+            'to' => 'required|string|size:3',
         ]);
 
-        try {
-            $amount = (float) $request->get('amount');
-            $fromCurrency = strtoupper($request->get('from'));
-            $toCurrency = strtoupper($request->get('to'));
+        $fromCurrency = Currency::where('code', strtoupper($request->from))
+            ->where('is_active', true)
+            ->first();
 
-            $exchangeRate = $this->currencyService->getRealTimeExchangeRate($fromCurrency, $toCurrency);
-            $convertedAmount = $amount * $exchangeRate;
+        $toCurrency = Currency::where('code', strtoupper($request->to))
+            ->where('is_active', true)
+            ->first();
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'original_amount' => $amount,
-                    'original_currency' => $fromCurrency,
-                    'converted_amount' => round($convertedAmount, 2),
-                    'converted_currency' => $toCurrency,
-                    'exchange_rate' => $exchangeRate,
-                    'formatted_original' => $this->currencyService->formatPrice($amount, $fromCurrency),
-                    'formatted_converted' => $this->currencyService->formatPrice($convertedAmount, $toCurrency),
-                    'timestamp' => now()->toISOString()
-                ]
-            ]);
-
-        } catch (\Exception $e) {
+        if (!$fromCurrency) {
             return response()->json([
                 'success' => false,
-                'message' => 'Para birimi dönüştürme işlemi başarısız oldu',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Kaynak para birimi bulunamadı: ' . $request->from
+            ], 400);
         }
+
+        if (!$toCurrency) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hedef para birimi bulunamadı: ' . $request->to
+            ], 400);
+        }
+
+        $originalAmount = (float) $request->amount;
+        $convertedAmount = $fromCurrency->convertTo($originalAmount, $toCurrency);
+
+        // Calculate exchange rate for display
+        $exchangeRate = $fromCurrency->convertTo(1, $toCurrency);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Para birimi çevirme başarılı',
+            'data' => [
+                'original_amount' => $originalAmount,
+                'converted_amount' => round($convertedAmount, 2),
+                'from_currency' => $fromCurrency->code,
+                'to_currency' => $toCurrency->code,
+                'exchange_rate' => round($exchangeRate, 6),
+                'converted_at' => now()->toISOString()
+            ]
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/currencies/{code}",
+     *     operationId="getCurrency",
+     *     tags={"Currencies", "Public API"},
+     *     summary="Para birimi detayını getir (Public)",
+     *     description="Belirtilen para birimi koduna ait detayları getirir. Authentication gerektirmez.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="code",
+     *         in="path",
+     *         description="Para birimi kodu (3 karakter)",
+     *         required=true,
+     *         @OA\Schema(type="string", example="USD")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Para birimi detayı başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Para birimi başarıyla getirildi"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Currency")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Para birimi bulunamadı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Para birimi bulunamadı")
+     *         )
+     *     )
+     * )
+     */
+    public function show(string $code): JsonResponse
+    {
+        $currency = Currency::where('code', strtoupper($code))
+            ->where('is_active', true)
+            ->first();
+
+        if (!$currency) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Para birimi bulunamadı: ' . $code
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Para birimi başarıyla getirildi',
+            'data' => new CurrencyResource($currency)
+        ]);
     }
 }

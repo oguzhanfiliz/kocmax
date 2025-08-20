@@ -314,6 +314,105 @@ class SettingController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/settings/features",
+     *     summary="Site özellik listesini al",
+     *     description="Ana sayfada gösterilecek site özelliklerini (ücretsiz teslimat, güvenli ödeme vb.) getirir",
+     *     operationId="getFeatures",
+     *     tags={"Settings"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Site özellikleri başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="string", example="Ücretsiz Teslimat"),
+     *                 @OA\Property(property="description", type="string", example="Tüm siparişlerde"),
+     *                 @OA\Property(property="icon", type="string", example="<svg>...</svg>"),
+     *                 @OA\Property(property="is_active", type="boolean", example=true),
+     *                 @OA\Property(property="sort_order", type="integer", example=1)
+     *             )),
+     *             @OA\Property(property="message", type="string", example="Site özellikleri başarıyla getirildi")
+     *         )
+     *     ),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
+    public function features()
+    {
+        try {
+            $features = Setting::getValue('site_features', []);
+
+            // Eğer henüz ayarlanmamışsa varsayılan özellikleri döndür
+            if (empty($features)) {
+                $features = $this->getDefaultFeatures();
+            }
+
+            // Sadece aktif olanları filtrele ve sırala
+            $activeFeatures = collect($features)
+                ->where('is_active', true)
+                ->sortBy('sort_order')
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => $activeFeatures,
+                'message' => 'Site özellikleri başarıyla getirildi'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Site özellikleri getirilirken bir hata oluştu',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get default features if not set
+     */
+    private function getDefaultFeatures(): array
+    {
+        return [
+            [
+                'id' => 1,
+                'title' => 'Ücretsiz Teslimat',
+                'description' => 'Tüm siparişlerde',
+                'icon' => '<svg width="33" height="27" viewBox="0 0 33 27" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.7222 1H31.5555V19.0556H10.7222V1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10.7222 7.94446H5.16667L1.00001 12.1111V19.0556H10.7222V7.94446Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M25.3055 26C23.3879 26 21.8333 24.4454 21.8333 22.5278C21.8333 20.6101 23.3879 19.0555 25.3055 19.0555C27.2232 19.0555 28.7778 20.6101 28.7778 22.5278C28.7778 24.4454 27.2232 26 25.3055 26Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M7.25001 26C5.33235 26 3.77778 24.4454 3.77778 22.5278C3.77778 20.6101 5.33235 19.0555 7.25001 19.0555C9.16766 19.0555 10.7222 20.6101 10.7222 22.5278C10.7222 24.4454 9.16766 26 7.25001 26Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+                'is_active' => true,
+                'sort_order' => 1
+            ],
+            [
+                'id' => 2,
+                'title' => 'Güvenli Ödeme',
+                'description' => '256-bit SSL şifreleme',
+                'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+                'is_active' => true,
+                'sort_order' => 2
+            ],
+            [
+                'id' => 3,
+                'title' => '24/7 Destek',
+                'description' => 'Müşteri hizmetleri',
+                'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+                'is_active' => true,
+                'sort_order' => 3
+            ],
+            [
+                'id' => 4,
+                'title' => 'Hızlı Kargo',
+                'description' => '1-2 iş günü teslimat',
+                'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+                'is_active' => true,
+                'sort_order' => 4
+            ]
+        ];
+    }
+
+    /**
      * Get full URL for image settings
      */
     private function getFullImageUrl(?string $imagePath): ?string
