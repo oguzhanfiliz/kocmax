@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SliderController;
+use App\Http\Controllers\Api\V1\SearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,12 +125,14 @@ Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public
     // Public product catalog routes with optional auth middleware
     Route::get('/', [ProductController::class, 'index'])
          ->middleware('auth.optional')->name('api.products.index');
-    Route::get('/{product}', [ProductController::class, 'show'])
-         ->middleware('auth.optional')->name('api.products.show');
          
-    // These routes remain fully public (no auth needed)
+    // These routes remain fully public (no auth needed) - MUST come before {product} route
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
+    
+    // Product detail route - MUST come last to avoid conflicts
+    Route::get('/{product}', [ProductController::class, 'show'])
+         ->middleware('auth.optional')->name('api.products.show');
 });
 
 /*
@@ -282,4 +285,16 @@ Route::prefix('v1/sliders')->middleware(['api', 'domain.cors', 'throttle:public'
     Route::get('/', [SliderController::class, 'index'])->name('api.sliders.index');
     Route::get('/{slider}', [SliderController::class, 'show'])->name('api.sliders.show')
           ->where('slider', '[0-9]+');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Search API Routes (Public with Domain Protection)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/search')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Public search routes - accessible by frontend without authentication
+    Route::get('/popular', [SearchController::class, 'popular'])->name('api.search.popular');
+    Route::get('/autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
+    Route::post('/record', [SearchController::class, 'record'])->name('api.search.record');
 });

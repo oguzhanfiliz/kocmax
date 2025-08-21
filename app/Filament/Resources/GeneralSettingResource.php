@@ -123,6 +123,7 @@ class GeneralSettingResource extends Resource
                                 'integer' => 'Sayı',
                                 'boolean' => 'Açık/Kapalı',
                                 'image' => 'Resim',
+                                'array' => 'Sıralı Liste (Array)',
                             ])
                             ->default('string')
                             ->required()
@@ -243,9 +244,6 @@ class GeneralSettingResource extends Resource
                                     ->disk('public')
                                     ->imageEditor()
                                     ->imageResizeMode('contain')
-                                    ->imageCropAspectRatio('16:9')
-                                    ->imageResizeTargetWidth('800')
-                                    ->imageResizeTargetHeight('450')
                                     ->maxSize(2048) // 2MB
                                     ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'])
                                     ->helperText('PNG, JPG, GIF veya WebP formatında yükleyebilirsiniz (Max: 2MB)')
@@ -258,7 +256,32 @@ class GeneralSettingResource extends Resource
                                         $type = $get('type');
                                         return $type === 'image';
                                     })
-                                    ->dehydrated(false)
+                                    ->columnSpanFull(),
+
+                                // Array: Footer Menü Öğeleri için Repeater
+                                Forms\Components\Repeater::make('array_value')
+                                    ->label('Menü Öğeleri')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)->schema([
+                                            Forms\Components\TextInput::make('title')->label('Başlık')->required()->placeholder('örn: Hesabım'),
+                                            Forms\Components\TextInput::make('url')->label('URL')->required()->placeholder('örn: /account')->prefixIcon('heroicon-o-link'),
+                                        ])
+                                    ])
+                                    ->addActionLabel('Yeni Menü Öğesi Ekle')
+                                    ->reorderable()->collapsible()->cloneable()
+                                    ->deleteAction(fn($action) => $action->requiresConfirmation())
+                                    ->visible(fn(Forms\Get $get) => $get('type') === 'array' && in_array($get('key'), ['footer_account_items', 'footer_info_items']))
+                                    ->columnSpanFull(),
+
+                                // Array: Genel Anahtar-Değer (Key-Value) Düzenleyici
+                                Forms\Components\KeyValue::make('key_value_array')
+                                    ->label('Değerler')
+                                    ->keyLabel('Anahtar')
+                                    ->valueLabel('Değer')
+                                    ->addActionLabel('Yeni Değer Ekle')
+                                    ->reorderable()
+                                    ->helperText('Yazılımcı olmayan kullanıcılar için düzenlenebilir anahtar-değer listesi.')
+                                    ->visible(fn(Forms\Get $get) => $get('type') === 'array' && !in_array($get('key'), ['footer_account_items', 'footer_info_items']))
                                     ->columnSpanFull(),
 
                                 // Diğer tüm string değerler için normal text input (en sonda, fallback olarak)
@@ -378,6 +401,7 @@ class GeneralSettingResource extends Resource
                             'integer' => 'heroicon-o-calculator',
                             'boolean' => 'heroicon-o-check-circle',
                             'image' => 'heroicon-o-photo',
+                            'array' => 'heroicon-o-list-bullet',
                             default => 'heroicon-o-square-3-stack-3d'
                         };
                     })
@@ -387,6 +411,7 @@ class GeneralSettingResource extends Resource
                             'integer' => 'Sayı',
                             'boolean' => 'Açık/Kapalı',
                             'image' => 'Resim',
+                            'array' => 'Sıralı Liste',
                             default => ucfirst($state)
                         };
                     })
@@ -396,6 +421,7 @@ class GeneralSettingResource extends Resource
                             'integer' => 'info',
                             'boolean' => 'success',
                             'image' => 'warning',
+                            'array' => 'purple',
                             default => 'gray'
                         };
                     }),
@@ -434,6 +460,7 @@ class GeneralSettingResource extends Resource
                         'integer' => 'Sayı',
                         'boolean' => 'Açık/Kapalı',
                         'image' => 'Resim',
+                        'array' => 'Sıralı Liste',
                     ]),
 
                 Tables\Filters\TernaryFilter::make('is_public')

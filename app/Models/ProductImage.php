@@ -23,6 +23,8 @@ class ProductImage extends Model
         'sort_order' => 'integer',
     ];
 
+    protected $appends = ['image_url'];
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
@@ -31,6 +33,15 @@ class ProductImage extends Model
     public function getUrlAttribute(): string
     {
         return Storage::disk('public')->url($this->image);
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image) {
+            return null;
+        }
+        
+        return asset('storage/' . $this->image);
     }
 
     public function scopePrimary($query)

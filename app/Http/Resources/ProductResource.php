@@ -42,6 +42,16 @@ use App\Services\Pricing\CustomerTypeDetectorService;
  *         @OA\Property(property="name", type="string", example="Güvenlik Ekipmanları"),
  *         @OA\Property(property="slug", type="string", example="guvenlik-ekipmanlari")
  *     )),
+ *     @OA\Property(property="variants", type="array", @OA\Items(
+ *         @OA\Property(property="id", type="integer", example=1),
+ *         @OA\Property(property="name", type="string", example="42 Numara Siyah"),
+ *         @OA\Property(property="sku", type="string", example="GA-001-42-BLK"),
+ *         @OA\Property(property="price", type="number", format="float", example=150.00),
+ *         @OA\Property(property="stock", type="integer", example=25),
+ *         @OA\Property(property="color", type="string", example="Siyah"),
+ *         @OA\Property(property="size", type="string", example="42"),
+ *         @OA\Property(property="is_active", type="boolean", example=true)
+ *     )),
  *     @OA\Property(property="variants_count", type="integer", example=5),
  *     @OA\Property(property="in_stock", type="boolean", example=true),
  *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-08T10:30:00Z"),
@@ -109,6 +119,18 @@ class ProductResource extends JsonResource
                     'id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
+                ])
+            ),
+            'variants' => $this->whenLoaded('variants', fn() => 
+                $this->variants->map(fn($variant) => [
+                    'id' => $variant->id,
+                    'name' => $variant->name,
+                    'sku' => $variant->sku,
+                    'price' => (float) $variant->price,
+                    'stock' => (int) $variant->stock,
+                    'color' => $variant->color,
+                    'size' => $variant->size,
+                    'is_active' => (bool) $variant->is_active,
                 ])
             ),
             'variants_count' => $this->whenCounted('variants'),

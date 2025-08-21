@@ -102,13 +102,12 @@ class ProductDetailResource extends JsonResource
                             $currency
                         ),
                     ],
-                    'images' => $variant->whenLoaded('images', fn() => 
+                    'images' => $variant->relationLoaded('images') ? 
                         $variant->images->map(fn($image) => [
                             'id' => $image->id,
                             'image_url' => $image->image_url,
                             'alt_text' => $image->alt_text,
-                        ])
-                    ),
+                        ]) : [],
                 ])
             ),
             'reviews' => $this->whenLoaded('reviews', function () {

@@ -45,9 +45,30 @@ class EditGeneralSetting extends EditRecord
             $data['boolean_value'] = in_array($rawValue, ['1', 'true', 'on', 'yes'], true);
         }
         
+        // Array tipi için ayrı alan (footer menu items vb.)
+        if ($setting->type === 'array' && $rawValue) {
+            // JSON string'i array'e çevir
+            $arrayData = is_string($rawValue) ? json_decode($rawValue, true) : $rawValue;
+
+            if (in_array($setting->key, ['footer_account_items', 'footer_info_items'])) {
+                $data['array_value'] = $arrayData ?: [];
+            } else {
+                $data['key_value_array'] = $arrayData ?: [];
+            }
+        }
+        
         // Image tipi için ayrı alan
-        if ($setting->type === 'image' && $data['value']) {
-            $data['image_value'] = [$data['value']];
+        if ($setting->type === 'image' && $rawValue) {
+            // FileUpload component'i için tam storage path vermen gerekiyor
+            $imagePath = $rawValue;
+            
+            // Eğer sadece dosya adı ise, settings/images/ dizinini ekle
+            if (!str_contains($imagePath, '/') && !str_starts_with($imagePath, 'settings/')) {
+                $imagePath = 'settings/images/' . $imagePath;
+            }
+            
+            
+            $data['image_value'] = [$imagePath];
         }
         return $data;
     }
@@ -56,17 +77,35 @@ class EditGeneralSetting extends EditRecord
     {
         $setting = $this->getRecord();
         
+        
         // Boolean değerler için özel işlem
         if ($setting->type === 'boolean' && isset($data['boolean_value'])) {
             $data['value'] = $data['boolean_value'] ? '1' : '0';
             unset($data['boolean_value']); // Form field'ını kaldır
         }
         
+        // Array değerler için özel işlem
+        if ($setting->type === 'array') {
+            if (isset($data['array_value'])) {
+                $data['value'] = json_encode($data['array_value']);
+                unset($data['array_value']);
+            }
+            if (isset($data['key_value_array'])) {
+                $data['value'] = json_encode($data['key_value_array']);
+                unset($data['key_value_array']);
+            }
+        }
+        
         // Image upload için özel işlem
         if ($setting->type === 'image' && isset($data['image_value']) && !empty($data['image_value'])) {
+            // FileUpload component hem string hem array olarak gelebilir
             if (is_array($data['image_value'])) {
                 $data['value'] = $data['image_value'][0] ?? $data['value'];
+            } else {
+                $data['value'] = $data['image_value'];
             }
+            
+            
             unset($data['image_value']);
         }
         

@@ -38,6 +38,8 @@ class Category extends Model
         'parent_id' => 'integer',
     ];
 
+    protected $appends = ['image_url'];
+
     protected static function boot()
     {
         parent::boot();

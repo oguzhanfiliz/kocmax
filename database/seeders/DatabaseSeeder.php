@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
                 ProductSeeder::class,
                 DealerApplicationSeeder::class,
                 ProductReviewSeeder::class,
+                PopularSearchSeeder::class,
             ]
         ];
 
@@ -65,6 +66,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('   📦 Ürünler: ' . \App\Models\Product::count());
         $this->command->info('   🎨 Ürün varyantları: ' . \App\Models\ProductVariant::count());
         $this->command->info('   📂 Kategoriler: ' . \App\Models\Category::count());
+        $this->command->info('   🔍 Popüler aramalar: ' . \App\Models\PopularSearch::count());
         $this->command->info('   💱 Para birimleri: ' . \App\Models\Currency::count());
     }
 }

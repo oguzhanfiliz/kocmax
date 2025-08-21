@@ -6063,6 +6063,262 @@
                 ]
             }
         },
+        "/api/v1/search/popular": {
+            "get": {
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Popüler arama terimlerini getir",
+                "description": "En çok aranan terimleri döndürür",
+                "operationId": "getPopularSearches",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Döndürülecek maksimum sonuç sayısı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Popüler aramalar başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Popüler aramalar getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "güvenlik ayakkabısı"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/search/autocomplete": {
+            "get": {
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Arama önerilerini getir",
+                "description": "Girilen metne göre ürün, kategori ve arama önerilerini döndürür",
+                "operationId": "getAutocomplete",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Arama terimi (minimum 2 karakter)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "güvenlik"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Kategori başına maksimum sonuç sayısı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 5,
+                            "maximum": 20,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Arama önerileri başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Arama önerileri getirildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "products": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "slug": {
+                                                                "type": "string"
+                                                            },
+                                                            "base_price": {
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "categories": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "slug": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "suggestions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Geçersiz arama terimi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Arama terimi en az 2 karakter olmalıdır"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/search/record": {
+            "post": {
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Arama terimini kaydet",
+                "description": "Kullanıcının arama terimini kaydeder (popüler aramalar için)",
+                "operationId": "recordSearch",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "query": {
+                                        "type": "string",
+                                        "minLength": 2,
+                                        "example": "güvenlik ayakkabısı"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Arama terimi başarıyla kaydedildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Arama terimi kaydedildi"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Geçersiz arama terimi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Arama terimi en az 2 karakter olmalıdır"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
         "/api/v1/wishlist": {
             "get": {
                 "tags": [
@@ -7587,6 +7843,47 @@
                             "type": "object"
                         }
                     },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "example": "42 Numara Siyah"
+                                },
+                                "sku": {
+                                    "type": "string",
+                                    "example": "GA-001-42-BLK"
+                                },
+                                "price": {
+                                    "type": "number",
+                                    "format": "float",
+                                    "example": 150
+                                },
+                                "stock": {
+                                    "type": "integer",
+                                    "example": 25
+                                },
+                                "color": {
+                                    "type": "string",
+                                    "example": "Siyah"
+                                },
+                                "size": {
+                                    "type": "string",
+                                    "example": "42"
+                                },
+                                "is_active": {
+                                    "type": "boolean",
+                                    "example": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
                     "variants_count": {
                         "type": "integer",
                         "example": 5
@@ -8064,6 +8361,10 @@
         {
             "name": "Users",
             "description": "Kullanıcı profili ve hesap yönetimi API uç noktaları"
+        },
+        {
+            "name": "Search",
+            "description": "Arama API uç noktaları"
         },
         {
             "name": "Wishlist",

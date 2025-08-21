@@ -213,6 +213,7 @@ class Product extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
+
     /**
      * Get route key name
      */
@@ -371,12 +372,49 @@ class Product extends Model
      */
     public function scopeSearch($query, $term)
     {
-        return $query->where(function ($query) use ($term) {
-            $query->where('name', 'like', "%{$term}%")
-                ->orWhere('description', 'like', "%{$term}%")
-                ->orWhere('sku', 'like', "%{$term}%")
-                ->orWhere('barcode', 'like', "%{$term}%");
+        if (empty(trim($term))) {
+            return $query;
+        }
+
+        // Türkçe karakter desteği için normalize
+        $normalizedTerm = $this->normalizeSearchTerm($term);
+        
+        return $query->where(function ($q) use ($normalizedTerm) {
+            // Ana ürün bilgilerinde ara (MySQL için LIKE, PostgreSQL için ILIKE)
+            $q->where('name', 'LIKE', "%{$normalizedTerm}%")
+              ->orWhere('description', 'LIKE', "%{$normalizedTerm}%")
+              ->orWhere('short_description', 'LIKE', "%{$normalizedTerm}%")
+              ->orWhere('sku', 'LIKE', "%{$normalizedTerm}%")
+              ->orWhere('barcode', 'LIKE', "%{$normalizedTerm}%")
+              ->orWhere('slug', 'LIKE', "%{$normalizedTerm}%")
+              
+              // Kategori isimlerinde ara
+              ->orWhereHas('categories', function ($cat) use ($normalizedTerm) {
+                  $cat->where('name', 'LIKE', "%{$normalizedTerm}%")
+                      ->orWhere('slug', 'LIKE', "%{$normalizedTerm}%");
+              })
+              
+              // Ürün varyantlarında ara
+              ->orWhereHas('variants', function ($variant) use ($normalizedTerm) {
+                  $variant->where('color', 'LIKE', "%{$normalizedTerm}%")
+                          ->orWhere('size', 'LIKE', "%{$normalizedTerm}%")
+                          ->orWhere('sku', 'LIKE', "%{$normalizedTerm}%");
+              });
         });
+    }
+
+    /**
+     * Normalize search term for Turkish characters
+     */
+    private function normalizeSearchTerm(string $search): string
+    {
+        $search = trim($search);
+        $search = mb_strtolower($search, 'UTF-8');
+        
+        // Çoklu boşlukları tek boşluğa çevir
+        $search = preg_replace('/\s+/', ' ', $search);
+        
+        return $search;
     }
 
     /**
