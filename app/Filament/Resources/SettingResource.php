@@ -105,6 +105,7 @@ class SettingResource extends Resource
                                         'boolean' => 'Evet/Hayır',
                                         'array' => 'Dizi',
                                         'json' => 'JSON',
+                                        'image' => 'Resim',
                                     ])
                                     ->default('string')
                                     ->required()
@@ -120,6 +121,31 @@ class SettingResource extends Resource
 
                 Forms\Components\Section::make('Değer Ayarları')
                     ->schema([
+                        // Resim yükleme alanı - image tipi seçildiğinde
+                        Forms\Components\FileUpload::make('image_value')
+                            ->label('Resim Yükle')
+                            ->image()
+                            ->directory('settings/images')
+                            ->disk('public')
+                            ->imageEditor()
+                            ->imageResizeMode('contain')
+                            ->imageCropAspectRatio('16:9')
+                            ->imageResizeTargetWidth('800')
+                            ->imageResizeTargetHeight('450')
+                            ->maxSize(2048) // 2MB
+                            ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'])
+                            ->helperText('PNG, JPG, GIF veya WebP formatında yükleyebilirsiniz (Max: 2MB)')
+                            ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                if (is_array($state) && !empty($state)) {
+                                    $set('value', $state[0]);
+                                }
+                            })
+                            ->visible(function (Forms\Get $get) {
+                                return $get('type') === 'image';
+                            })
+                            ->dehydrated(false)
+                            ->columnSpanFull(),
+                            
                         Forms\Components\Textarea::make('value')
                             ->label('Değer')
                             ->required()
@@ -132,6 +158,7 @@ class SettingResource extends Resource
                                     'boolean' => 'true veya false',
                                     'array' => '["değer1", "değer2", "değer3"]',
                                     'json' => '{"anahtar": "değer", "sayı": 123}',
+                                    'image' => 'Resim seçildiğinde yukarıdaki alanı kullanın',
                                     default => 'Değeri girin...'
                                 };
                             })
@@ -143,8 +170,12 @@ class SettingResource extends Resource
                                     'boolean' => 'true veya false değeri',
                                     'array' => 'JSON dizisi formatında',
                                     'json' => 'Geçerli JSON formatında',
+                                    'image' => 'Resim seçildiğinde yukarıdaki resim yükleme alanını kullanın',
                                     default => 'Veri tipine uygun değer girin'
                                 };
+                            })
+                            ->visible(function (Forms\Get $get) {
+                                return $get('type') !== 'image';
                             })
                             ->columnSpanFull(),
 
@@ -250,7 +281,18 @@ class SettingResource extends Resource
                         return $record->value;
                     })
                     ->fontFamily('mono')
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->visible(function ($record) {
+                        return $record?->type !== 'image';
+                    }),
+                    
+                Tables\Columns\ImageColumn::make('value')
+                    ->label('Resim')
+                    ->square()
+                    ->size(60)
+                    ->visible(function ($record) {
+                        return $record?->type === 'image';
+                    }),
 
                 Tables\Columns\IconColumn::make('is_public')
                     ->label('Herkese Açık')

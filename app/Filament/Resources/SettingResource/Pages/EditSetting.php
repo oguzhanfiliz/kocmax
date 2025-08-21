@@ -35,13 +35,33 @@ class EditSetting extends EditRecord
         
         // Value alanını görünür yap ve değerini al
         $setting->makeVisible(['value']);
-        $data['value'] = $setting->value; // Accessor'dan değeri al
+        $data['value'] = $setting->getRawOriginal('value'); // Raw değeri kullan, accessor'u bypass et
+        
+        // Image tipi için ayrı alan
+        if ($setting->type === 'image' && $data['value']) {
+            $data['image_value'] = [$data['value']];
+        }
         
         return $data;
     }
     
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $setting = $this->getRecord();
+        
+        // Boolean değerler için özel işlem
+        if ($setting->type === 'boolean' && isset($data['value'])) {
+            $data['value'] = filter_var($data['value'], FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+        }
+        
+        // Image upload için özel işlem
+        if ($setting->type === 'image' && isset($data['image_value']) && !empty($data['image_value'])) {
+            if (is_array($data['image_value'])) {
+                $data['value'] = $data['image_value'][0] ?? $data['value'];
+            }
+            unset($data['image_value']);
+        }
+        
         $data['updated_by'] = auth()->id();
         return $data;
     }

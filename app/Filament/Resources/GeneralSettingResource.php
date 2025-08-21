@@ -13,6 +13,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class GeneralSettingResource extends Resource
 {
@@ -43,6 +44,22 @@ class GeneralSettingResource extends Resource
     {
         return $form
             ->schema([
+                // Korumalı ayarlar için uyarı mesajı
+                Forms\Components\Section::make('Korumalı Ayar Uyarısı')
+                    ->schema([
+                        Forms\Components\Placeholder::make('protected_warning')
+                            ->content(function ($record) {
+                                if ($record && $record->isEssential()) {
+                                    return '⚠️ Bu ayar sistem için gereklidir ve dikkatli düzenlenmelidir.';
+                                }
+                                return null;
+                            })
+                            ->visible(fn ($record) => $record && $record->isEssential())
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn ($record) => $record && $record->isEssential())
+                    ->collapsible()
+                    ->collapsed(),
                 Forms\Components\Section::make('Ayar Bilgileri')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->schema([
@@ -115,53 +132,18 @@ class GeneralSettingResource extends Resource
                         // Dinamik değer alanı - key'e göre farklı input tipleri
                         Forms\Components\Group::make()
                             ->schema([
-                                // Logo ve favicon için resim yükleme
-                                Forms\Components\FileUpload::make('image_value')
-                                    ->label('Resim Yükle')
-                                    ->image()
-                                    ->directory('settings/images')
-                                    ->disk('public')
-                                    ->imageEditor()
-                                    ->imageResizeMode('contain')
-                                    ->imageCropAspectRatio('16:9')
-                                    ->imageResizeTargetWidth('800')
-                                    ->imageResizeTargetHeight('450')
-                                    ->maxSize(2048) // 2MB
-                                    ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'])
-                                    ->helperText('PNG, JPG, GIF veya WebP formatında yükleyebilirsiniz (Max: 2MB)')
-                                    ->afterStateUpdated(function (Forms\Set $set, $state) {
-                                        if (is_array($state) && !empty($state)) {
-                                            $set('value', $state[0]);
-                                        }
-                                    })
-                                    ->visible(function (Forms\Get $get) {
-                                        $type = $get('type');
-                                        $key = $get('key');
-                                        return $type === 'image' || in_array($key, ['site_logo', 'site_favicon']);
-                                    })
-                                    ->dehydrated(false)
-                                    ->columnSpanFull(),
-
-                                // Renk seçici için
-                                Forms\Components\ColorPicker::make('value')
-                                    ->label('Renk Seç')
-                                    ->helperText('Tema renginizi seçin')
-                                    ->visible(function (Forms\Get $get) {
-                                        $key = $get('key');
-                                        return $key && in_array($key, ['theme_color', 'primary_color', 'accent_color']);
-                                    }),
-
-                                // Boolean değerler için toggle
-                                Forms\Components\Toggle::make('value')
+                                // Boolean değerler için toggle (en üstte, çünkü en spesifik)
+                                Forms\Components\Toggle::make('boolean_value')
                                     ->label('Açık/Kapalı')
                                     ->onColor('success')
                                     ->offColor('gray')
                                     ->helperText('Bu özelliği etkinleştirin veya devre dışı bırakın')
                                     ->visible(function (Forms\Get $get) {
                                         $type = $get('type');
-                                        $key = $get('key');
-                                        return $type === 'boolean' || ($key && in_array($key, ['enable_dark_mode', 'enable_notifications']));
-                                    }),
+                                        return $type === 'boolean';
+                                    })
+                                    ->dehydrateStateUsing(fn ($state) => $state ? '1' : '0')
+                                    ->formatStateUsing(fn ($state) => (bool) $state),
 
                                 // Sayısal değerler için
                                 Forms\Components\TextInput::make('value')
@@ -172,6 +154,15 @@ class GeneralSettingResource extends Resource
                                     ->visible(function (Forms\Get $get) {
                                         $type = $get('type');
                                         return $type === 'integer';
+                                    }),
+
+                                // Renk seçici için
+                                Forms\Components\ColorPicker::make('value')
+                                    ->label('Renk Seç')
+                                    ->helperText('Tema renginizi seçin')
+                                    ->visible(function (Forms\Get $get) {
+                                        $key = $get('key');
+                                        return $key && in_array($key, ['theme_color', 'primary_color', 'accent_color']);
                                     }),
 
                                 // URL alanları için
@@ -216,7 +207,19 @@ class GeneralSettingResource extends Resource
                                         return str_contains($key, 'phone') || str_contains($key, 'whatsapp') || str_contains($key, 'tel');
                                     }),
 
-                                // Uzun metinler için textarea
+                                // Copyright için özel alan (HTML destekli)
+                                Forms\Components\Textarea::make('value')
+                                    ->label('Copyright Metni')
+                                    ->placeholder('© {year} Şirket Adı. <a href="/link">Link</a> HTML kullanabilirsiniz.')
+                                    ->helperText('HTML etiketleri kullanabilirsiniz. {year} otomatik güncel yıl olur.')
+                                    ->rows(6)
+                                    ->visible(function (Forms\Get $get) {
+                                        $key = $get('key');
+                                        return $key === 'copyright_text';
+                                    })
+                                    ->columnSpanFull(),
+
+                                // Uzun metinler için textarea (copyright hariç)
                                 Forms\Components\Textarea::make('value')
                                     ->label('Metin')
                                     ->rows(4)
@@ -226,13 +229,39 @@ class GeneralSettingResource extends Resource
                                         $key = $get('key');
                                         if (!$key) return false;
 
-                                        return in_array($key, ['site_description', 'working_hours', 'contact_address', 'copyright_text'])
-                                            || str_contains($key, 'description')
-                                            || str_contains($key, 'content');
+                                        return in_array($key, ['site_description', 'working_hours', 'contact_address'])
+                                            || (str_contains($key, 'description') && $key !== 'copyright_text')
+                                            || (str_contains($key, 'content') && $key !== 'copyright_text');
                                     })
                                     ->columnSpanFull(),
 
-                                // Diğer tüm string değerler için normal text input
+                                // Resim yükleme alanı - image tipi seçildiğinde
+                                Forms\Components\FileUpload::make('image_value')
+                                    ->label('Resim Yükle')
+                                    ->image()
+                                    ->directory('settings/images')
+                                    ->disk('public')
+                                    ->imageEditor()
+                                    ->imageResizeMode('contain')
+                                    ->imageCropAspectRatio('16:9')
+                                    ->imageResizeTargetWidth('800')
+                                    ->imageResizeTargetHeight('450')
+                                    ->maxSize(2048) // 2MB
+                                    ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'])
+                                    ->helperText('PNG, JPG, GIF veya WebP formatında yükleyebilirsiniz (Max: 2MB)')
+                                    ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                        if (is_array($state) && !empty($state)) {
+                                            $set('value', $state[0]);
+                                        }
+                                    })
+                                    ->visible(function (Forms\Get $get) {
+                                        $type = $get('type');
+                                        return $type === 'image';
+                                    })
+                                    ->dehydrated(false)
+                                    ->columnSpanFull(),
+
+                                // Diğer tüm string değerler için normal text input (en sonda, fallback olarak)
                                 Forms\Components\TextInput::make('value')
                                     ->label('Değer')
                                     ->placeholder('Değeri buraya yazın...')
@@ -243,22 +272,14 @@ class GeneralSettingResource extends Resource
 
                                         if (!$key) return false;
 
-                                        // Eğer yukarıdaki özel alanların hiçbiri değilse normal text input göster
-                                        return ! in_array($key, ['site_logo', 'site_favicon', 'theme_color', 'primary_color', 'accent_color'])
-                                            && $type !== 'boolean'
-                                            && $type !== 'integer'
-                                            && $type !== 'image'
-                                            && ! str_contains($key, 'social_')
-                                            && ! str_contains($key, 'url')
-                                            && ! str_contains($key, 'website')
-                                            && ! str_contains($key, 'email')
-                                            && ! str_contains($key, '_mail')
-                                            && ! str_contains($key, 'phone')
-                                            && ! str_contains($key, 'whatsapp')
-                                            && ! str_contains($key, 'tel')
-                                            && ! in_array($key, ['site_description', 'working_hours', 'contact_address', 'copyright_text'])
-                                            && ! str_contains($key, 'description')
-                                            && ! str_contains($key, 'content');
+                                        // Yukarıdaki hiçbir özel alan gösterilmiyorsa bu alanı göster
+                                        $visible = $type === 'string' && !in_array($key, ['site_logo', 'site_favicon', 'theme_color', 'primary_color', 'accent_color', 'site_description', 'working_hours', 'contact_address', 'copyright_text'])
+                                            && !str_contains($key, 'social_') && !str_contains($key, 'url') && !str_contains($key, 'website')
+                                            && !str_contains($key, 'email') && !str_contains($key, '_mail')
+                                            && !str_contains($key, 'phone') && !str_contains($key, 'whatsapp') && !str_contains($key, 'tel')
+                                            && !str_contains($key, 'description') && !str_contains($key, 'content');
+                                        
+                                        return $visible;
                                     }),
                             ])
                             ->columnSpanFull(),

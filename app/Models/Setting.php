@@ -50,7 +50,7 @@ class Setting extends Model
     ];
 
     protected $hidden = [
-        'value', // Value accessor'la kontrol edilecek
+        // Value alanını hidden'dan çıkar çünkü Filament form'da kullanılıyor
     ];
 
     /**
@@ -109,17 +109,44 @@ class Setting extends Model
 
         // Decrypt if needed
         if ($this->is_encrypted) {
-            $value = Crypt::decryptString($value);
+            try {
+                $value = Crypt::decryptString($value);
+            } catch (\Exception $e) {
+                // Eğer decrypt edilemezse raw değeri döndür
+                return $value;
+            }
         }
 
-        // Cast to appropriate type
-        return match ($this->type) {
-            'integer' => (int) $value,
-            'float' => (float) $value,
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-            'array', 'json' => json_decode($value, true) ?: [],
-            default => $value,
-        };
+        // Sadece özel durumlar için casting yap
+        switch ($this->type) {
+            case 'boolean':
+                // Sadece boolean tip ayarlar için ve sadece tam eşleşme kontrolü
+                $lowerValue = strtolower(trim($value));
+                if ($lowerValue === '1' || $lowerValue === 'true' || $lowerValue === 'on' || $lowerValue === 'yes') {
+                    return true;
+                } elseif ($lowerValue === '0' || $lowerValue === 'false' || $lowerValue === 'off' || $lowerValue === 'no' || $lowerValue === '') {
+                    return false;
+                }
+                // Diğer tüm değerler için raw string döndür
+                return $value;
+            case 'integer':
+                return (int) $value;
+            case 'float':
+                return (float) $value;
+            case 'array':
+            case 'json':
+                return json_decode($value, true) ?: [];
+            default:
+                // String ve diğer tüm tipler için raw değeri döndür
+                $processedValue = $value;
+                
+                // Copyright için özel işlem
+                if ($this->key === 'copyright_text' && is_string($processedValue)) {
+                    $processedValue = str_replace('{year}', date('Y'), $processedValue);
+                }
+                
+                return $processedValue;
+        }
     }
 
     /**
@@ -127,8 +154,12 @@ class Setting extends Model
      */
     public function setValueAttribute(mixed $value): void
     {
+        // Boolean değerler için özel işlem
+        if ($this->type === 'boolean') {
+            $value = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+        }
         // Serialize complex types
-        if (in_array($this->type, ['array', 'json'])) {
+        elseif (in_array($this->type, ['array', 'json'])) {
             $value = json_encode($value);
         } else {
             $value = (string) $value;
