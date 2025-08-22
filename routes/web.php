@@ -14,8 +14,20 @@ use Illuminate\Http\Request;
 |
 */
 
+// Frontend Route - Serve Nuxt app
 Route::get('/', function () {
-    return 'Yeni projeniz hazır!';
+    // Development: Redirect to Nuxt dev server
+    if (config('app.debug')) {
+        return redirect('http://localhost:3000');
+    }
+    
+    // Production: Serve built frontend
+    $indexPath = public_path('frontend/index.html');
+    if (file_exists($indexPath)) {
+        return response()->file($indexPath);
+    }
+    
+    return 'Frontend build not found. Run build script first.';
 });
 
 // Simple login info page for web requests (API-only application)
@@ -83,5 +95,27 @@ Route::get('storage/{path}', function (Request $request, $path) {
     
     return $response;
 })->where('path', '.*');
+
+/*
+|--------------------------------------------------------------------------
+| Frontend SPA Routes - Serve Nuxt App
+|--------------------------------------------------------------------------
+*/
+
+// Catch all routes that aren't API routes and serve the frontend
+Route::get('/{any}', function () {
+    // Development: Redirect to Nuxt dev server
+    if (config('app.debug')) {
+        return redirect('http://localhost:3000/' . request()->path());
+    }
+    
+    // Production: Serve built frontend index.html for SPA routing
+    $indexPath = public_path('frontend/index.html');
+    if (file_exists($indexPath)) {
+        return response()->file($indexPath);
+    }
+    
+    return 'Frontend build not found. Run build script first.';
+})->where('any', '^(?!api|admin|storage).*$'); // Exclude API, admin, and storage routes
 
 

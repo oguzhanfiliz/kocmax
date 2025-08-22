@@ -1,0 +1,1 @@
+import{g as a,c as r,o as n,n as o}from"./3_Zv-WpX.js";const p={__name:"login",async setup(s){let e,t;return[e,t]=a(()=>o("/giris",{replace:!0})),await e,t(),(c,_)=>(n(),r("div"))}};export{p as default};

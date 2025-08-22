@@ -1,0 +1,1 @@
+import{av as i,h as u,n as a,aw as n}from"./3_Zv-WpX.js";const h=i(async r=>{let e,s;const t=u();if(!t.isAuthenticated)return a({path:"/giris",query:{redirect:r.fullPath}});if(t.isTokenExpired&&t.refreshToken&&!([e,s]=n(()=>t.refreshAuthToken()),e=await e,s(),e))return a({path:"/giris",query:{redirect:r.fullPath}})});export{h as default};

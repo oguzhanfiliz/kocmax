@@ -1,0 +1,1 @@
+import{g as a,c as r,o,n as c}from"./3_Zv-WpX.js";const i={__name:"profile",async setup(n){let e,t;return[e,t]=a(()=>c("/profilim",{replace:!0})),await e,t(),(s,_)=>(o(),r("div"))}};export{i as default};
