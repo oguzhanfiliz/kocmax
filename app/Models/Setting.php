@@ -46,7 +46,7 @@ class Setting extends Model
         'contact_phone', 'contact_email', 'contact_address',
         'company_name', 'company_tax_number',
         'social_facebook', 'social_twitter', 'social_instagram', 'social_linkedin',
-        'theme_color', 'enable_dark_mode'
+        'theme_color', 'enable_dark_mode', 'enable_product_reviews'
     ];
 
     protected $hidden = [
@@ -315,6 +315,7 @@ class Setting extends Model
             ['key' => 'social_linkedin', 'label' => 'LinkedIn URL', 'value' => '', 'type' => 'string', 'group' => 'social'],
             ['key' => 'theme_color', 'label' => 'Tema Rengi', 'value' => '#3b82f6', 'type' => 'string', 'group' => 'ui'],
             ['key' => 'enable_dark_mode', 'label' => 'Koyu Tema', 'value' => false, 'type' => 'boolean', 'group' => 'ui'],
+            ['key' => 'enable_product_reviews', 'label' => 'Ürün Yorumları', 'value' => true, 'type' => 'boolean', 'group' => 'features'],
         ];
 
         foreach ($essentialSettings as $settingData) {

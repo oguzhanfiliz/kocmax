@@ -7,6 +7,7 @@ use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAttribute;
+use App\Models\Setting;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -337,11 +338,17 @@ class ProductResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
+        $relations = [
             RelationManagers\ImagesRelationManager::class,
             RelationManagers\VariantsRelationManager::class,
-            RelationManagers\ReviewsRelationManager::class,
         ];
+
+        // Yorumlar özelliği aktifse Reviews relation manager'ı ekle
+        if (Setting::getValue('enable_product_reviews', true)) {
+            $relations[] = RelationManagers\ReviewsRelationManager::class;
+        }
+
+        return $relations;
     }
 
     public static function getPages(): array

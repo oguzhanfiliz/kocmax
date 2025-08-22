@@ -37,7 +37,7 @@ class GeneralSettingResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('group', ['general', 'contact', 'company', 'social', 'ui', 'notification']);
+            ->whereIn('group', ['general', 'contact', 'company', 'social', 'ui', 'notification', 'features']);
     }
 
     public static function form(Form $form): Form
