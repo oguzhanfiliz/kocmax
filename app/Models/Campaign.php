@@ -211,9 +211,14 @@ class Campaign extends Model
                 $model->slug = \Str::slug($model->name);
             }
             
-            // Set created_by if user is authenticated and field is empty
-            if (empty($model->created_by) && auth()->check()) {
-                $model->created_by = auth()->id();
+            // Set created_by and updated_by if user is authenticated
+            if (auth()->check()) {
+                if (empty($model->created_by)) {
+                    $model->created_by = auth()->id();
+                }
+                if (empty($model->updated_by)) {
+                    $model->updated_by = auth()->id();
+                }
             }
         });
 
