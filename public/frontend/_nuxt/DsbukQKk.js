@@ -1,0 +1,1 @@
+import{g as a,c as r,o as c,n as s}from"./3_Zv-WpX.js";const i={__name:"cart",async setup(n){let e,t;return[e,t]=a(()=>s("/sepetim",{replace:!0})),await e,t(),(o,_)=>(c(),r("div"))}};export{i as default};

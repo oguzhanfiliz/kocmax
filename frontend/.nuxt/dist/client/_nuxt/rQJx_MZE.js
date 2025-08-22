@@ -1,0 +1,1 @@
+import{_ as c,a as r,b as s,c as m,d as p}from"./BLXNudMV.js";import{d as u,u as i,c as d,b as o,o as k}from"./3_Zv-WpX.js";import"./Bs3-i8Y-.js";import"./BuFuiHuF.js";const v=u({__name:"hakkimizda",setup(l){return i({title:"Hakkımızda"}),(f,x)=>{const _=c,n=r,t=s,e=m,a=p;return k(),d("div",null,[o(_),o(n),o(t),o(e),o(a)])}}});export{v as default};

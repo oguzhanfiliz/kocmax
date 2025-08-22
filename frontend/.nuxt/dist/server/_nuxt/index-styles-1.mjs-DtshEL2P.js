@@ -1,0 +1,5 @@
+const index_vue_vue_type_style_index_0_scoped_7abdf43f_lang = ".skeleton-product-card[data-v-7abdf43f]{background:#fff;border-radius:8px;box-shadow:0 2px 8px #0000000d;margin-bottom:25px;padding:15px}.skeleton-thumb[data-v-7abdf43f]{animation:skeleton-loading-7abdf43f 1.5s infinite;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0,#f0f0f0 75%);background-size:200% 100%;border-radius:8px;height:200px;margin-bottom:15px}.skeleton-content[data-v-7abdf43f]{padding:10px 0}.skeleton-text[data-v-7abdf43f]{animation:skeleton-loading-7abdf43f 1.5s infinite;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0,#f0f0f0 75%);background-size:200% 100%;border-radius:4px;height:12px;margin-bottom:8px}.skeleton-text-xs[data-v-7abdf43f]{width:40%}.skeleton-text-sm[data-v-7abdf43f]{width:60%}.skeleton-text-md[data-v-7abdf43f]{width:80%}@keyframes skeleton-loading-7abdf43f{0%{background-position:200% 0}to{background-position:-200% 0}}";
+export {
+  index_vue_vue_type_style_index_0_scoped_7abdf43f_lang as default
+};
+//# sourceMappingURL=index-styles-1.mjs-DtshEL2P.js.map

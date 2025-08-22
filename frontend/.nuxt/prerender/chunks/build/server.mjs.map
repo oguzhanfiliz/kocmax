@@ -1,0 +1,1 @@
+{"version":3,"file":"server.mjs","sources":["../../../../node_modules/vue-timer-hook/dist/vue-timer-hook.cjs.js","../../../dist/server/server.mjs"],"sourcesContent":null,"names":["createRouter","createRouter$1","useTimer"],"mappings":"","x_google_ignoreList":[0]}
