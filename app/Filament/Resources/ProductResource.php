@@ -121,7 +121,9 @@ class ProductResource extends Resource
                             ->label('Kategoriler')
                             ->multiple()
                             ->searchable()
+                            ->relationship('categories', 'name')
                             ->options(Category::getTreeForSelect())
+                            ->preload()
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, $set) {
                                 if ($state && is_array($state)) {
@@ -373,6 +375,7 @@ class ProductResource extends Resource
         if ($isEditPage) {
             // Full query for edit page
             $query = parent::getEloquentQuery()
+                ->with(['categories'])
                 ->withCount(['variants']);
         } else {
             // Optimized query for list page

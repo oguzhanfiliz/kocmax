@@ -66,9 +66,12 @@ class Product extends Model
         });
 
         static::saved(function ($product) {
-            // Kategori güncellemelerini kontrol et
-            if (request()->has('categories')) {
-                $product->validateAndSyncCategories(request('categories'));
+            // Filament form submission'dan sonra kategorileri kontrol et
+            if (request()->has('categories') || isset($product->getAttributes()['categories'])) {
+                $categories = request('categories') ?? $product->categories->pluck('id')->toArray();
+                if (!empty($categories)) {
+                    $product->validateAndSyncCategories($categories);
+                }
             }
         });
     }
