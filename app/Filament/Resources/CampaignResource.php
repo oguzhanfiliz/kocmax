@@ -54,7 +54,11 @@ class CampaignResource extends Resource
                                     ->label('Kampanya Adı')
                                     ->required()
                                     ->maxLength(255)
-                                    ->placeholder('Örn: Bahar İndirimi 2025'),
+                                    ->placeholder('Örn: Bahar İndirimi 2025')
+                                    ->live(debounce: 500)
+                                    ->afterStateUpdated(fn ($set, ?string $state) => 
+                                        $set('slug', \Str::slug($state ?? ''))
+                                    ),
 
                                 Select::make('type')
                                     ->label('Kampanya Türü')
@@ -70,7 +74,6 @@ class CampaignResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->reactive()
-                                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', str($state)->slug()))
                                     ->helperText('Kampanya türünü seçin. Detaylar için ℹ️ butonuna tıklayın.')
                                     ->suffixAction(
                                         \Filament\Forms\Components\Actions\Action::make('info')
@@ -110,8 +113,8 @@ class CampaignResource extends Resource
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
-                                    ->rules(['regex:/^[a-z0-9\-]+$/'])
-                                    ->helperText('Sadece küçük harf, rakam ve tire (-) kullanın'),
+                                    ->rules(['regex:/^[a-z0-9\-_]+$/'])
+                                    ->helperText('Sadece küçük harf, rakam, tire (-) ve alt tire (_) kullanın'),
 
                                 Select::make('status')
                                     ->label('Durum')
