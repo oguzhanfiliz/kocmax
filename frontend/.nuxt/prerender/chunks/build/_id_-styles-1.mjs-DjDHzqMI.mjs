@@ -1,4 +1,0 @@
-const _id__vue_vue_type_style_index_0_scoped_0bd50935_lang = ".spinner-border[data-v-0bd50935]{height:3rem;width:3rem}.text-center[data-v-0bd50935]{text-align:center}.container[data-v-0bd50935]{margin:0 auto;max-width:1200px;padding:0 15px}.py-5[data-v-0bd50935]{padding:3rem 0}.mt-3[data-v-0bd50935]{margin-top:1rem}.text-muted[data-v-0bd50935]{color:#6c757d}.btn[data-v-0bd50935]{border:1px solid transparent;border-radius:.375rem;cursor:pointer;display:inline-block;font-size:1rem;font-weight:400;line-height:1.5;margin-bottom:0;padding:.5rem 1rem;text-align:center;text-decoration:none;transition:color .15s ease-in-out,background-color .15s ease-in-out;vertical-align:middle}.btn-primary[data-v-0bd50935]{background-color:#0989ff;border-color:#0989ff;color:#fff}.btn-primary[data-v-0bd50935]:hover{background-color:#0056b3;border-color:#0056b3}";
-
-export { _id__vue_vue_type_style_index_0_scoped_0bd50935_lang as _ };
-//# sourceMappingURL=_id_-styles-1.mjs-DjDHzqMI.mjs.map

@@ -1,1 +1,0 @@
-import{g as s,c as a,o as r,n as c}from"./3_Zv-WpX.js";const l={__name:"wishlist",async setup(n){let e,t;return[e,t]=s(()=>c("/istek-listesi",{replace:!0})),await e,t(),(o,_)=>(r(),a("div"))}};export{l as default};

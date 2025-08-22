@@ -1,1 +1,0 @@
-import{D as s}from"./3_Zv-WpX.js";const i=s("/img/login/login-shape-1.png"),g=s("/img/login/login-shape-2.png"),n=s("/img/login/login-shape-3.png"),p=s("/img/login/login-shape-4.png");export{i as _,g as a,n as b,p as c};

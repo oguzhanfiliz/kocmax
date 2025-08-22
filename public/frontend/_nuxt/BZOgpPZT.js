@@ -1,1 +1,0 @@
-import{g as a,c,o as n,n as o}from"./3_Zv-WpX.js";const p={__name:"contact",async setup(r){let e,t;return[e,t]=a(()=>o("/iletisim",{replace:!0})),await e,t(),(s,_)=>(n(),c("div"))}};export{p as default};

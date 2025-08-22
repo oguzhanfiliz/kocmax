@@ -1,1 +1,0 @@
-import{_ as e}from"./CBiN9G6S.js";import{d as t,u as a,c as n,b as c,o as r}from"./3_Zv-WpX.js";import"./CWHvRTZ_.js";import"./CqkleIqs.js";const f=t({__name:"coupons",setup(s){return a({title:"Coupon Page"}),(p,_)=>{const o=e;return r(),n("div",null,[c(o)])}}});export{f as default};
