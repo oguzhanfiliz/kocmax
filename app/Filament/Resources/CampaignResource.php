@@ -131,6 +131,25 @@ class CampaignResource extends Resource
                             ->label('Kampanya Açıklaması')
                             ->rows(3)
                             ->placeholder('Kampanya detaylarını açıklayın...'),
+
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('minimum_cart_amount')
+                                    ->label('Minimum Sepet Tutarı')
+                                    ->numeric()
+                                    ->suffix('₺')
+                                    ->placeholder('Örn: 500')
+                                    ->helperText('Bu tutarın üzerinde kampanya geçerli olur (boş bırakılırsa sınırsız)')
+                                    ->step(0.01)
+                                    ->minValue(0),
+
+                                TextInput::make('priority')
+                                    ->label('Öncelik')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->helperText('Yüksek sayı = yüksek öncelik (aynı anda birden fazla kampanya varsa)')
+                                    ->minValue(0),
+                            ]),
                     ]),
 
                 Section::make('Kampanya Tarihleri')
