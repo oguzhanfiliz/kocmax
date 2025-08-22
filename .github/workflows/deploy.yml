@@ -104,7 +104,7 @@ jobs:
           fi
           
           # Shield permissions oluştur
-          php artisan shield:generate --all --panel=admin --force
+          php artisan shield:generate --all --panel=admin
           
           # Admin role permissions seed
           php artisan db:seed --class=PermissionSeederForAdminRole --force

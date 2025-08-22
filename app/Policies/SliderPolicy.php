@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Setting;
+use App\Models\Slider;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class SettingPolicy
+class SliderPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class SettingPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_site::feature');
+        return $user->can('view_any_slider');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Setting $setting): bool
+    public function view(User $user, Slider $slider): bool
     {
-        return $user->can('view_site::feature');
+        return $user->can('view_slider');
     }
 
     /**
@@ -31,23 +31,23 @@ class SettingPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_site::feature');
+        return $user->can('create_slider');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Setting $setting): bool
+    public function update(User $user, Slider $slider): bool
     {
-        return $user->can('update_site::feature');
+        return $user->can('update_slider');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Setting $setting): bool
+    public function delete(User $user, Slider $slider): bool
     {
-        return $user->can('delete_site::feature');
+        return $user->can('delete_slider');
     }
 
     /**
@@ -55,15 +55,15 @@ class SettingPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_site::feature');
+        return $user->can('delete_any_slider');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Setting $setting): bool
+    public function forceDelete(User $user, Slider $slider): bool
     {
-        return $user->can('force_delete_site::feature');
+        return $user->can('force_delete_slider');
     }
 
     /**
@@ -71,15 +71,15 @@ class SettingPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_site::feature');
+        return $user->can('force_delete_any_slider');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Setting $setting): bool
+    public function restore(User $user, Slider $slider): bool
     {
-        return $user->can('restore_site::feature');
+        return $user->can('restore_slider');
     }
 
     /**
@@ -87,15 +87,15 @@ class SettingPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_site::feature');
+        return $user->can('restore_any_slider');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Setting $setting): bool
+    public function replicate(User $user, Slider $slider): bool
     {
-        return $user->can('replicate_site::feature');
+        return $user->can('replicate_slider');
     }
 
     /**
@@ -103,6 +103,6 @@ class SettingPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_site::feature');
+        return $user->can('reorder_slider');
     }
 }

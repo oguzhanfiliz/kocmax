@@ -31,6 +31,9 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName($siteTitle)
+            ->domain(null) // Same domain
+            ->authGuard('web')
+            ->authPasswordBroker('users')
             ->colors([
                 'primary' => Color::Amber,
             ])
