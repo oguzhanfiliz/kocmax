@@ -105,15 +105,10 @@ class ProductResource extends Resource
                 
                 Section::make('Açıklama')
                     ->schema([
-                        Forms\Components\Textarea::make('short_description')
-                            ->label('Kısa Açıklama')
-                            ->rows(3)
-                            ->maxLength(500),
                         Forms\Components\RichEditor::make('description')
                             ->label('Detaylı Açıklama')
                             ->columnSpanFull(),
-                    ])
-                    ->columns(2),
+                    ]),
 
                 Section::make('Kategori ve Sınıflandırma')
                     ->schema([
