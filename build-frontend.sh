@@ -26,7 +26,7 @@ if [ ! -d ".output/public" ]; then
 fi
 
 echo "📁 Copying build files to Laravel public..."
-# Create frontend directory in Laravel public
+# Create frontend directory in Laravel public (from frontend dir, go up to Laravel root)
 mkdir -p ../public/frontend
 
 # Copy all files from .output/public to Laravel public/frontend
@@ -43,7 +43,7 @@ php artisan cache:clear
 
 echo "✅ Frontend build completed successfully!"
 echo "📍 Files are ready in: public/frontend/"
-echo "🌐 Test: http://your-domain.com"
+echo "🌐 Test: http://b2bb2c.mutfakyapim.net"
 
 # Optional: Run Laravel optimization
 echo "⚡ Optimizing Laravel..."
