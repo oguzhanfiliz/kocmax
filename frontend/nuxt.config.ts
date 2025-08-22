@@ -1,0 +1,83 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  devtools: { enabled: true },
+  
+  runtimeConfig: {
+    public: {
+      // Laravel entegrasyonu için API base URL
+      apiBaseUrl: process.env.NODE_ENV === 'production' 
+        ? '/api/v1'  // Production: Same domain 
+        : 'http://127.0.0.1:8002/api/v1', // Dev: Laravel dev server
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    }
+  },
+
+  nitro: {
+    // Production build output path
+    output: {
+      publicDir: '../public/frontend'
+    },
+    
+    // Development proxy
+    devProxy: {
+      '/api/': {
+        target: 'http://127.0.0.1:8002/api',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '' }
+      }
+    }
+  },
+
+  modules: [
+    [
+      '@pinia/nuxt',
+      {
+        autoImports: [
+          'defineStore',
+          ['defineStore', 'definePiniaStore'],
+        ],
+        devtools: true,
+      },
+    ],
+  ],
+
+  imports: {
+    dirs: [
+      'pinia/**',
+    ]
+  },
+
+  app: {
+    head: {
+      title: "Shofy - Multipurpose eCommerce Vue Nuxt 3 Template",
+      charset: 'utf-8',
+      viewport: 'width=device-width, initial-scale=1',
+      script: [
+        {
+          src: "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js",
+        },
+      ],
+    }
+  },
+
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ["legacy-js-api"],
+        },
+      },
+    },
+    define: {
+      __VUE_PROD_DEVTOOLS__: process.env.NODE_ENV !== 'production',
+    },
+  },
+
+  css: [
+    "@/assets/css/font-awesome-pro.css",
+    "@/assets/css/flaticon_shofy.css",
+    "@/assets/scss/main.scss",
+  ],
+
+  compatibilityDate: "2025-01-27",
+})
