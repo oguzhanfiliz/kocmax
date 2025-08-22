@@ -38,7 +38,8 @@ Route::options('storage/{path}', function (Request $request) {
         'http://localhost:3000', 
         'http://localhost:5173', 
         'http://127.0.0.1:3000',
-        'https://b2bb2c.mutfakyapim.net' // Production domain
+        'https://b2bb2c.mutfakyapim.net', // Production domain
+        'https://b2bb2c-frontend.vercel.app' // Frontend domain
     ];
     
     $response = response('', 200);
@@ -66,7 +67,8 @@ Route::get('storage/{path}', function (Request $request, $path) {
         'http://localhost:3000', 
         'http://localhost:5173', 
         'http://127.0.0.1:3000',
-        'https://b2bb2c.mutfakyapim.net' // Production domain
+        'https://b2bb2c.mutfakyapim.net', // Production domain
+        'https://b2bb2c-frontend.vercel.app' // Frontend domain
     ];
     
     // Get the file info

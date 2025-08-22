@@ -25,7 +25,9 @@ return [
             'http://localhost:5173', 
             'http://127.0.0.1:3000',
             'https://kocmax.mutfakyapim.net',
-            'https://b2bb2c.mutfakyapim.net'
+            'https://b2bb2c.mutfakyapim.net',
+            'https://kocmax.netlify.app',
+            'https://b2bb2c-frontend.vercel.app'
         ],
 
     'allowed_origins_patterns' => [
@@ -84,6 +86,8 @@ return [
             'b2bb2c.mutfakyapim.net',
             'www.b2bb2c.mutfakyapim.net',
             'kocmax.mutfakyapim.net',
+            'kocmax.netlify.app',
+            'b2bb2c-frontend.vercel.app',
             '*.mutfakyapim.net',
         ],
 

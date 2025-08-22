@@ -10,6 +10,27 @@ php_value session.cookie_httponly 1
 php_value session.cookie_secure 0
 php_value session.cookie_samesite "Lax"
 
+# CORS Headers for Storage Images
+<IfModule mod_headers.c>
+    # Allow CORS for storage images
+    <FilesMatch "\.(png|jpg|jpeg|gif|webp|avif|svg)$">
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Origin, Content-Type, Accept"
+        Header always set Access-Control-Max-Age "3600"
+    </FilesMatch>
+    
+    # Specific CORS for frontend domain
+    <If "%{HTTP_ORIGIN} == 'https://b2bb2c-frontend.vercel.app'">
+        Header always set Access-Control-Allow-Origin "https://b2bb2c-frontend.vercel.app"
+    </If>
+    
+    # Handle preflight requests
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
