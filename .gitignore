@@ -3,10 +3,17 @@
 
 # Node.js dependencies
 /node_modules/
+/frontend/node_modules/
 
 # Laravel build artifacts (Vite)
 /public/build/
 /public/hot
+
+# Frontend build artifacts
+/public/frontend/
+/frontend/.nuxt/
+/frontend/.output/
+/frontend/dist/
 
 # Laravel bootstrap cache
 /bootstrap/cache/*.php
