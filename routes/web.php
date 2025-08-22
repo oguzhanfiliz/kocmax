@@ -14,21 +14,8 @@ use Illuminate\Http\Request;
 |
 */
 
-// Frontend Route - Serve Nuxt app
-Route::get('/', function () {
-    // Development: Redirect to Nuxt dev server
-    if (config('app.debug')) {
-        return redirect('http://localhost:3000');
-    }
-    
-    // Production: Serve built frontend
-    $indexPath = public_path('frontend/index.html');
-    if (file_exists($indexPath)) {
-        return response()->file($indexPath);
-    }
-    
-    return 'Frontend build not found. Run build script first.';
-});
+// Bu Laravel uygulaması sadece API ve Admin Panel sunuyor
+// Frontend ayrı domain'de (kocmax.mutfakyapim.net) çalışacak
 
 // Simple login info page for web requests (API-only application)
 Route::get('/login-required', function () {
@@ -47,7 +34,12 @@ Route::get('/login-required', function () {
 // OPTIONS handler for preflight requests
 Route::options('storage/{path}', function (Request $request) {
     $origin = $request->header('Origin');
-    $allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
+    $allowedOrigins = [
+        'http://localhost:3000', 
+        'http://localhost:5173', 
+        'http://127.0.0.1:3000',
+        'https://b2bb2c.mutfakyapim.net' // Production domain
+    ];
     
     $response = response('', 200);
     
@@ -70,7 +62,12 @@ Route::get('storage/{path}', function (Request $request, $path) {
     }
     
     $origin = $request->header('Origin');
-    $allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
+    $allowedOrigins = [
+        'http://localhost:3000', 
+        'http://localhost:5173', 
+        'http://127.0.0.1:3000',
+        'https://b2bb2c.mutfakyapim.net' // Production domain
+    ];
     
     // Get the file info
     $mimeType = mime_content_type($file);
@@ -98,24 +95,11 @@ Route::get('storage/{path}', function (Request $request, $path) {
 
 /*
 |--------------------------------------------------------------------------
-| Frontend SPA Routes - Serve Nuxt App
+| API ve Admin Panel Uygulaması
 |--------------------------------------------------------------------------
-*/
-
-// Catch all routes that aren't API routes and serve the frontend
-Route::get('/{any}', function () {
-    // Development: Redirect to Nuxt dev server
-    if (config('app.debug')) {
-        return redirect('http://localhost:3000/' . request()->path());
-    }
-    
-    // Production: Serve built frontend index.html for SPA routing
-    $indexPath = public_path('frontend/index.html');
-    if (file_exists($indexPath)) {
-        return response()->file($indexPath);
-    }
-    
-    return 'Frontend build not found. Run build script first.';
-})->where('any', '^(?!api|admin|storage).*$'); // Exclude API, admin, and storage routes
+| 
+| Bu Laravel uygulaması sadece API ve Admin Panel hizmeti sunuyor.
+| Frontend ayrı domain'de (kocmax.mutfakyapim.net) çalışıyor.
+|*/
 
 

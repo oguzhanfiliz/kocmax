@@ -5,6 +5,11 @@ php_value max_execution_time 300
 php_value max_input_time 300
 php_value memory_limit 1024M
 
+# Session and Cookie Settings for Admin Panel
+php_value session.cookie_httponly 1
+php_value session.cookie_secure 0
+php_value session.cookie_samesite "Lax"
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
