@@ -89,11 +89,10 @@ class FreeShippingHandler implements CampaignHandlerInterface
 
     private function calculateShippingBenefit(Campaign $campaign, CartContext $context): array
     {
-        $rules = $campaign->rules ?? [];
-        
-        $minAmount = $rules['free_shipping_min_amount'] ?? 0;
-        $specialProducts = $rules['free_shipping_products'] ?? [];
-        $standardShippingCost = $rules['standard_shipping_cost'] ?? 25; // Default shipping cost
+        // Yeni alanları kullan
+        $minAmount = $campaign->free_shipping_min_amount ?? 0;
+        $specialProducts = $campaign->products->pluck('id')->toArray();
+        $standardShippingCost = 25; // Default shipping cost
 
         $cartTotal = $context->getTotalAmount();
         $cartItems = $context->getItems();

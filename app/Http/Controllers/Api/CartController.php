@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Cart\CartService;
 use App\Services\Cart\CartStrategyFactory;
 use App\Services\MultiCurrencyPricingService;
+use App\Services\Campaign\CampaignEngine;
+use App\ValueObjects\Campaign\CartContext;
 use App\Models\Cart;
 use App\Models\ProductVariant;
 use App\Http\Requests\Cart\AddItemRequest;
@@ -31,7 +33,8 @@ class CartController extends Controller
     public function __construct(
         private CartService $cartService,
         private CartStrategyFactory $strategyFactory,
-        private MultiCurrencyPricingService $multiCurrencyPricingService
+        private MultiCurrencyPricingService $multiCurrencyPricingService,
+        private CampaignEngine $campaignEngine
     ) {}
 
     /**
@@ -511,6 +514,117 @@ class CartController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Misafir sepeti taşınamadı',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *      path="/api/v1/cart/apply-campaigns",
+     *      operationId="applyCartCampaigns",
+     *      tags={"Cart", "Protected API"},
+     *      summary="Sepete uygulanabilir kampanyaları uygula",
+     *      description="Sepet içeriğine göre uygulanabilir kampanyaları otomatik olarak uygular",
+     *      security={{ "sanctum": {} }},
+     *      @OA\Response(
+     *          response=200,
+     *          description="Kampanyalar başarıyla uygulandı",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=true),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="applied_campaigns", type="array", @OA\Items(type="object")),
+     *                  @OA\Property(property="total_discount", type="number", example=25.50),
+     *                  @OA\Property(property="free_shipping", type="boolean", example=true),
+     *                  @OA\Property(property="cart_summary", type="object")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Kampanyalar uygulanamadı"
+     *      )
+     * )
+     * 
+     * Sepete uygulanabilir kampanyaları uygula
+     */
+    public function applyCampaigns(Request $request): JsonResponse
+    {
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $user = Auth::user();
+            
+            // Sepet içeriğini CartContext'e dönüştür
+            $cartItems = $cart->items->map(function ($item) {
+                return [
+                    'product_id' => $item->productVariant->product_id,
+                    'variant_id' => $item->product_variant_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_price' => $item->total_price,
+                ];
+            })->toArray();
+
+            $customerType = $user && $user->is_approved_dealer ? 'b2b' : ($user ? 'b2c' : 'guest');
+            
+            $context = new CartContext(
+                items: $cartItems,
+                totalAmount: $cart->total_amount,
+                customerType: $customerType,
+                customerId: $user?->id
+            );
+
+            // Kampanyaları uygula
+            $campaignResults = $this->campaignEngine->applyCampaigns($context, $user);
+            
+            $appliedCampaigns = [];
+            $totalDiscount = 0;
+            $freeShipping = false;
+
+            foreach ($campaignResults as $result) {
+                $campaign = $result['campaign'];
+                $campaignResult = $result['result'];
+                
+                if ($campaignResult->isApplied()) {
+                    $appliedCampaigns[] = [
+                        'id' => $campaign->id,
+                        'name' => $campaign->name,
+                        'type' => $campaign->type,
+                        'description' => $campaignResult->getMessage(),
+                        'discount_amount' => $campaignResult->getDiscount()?->getAmount() ?? 0,
+                        'discount_type' => $campaignResult->getDiscount()?->getType() ?? 'unknown'
+                    ];
+
+                    $totalDiscount += $campaignResult->getDiscount()?->getAmount() ?? 0;
+                    
+                    // Ücretsiz kargo kontrolü
+                    if ($campaign->type === 'free_shipping') {
+                        $freeShipping = true;
+                    }
+                }
+            }
+
+            // Sepet özetini güncelle
+            $summary = $this->cartService->calculateSummary($cart);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kampanyalar başarıyla uygulandı',
+                'data' => [
+                    'applied_campaigns' => $appliedCampaigns,
+                    'total_discount' => $totalDiscount,
+                    'free_shipping' => $freeShipping,
+                    'cart_summary' => new CartSummaryResource($summary),
+                    'campaigns_count' => count($appliedCampaigns)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Kampanya uygulama hatası', ['error' => $e->getMessage()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Kampanyalar uygulanamadı',
                 'error' => $e->getMessage()
             ], 500);
         }

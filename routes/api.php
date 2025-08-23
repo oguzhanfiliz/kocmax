@@ -83,6 +83,9 @@ Route::prefix('v1/cart')->middleware('auth:sanctum')->group(function () {
     Route::get('/summary', [CartController::class, 'summary'])->name('api.cart.summary');
     Route::post('/refresh-pricing', [CartController::class, 'refreshPricing'])->name('api.cart.refresh-pricing');
     
+    // Cart campaigns
+    Route::post('/apply-campaigns', [CartController::class, 'applyCampaigns'])->name('api.cart.apply-campaigns');
+    
     // Cart migration from guest to authenticated user
     Route::post('/migrate', [CartController::class, 'migrate'])->name('api.cart.migrate');
 });
