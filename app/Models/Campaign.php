@@ -34,7 +34,15 @@ class Campaign extends Model
         'minimum_cart_amount',
         'customer_types', // ['b2b', 'b2c', 'guest']
         'created_by',
-        'updated_by'
+        'updated_by',
+        // Kampanya türüne özel alanlar
+        'required_quantity',
+        'free_quantity',
+        'bundle_discount_type',
+        'bundle_discount_value',
+        'free_shipping_min_amount',
+        'flash_discount_type',
+        'flash_discount_value'
     ];
 
     protected $casts = [
@@ -50,7 +58,13 @@ class Campaign extends Model
         'usage_limit' => 'integer',
         'usage_count' => 'integer',
         'usage_limit_per_customer' => 'integer',
-        'minimum_cart_amount' => 'decimal:2'
+        'minimum_cart_amount' => 'decimal:2',
+        // Kampanya türüne özel alanlar
+        'required_quantity' => 'integer',
+        'free_quantity' => 'integer',
+        'bundle_discount_value' => 'decimal:2',
+        'free_shipping_min_amount' => 'decimal:2',
+        'flash_discount_value' => 'decimal:2'
     ];
 
     // Relations
