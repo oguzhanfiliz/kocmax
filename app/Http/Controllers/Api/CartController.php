@@ -554,7 +554,7 @@ class CartController extends Controller
             $cart = $this->getOrCreateCart($request);
             $user = Auth::user();
             
-            // Sepet içeriğini CartContext'e dönüştür
+            // Sepet içeriğini CartContext'e dönüştür (Domain Service pattern)
             $cartItems = $cart->items->map(function ($item) {
                 return [
                     'product_id' => $item->productVariant->product_id,
