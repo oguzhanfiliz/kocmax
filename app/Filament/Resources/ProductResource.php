@@ -273,7 +273,29 @@ class ProductResource extends Resource
                 // Brand column kaldırıldı
                 Tables\Columns\TextColumn::make('base_price')
                     ->label('Temel Fiyat')
-                    ->money('TRY')
+                    ->formatStateUsing(function ($state, $record) {
+                        $code = $record->base_currency ?? 'TRY';
+                        $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($code);
+                        return $symbol . ' ' . number_format((float) $state, 2, ',', '.');
+                    })
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('base_price_try')
+                    ->label('TL Karşılığı')
+                    ->getStateUsing(function ($record) {
+                        try {
+                            $conversion = app(\App\Services\CurrencyConversionService::class);
+                            $price = (float) ($record->base_price ?? 0);
+                            $from = $record->base_currency ?? 'TRY';
+                            $tryPrice = $conversion->convertPrice($price, $from, 'TRY');
+                            return $tryPrice;
+                        } catch (\Throwable $e) {
+                            return null;
+                        }
+                    })
+                    ->formatStateUsing(function ($state) {
+                        if ($state === null) return '—';
+                        return '₺ ' . number_format((float) $state, 2, ',', '.');
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('variants_count')
                     ->label('Varyant Sayısı')
@@ -386,6 +408,7 @@ class ProductResource extends Resource
                     'products.slug',
                     'products.sku',
                     'products.base_price',
+                    'products.base_currency',
                     'products.is_active',
                     'products.is_featured',
                     'products.created_at',

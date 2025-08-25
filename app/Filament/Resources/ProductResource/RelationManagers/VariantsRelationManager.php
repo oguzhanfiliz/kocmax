@@ -308,9 +308,22 @@ class VariantsRelationManager extends RelationManager
                     ->label('Orijinal Fiyat')
                     ->formatStateUsing(fn ($record) => $record ? $record->getFormattedSourcePrice() : '-')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('price')
+                Tables\Columns\TextColumn::make('price_try')
                     ->label('TL Fiyat')
-                    ->money('TRY')
+                    ->getStateUsing(function ($record) {
+                        try {
+                            $conversion = app(\App\Services\CurrencyConversionService::class);
+                            $sourcePrice = (float) ($record->source_price ?? $record->price ?? 0);
+                            $from = $record->source_currency ?? ($record->currency_code ?? 'TRY');
+                            return $conversion->convertPrice($sourcePrice, $from, 'TRY');
+                        } catch (\Throwable $e) {
+                            return null;
+                        }
+                    })
+                    ->formatStateUsing(function ($state) {
+                        if ($state === null) return '—';
+                        return '₺ ' . number_format((float) $state, 2, ',', '.');
+                    })
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('stock')
