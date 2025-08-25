@@ -196,8 +196,9 @@ class ProductResource extends JsonResource
         $basePrice = (float) $this->base_price;
         $user = $customerInfo['user'];
         
-        // Base currency conversion
-        $basePriceConverted = $this->pricingService->convertPrice($basePrice, 'TRY', $currency);
+        // Base currency conversion (respect product base currency, e.g., EUR → TRY)
+        $sourceCurrency = $this->base_currency ?? 'TRY';
+        $basePriceConverted = $this->pricingService->convertPrice($basePrice, $sourceCurrency, $currency);
         
         if (!$smartPricingEnabled) {
             // Legacy mode - just return base price
