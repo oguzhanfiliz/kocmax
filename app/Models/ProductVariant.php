@@ -59,23 +59,21 @@ class ProductVariant extends Model
         parent::boot();
 
         static::creating(function ($variant) {
-            // Set default source currency if not provided
             if (empty($variant->source_currency)) {
                 $variant->source_currency = 'TRY';
             }
-            
-            // If source_price not set, use price
             if (empty($variant->source_price) && !empty($variant->price)) {
                 $variant->source_price = $variant->price;
             }
-            
-            // Always set currency_code to TRY for new variants (for backwards compatibility)
-            $variant->currency_code = 'TRY';
+            // Kaydedilen fiyat artık kaynak para biriminde tutulur
+            $variant->currency_code = $variant->source_currency;
         });
 
         static::updating(function ($variant) {
-            // Always keep currency_code as TRY on updates (for backwards compatibility)
-            $variant->currency_code = 'TRY';
+            // currency_code, kaynak para birimiyle aynı tutulur
+            if (!empty($variant->source_currency)) {
+                $variant->currency_code = $variant->source_currency;
+            }
         });
     }
 

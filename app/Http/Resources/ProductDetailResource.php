@@ -72,7 +72,7 @@ class ProductDetailResource extends JsonResource
 
     public function toArray($request): array
     {
-        $currency = app()->bound('api_currency') ? app('api_currency') : 'TRY';
+        $currency = 'TRY';
 
         // Base product data
         $baseData = (new ProductResource($this->resource))->toArray($request);
@@ -86,20 +86,20 @@ class ProductDetailResource extends JsonResource
                     'size' => $variant->size,
                     'stock' => $variant->stock,
                     'price' => [
-                        'original' => (float) $variant->price,
-                        'converted' => $this->pricingService->convertPrice(
-                            (float) $variant->price, 
-                            $variant->currency_code ?? 'TRY', 
-                            $currency
+                        'original' => (float) $variant->source_price ?? (float) $variant->price,
+                        'converted' => app(\App\Services\CurrencyConversionService::class)->convertPrice(
+                            (float) ($variant->source_price ?? $variant->price),
+                            $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                            'TRY'
                         ),
-                        'currency' => $currency,
+                        'currency' => 'TRY',
                         'formatted' => $this->formatPrice(
-                            $this->pricingService->convertPrice(
-                                (float) $variant->price, 
-                                $variant->currency_code ?? 'TRY', 
-                                $currency
-                            ), 
-                            $currency
+                            app(\App\Services\CurrencyConversionService::class)->convertPrice(
+                                (float) ($variant->source_price ?? $variant->price),
+                                $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                                'TRY'
+                            ),
+                            'TRY'
                         ),
                     ],
                     'images' => $variant->relationLoaded('images') ? 
@@ -149,10 +149,10 @@ class ProductDetailResource extends JsonResource
                 
                 if ($variants->count() > 0) {
                     $prices = $variants->map(fn($variant) => 
-                        $this->pricingService->convertPrice(
-                            (float) $variant->price, 
-                            $variant->currency_code ?? 'TRY', 
-                            $currency
+                        app(\App\Services\CurrencyConversionService::class)->convertPrice(
+                            (float) ($variant->source_price ?? $variant->price),
+                            $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                            'TRY'
                         )
                     );
                     

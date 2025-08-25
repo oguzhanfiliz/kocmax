@@ -129,7 +129,9 @@ class VariantsRelationManager extends RelationManager
                                     ->live()
                                     ->helperText('Ürün hangi para biriminde satın alındı?'),
                                     
-                                Forms\Components\TextInput::make('source_price')
+                                
+                                    
+                                Forms\Components\TextInput::make('price')
                                     ->label(function (Forms\Get $get): string {
                                         $currencyCode = $get('source_currency') ?? 'TRY';
                                         $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
@@ -142,71 +144,20 @@ class VariantsRelationManager extends RelationManager
                                         $currencyCode = $get('source_currency') ?? 'TRY';
                                         return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
                                     })
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (Forms\Set $set, ?float $state, Forms\Get $get) {
-                                        if (!$state) return;
-                                        
-                                        $sourceCurrency = $get('source_currency') ?? 'TRY';
-                                        
-                                        if ($sourceCurrency === 'TRY') {
-                                            // Direkt TRY fiyatı ayarla
-                                            $set('price', $state);
-                                        } else {
-                                            // Döviz kurunu al ve TRY'ye çevir (display price için)
-                                            try {
-                                                $conversionService = app(\App\Services\CurrencyConversionService::class);
-                                                $tryPrice = $conversionService->convertPrice($state, $sourceCurrency, 'TRY');
-                                                $set('price', round($tryPrice, 2));
-                                            } catch (\Exception $e) {
-                                                // Hata durumunda fallback kurlar kullan
-                                                $fallbackRates = ['USD' => 30.0, 'EUR' => 33.0];
-                                                $rate = $fallbackRates[$sourceCurrency] ?? 1.0;
-                                                $set('price', round($state * $rate, 2));
-                                            }
-                                        }
-                                    })
-                                    ->placeholder('299.99')
-                                    ->helperText('Orijinal para biriminde fiyat'),
-                                    
-                                Forms\Components\TextInput::make('price')
-                                    ->label('TL Fiyat (₺)')
-                                    ->required()
-                                    ->numeric()
-                                    ->step(0.01)
-                                    ->prefix('₺')
-                                    ->disabled()
-                                    ->helperText('Otomatik hesaplanır (Sistemde saklanan fiyat)')
-                                    ->hint('Database\'e kaydedilen değer'),
+                                    ->helperText('Kaynak para biriminde fiyat (DB\'ye bu değer kaydedilir)'),
                                     
                                 Forms\Components\Placeholder::make('price_preview')
-                                    ->label('💰 Diğer Para Birimlerinde')
+                                    ->label('💰 TL Karşılığı (bilgi amaçlı)')
                                     ->content(function (Forms\Get $get): string {
-                                        $tryPrice = $get('price');
+                                        $price = $get('price');
                                         $sourceCurrency = $get('source_currency') ?? 'TRY';
-                                        
-                                        if (!$tryPrice) return 'Fiyat henüz hesaplanmadı...';
-                                        
+                                        if (!$price) return '—';
                                         try {
                                             $conversionService = app(\App\Services\CurrencyConversionService::class);
-                                            $currencies = \App\Helpers\CurrencyHelper::getActiveCurrencyOptions();
-                                            
-                                            $previews = [];
-                                            foreach ($currencies as $code => $name) {
-                                                if ($code !== $sourceCurrency) {
-                                                    $convertedPrice = $conversionService->convertPrice(
-                                                        (float)$tryPrice, 
-                                                        'TRY', 
-                                                        $code
-                                                    );
-                                                    $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($code);
-                                                    $previews[] = "{$symbol}" . number_format($convertedPrice, 2);
-                                                }
-                                            }
-                                            
-                                            return count($previews) > 0 ? implode(' • ', $previews) : 'Diğer para birimi yok';
-                                            
+                                            $tryPrice = $conversionService->convertPrice((float)$price, $sourceCurrency, 'TRY');
+                                            return '≈ ₺' . number_format($tryPrice, 2);
                                         } catch (\Exception $e) {
-                                            return 'Döviz kuru bilgisi alınamadı';
+                                            return 'TL karşılığı hesaplanamadı';
                                         }
                                     })
                                     ->columnSpan(2),
@@ -442,6 +393,10 @@ class VariantsRelationManager extends RelationManager
                         // Ensure product_id is set
                         $data['product_id'] = $this->getOwnerRecord()->getKey();
                         
+                        // Persist price as source currency value
+                        $data['source_price'] = $data['price'] ?? $data['source_price'] ?? null;
+                        $data['currency_code'] = $data['source_currency'] ?? 'TRY';
+                        
                         // Remove variant_options and variant_images from data as they're not direct fields
                         unset($data['variant_options'], $data['variant_images']);
                         
@@ -574,8 +529,7 @@ class VariantsRelationManager extends RelationManager
                         $data['variant_images'] = $record->images()->ordered()->pluck('image_url')->toArray();
                         
                         // Set source currency fields for editing
-                        $data['source_currency'] = $record->source_currency ?? 'TRY';
-                        $data['source_price'] = $record->source_price ?? $record->price;
+                        $data['source_currency'] = $record->source_currency ?? ($record->currency_code ?? 'TRY');
                         
                         return $data;
                     })
@@ -791,9 +745,10 @@ class VariantsRelationManager extends RelationManager
                     'sku' => $this->generateVariantSku(['color' => $color, 'size' => $size]),
                     'color' => $color,
                     'size' => $size,
-                    'price' => $defaultPrice, // TL equivalent for display
-                    'source_currency' => $sourceCurrency, // Original currency
-                    'source_price' => $sourcePrice, // Original price
+                    'price' => $sourcePrice, // Kaynak para birimindeki fiyatı kaydet
+                    'source_currency' => $sourceCurrency,
+                    'source_price' => $sourcePrice,
+                    'currency_code' => $sourceCurrency,
                     'stock' => $defaultStock,
                     'min_stock_level' => $defaultMinStock,
                     'is_active' => true,

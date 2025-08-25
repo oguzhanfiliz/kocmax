@@ -73,15 +73,48 @@ class ProductResource extends JsonResource
 
     public function toArray($request): array
     {
-        // Get context from app container
-        $currency = app()->bound('api_currency') ? app('api_currency') : 'TRY';
+        // Frontend için para birimini TRY'ye sabitle
+        $currency = 'TRY';
         $customerInfo = app()->bound('api_customer_info') ? app('api_customer_info') : [
             'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
         ];
         $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : false;
 
-        // 🎯 Smart Pricing Calculation
+        // 🎯 Smart Pricing Calculation (TRY'ye sabit)
         $pricingData = $this->calculateSmartPricing($currency, $customerInfo, $smartPricingEnabled);
+
+        // Varyantların TL fiyatları üzerinden vitrin fiyatını belirle (min TL)
+        $conversionService = app(\App\Services\CurrencyConversionService::class);
+        $variantConvertedPrices = [];
+        if ($this->relationLoaded('variants')) {
+            foreach ($this->variants as $variant) {
+                $variantConvertedPrices[] = $conversionService->convertPrice(
+                    (float) ($variant->source_price ?? $variant->price),
+                    $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                    'TRY'
+                );
+            }
+        }
+
+        // Ürünün kendi base_price'ını da TRY'ye çevir (base_currency dikkate alınır)
+        $productBaseConverted = $conversionService->convertPrice(
+            (float) $this->base_price,
+            $this->base_currency ?? 'TRY',
+            'TRY'
+        );
+
+        $displayBasePrice = !empty($variantConvertedPrices)
+            ? min($variantConvertedPrices)
+            : $productBaseConverted;
+
+        // Smart pricing devre dışı ise pricingData'yı bu taban fiyata göre güncelle
+        if (!$smartPricingEnabled) {
+            $pricingData['base_price'] = $displayBasePrice;
+            $pricingData['your_price'] = $displayBasePrice;
+            $pricingData['your_price_formatted'] = $this->formatPrice($displayBasePrice, 'TRY');
+            $pricingData['base_price_formatted'] = $this->formatPrice($displayBasePrice, 'TRY');
+            $pricingData['currency'] = 'TRY';
+        }
 
         return [
             'id' => $this->id,
@@ -100,11 +133,11 @@ class ProductResource extends JsonResource
             // 🔥 Enhanced pricing information
             'pricing' => $pricingData,
             
-            // Legacy compatibility (will use "your_price" when smart pricing enabled)
+            // Legacy compatibility (smart pricing açıkken your_price kullanılır)
             'price' => [
                 'original' => $pricingData['base_price'],
                 'converted' => $pricingData['your_price'],
-                'currency' => $currency,
+                'currency' => 'TRY',
                 'formatted' => $pricingData['your_price_formatted'],
             ],
             
@@ -128,7 +161,11 @@ class ProductResource extends JsonResource
                     'id' => $variant->id,
                     'name' => $variant->name,
                     'sku' => $variant->sku,
-                    'price' => (float) $variant->price,
+                    'price' => app(\App\Services\CurrencyConversionService::class)->convertPrice(
+                        (float) ($variant->source_price ?? $variant->price),
+                        $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                        'TRY'
+                    ),
                     'stock' => (int) $variant->stock,
                     'color' => $variant->color,
                     'size' => $variant->size,
