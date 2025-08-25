@@ -133,6 +133,13 @@ class ProductResource extends JsonResource
                     'color' => $variant->color,
                     'size' => $variant->size,
                     'is_active' => (bool) $variant->is_active,
+                    'images' => $variant->relationLoaded('images') ? 
+                        $variant->images->map(fn($image) => [
+                            'id' => $image->id,
+                            'image_url' => $image->image_url,
+                            'alt_text' => $image->alt_text,
+                            'is_primary' => (bool) $image->is_primary,
+                        ]) : [],
                 ])
             ),
             'variants_count' => $this->whenCounted('variants'),

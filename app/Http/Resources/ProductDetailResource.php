@@ -107,6 +107,8 @@ class ProductDetailResource extends JsonResource
                             'id' => $image->id,
                             'image_url' => $image->image_url,
                             'alt_text' => $image->alt_text,
+                            'is_primary' => (bool) $image->is_primary,
+                            'sort_order' => $image->sort_order,
                         ]) : [],
                 ])
             ),

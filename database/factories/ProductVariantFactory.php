@@ -64,4 +64,31 @@ class ProductVariantFactory extends Factory
             'is_active' => false,
         ]);
     }
+
+    /**
+     * Configure the variant to have images after creation.
+     */
+    public function configure()
+    {
+        return $this->afterCreating(function (ProductVariant $variant) {
+            // Her varyant için 2-4 resim oluştur
+            $imageCount = fake()->numberBetween(2, 4);
+            
+            // İlk resmi primary yap
+            \App\Models\VariantImage::factory()
+                ->forVariant($variant)
+                ->colorVariant($variant->color)
+                ->primary()
+                ->create();
+
+            // Diğer resimleri ekle
+            for ($i = 1; $i < $imageCount; $i++) {
+                \App\Models\VariantImage::factory()
+                    ->forVariant($variant)
+                    ->colorVariant($variant->color)
+                    ->state(['sort_order' => $i])
+                    ->create();
+            }
+        });
+    }
 }
