@@ -20,6 +20,21 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         return $campaign->type === CampaignType::BUNDLE_DISCOUNT->value;
     }
 
+    public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
+    {
+        return $this->validateCampaign($campaign) && $this->validateContext($context);
+    }
+
+    public function getSupportedType(): string
+    {
+        return CampaignType::BUNDLE_DISCOUNT->value;
+    }
+
+    public function getPriority(): int
+    {
+        return 50; // Orta öncelik
+    }
+
     public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {

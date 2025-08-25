@@ -183,6 +183,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\AdminMemoryServiceProvider::class,
         App\Providers\CampaignServiceProvider::class,
+        L5Swagger\L5SwaggerServiceProvider::class,
     ])->toArray(),
 
     /*

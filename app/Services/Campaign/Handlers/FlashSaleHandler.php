@@ -10,6 +10,7 @@ use App\Models\Campaign;
 use App\ValueObjects\Campaign\CampaignResult;
 use App\ValueObjects\Campaign\CartContext;
 use App\ValueObjects\Pricing\Discount;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class FlashSaleHandler implements CampaignHandlerInterface
@@ -19,7 +20,22 @@ class FlashSaleHandler implements CampaignHandlerInterface
         return $campaign->type === CampaignType::FLASH_SALE->value;
     }
 
-    public function apply(Campaign $campaign, CartContext $context): CampaignResult
+    public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
+    {
+        return $this->validateCampaign($campaign) && $this->validateContext($context);
+    }
+
+    public function getSupportedType(): string
+    {
+        return CampaignType::FLASH_SALE->value;
+    }
+
+    public function getPriority(): int
+    {
+        return 100; // Yüksek öncelik (flash sale)
+    }
+
+    public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
             // Validation chain

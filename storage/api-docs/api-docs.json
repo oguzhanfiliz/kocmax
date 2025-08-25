@@ -2389,6 +2389,65 @@
                 ]
             }
         },
+        "/api/v1/cart/apply-campaigns": {
+            "post": {
+                "tags": [
+                    "Cart",
+                    "Protected API"
+                ],
+                "summary": "Sepete uygulanabilir kampanyaları uygula",
+                "description": "Sepet içeriğine göre uygulanabilir kampanyaları otomatik olarak uygular",
+                "operationId": "applyCartCampaigns",
+                "responses": {
+                    "200": {
+                        "description": "Kampanyalar başarıyla uygulandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "applied_campaigns": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "total_discount": {
+                                                    "type": "number",
+                                                    "example": 25.5
+                                                },
+                                                "free_shipping": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "cart_summary": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Kampanyalar uygulanamadı"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/categories": {
             "get": {
                 "tags": [
@@ -3529,17 +3588,17 @@
                                                         "USD": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.034
+                                                            "example": 0.0340000000000000024424906541753443889319896697998046875
                                                         },
                                                         "EUR": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.031
+                                                            "example": 0.0309999999999999997779553950749686919152736663818359375
                                                         },
                                                         "GBP": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.027
+                                                            "example": 0.0269999999999999996946886682280819513835012912750244140625
                                                         }
                                                     },
                                                     "type": "object"
@@ -3628,7 +3687,7 @@
                                                 "converted_amount": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 3.42
+                                                    "example": 3.4199999999999999289457264239899814128875732421875
                                                 },
                                                 "from_currency": {
                                                     "type": "string",
@@ -3641,7 +3700,7 @@
                                                 "exchange_rate": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 0.034
+                                                    "example": 0.0340000000000000024424906541753443889319896697998046875
                                                 },
                                                 "converted_at": {
                                                     "type": "string",
@@ -3769,6 +3828,109 @@
                                         }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customer/type": {
+            "get": {
+                "tags": [
+                    "Customer",
+                    "Public API"
+                ],
+                "summary": "Müşteri tipini belirle (Public)",
+                "description": "Kullanıcının müşteri tipini ve fiyatlandırma bilgilerini döndürür. Authentication opsiyonel.",
+                "operationId": "getCustomerType",
+                "responses": {
+                    "200": {
+                        "description": "İstek başarıyla tamamlandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Müşteri tipi başarıyla belirlendi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "customer_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "b2b",
+                                                        "b2c",
+                                                        "wholesale",
+                                                        "retail",
+                                                        "guest"
+                                                    ],
+                                                    "example": "b2b"
+                                                },
+                                                "can_access_dealer_prices": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "tier": {
+                                                    "type": "string",
+                                                    "example": "b2b_gold"
+                                                },
+                                                "discount_percentage": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 5
+                                                },
+                                                "is_authenticated": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "company_name": {
+                                                    "type": "string",
+                                                    "example": "ABC Şirketi"
+                                                },
+                                                "tax_number": {
+                                                    "type": "string",
+                                                    "example": "1234567890"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Domain not allowed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
                                 }
                             }
                         }
@@ -4513,6 +4675,232 @@
                     },
                     "403": {
                         "description": "Domain not allowed (production only)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/products/{product}/pricing": {
+            "get": {
+                "tags": [
+                    "Products",
+                    "Public API"
+                ],
+                "summary": "Ürün fiyatlandırma bilgilerini al (Public)",
+                "description": "Müşteri tipine göre ürün fiyatlandırma bilgilerini döndürür. Authentication opsiyonel.",
+                "operationId": "getProductPricing",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "description": "Ürün ID veya slug",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "description": "Para birimi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "TRY",
+                                "USD",
+                                "EUR"
+                            ],
+                            "example": "TRY"
+                        }
+                    },
+                    {
+                        "name": "context",
+                        "in": "query",
+                        "description": "Fiyatlandırma bağlamı (JSON)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "order_quantity: 10"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "İstek başarıyla tamamlandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ürün fiyatlandırma bilgileri başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Güvenlik Ayakkabısı"
+                                                },
+                                                "slug": {
+                                                    "type": "string",
+                                                    "example": "guvenlik-ayakkabisi"
+                                                },
+                                                "pricing": {
+                                                    "properties": {
+                                                        "base_price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 150
+                                                        },
+                                                        "your_price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 127.5
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "TRY"
+                                                        },
+                                                        "base_price_formatted": {
+                                                            "type": "string",
+                                                            "example": "150,00 ₺"
+                                                        },
+                                                        "your_price_formatted": {
+                                                            "type": "string",
+                                                            "example": "127,50 ₺"
+                                                        },
+                                                        "discount_percentage": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 15
+                                                        },
+                                                        "is_dealer_price": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "customer_type": {
+                                                            "type": "string",
+                                                            "example": "b2b"
+                                                        },
+                                                        "bulk_discounts": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "min_quantity": {
+                                                                        "type": "integer",
+                                                                        "example": 10
+                                                                    },
+                                                                    "discount_percentage": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 5
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "variants": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "42 Numara Siyah"
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 150
+                                                            },
+                                                            "stock": {
+                                                                "type": "integer",
+                                                                "example": 25
+                                                            },
+                                                            "color": {
+                                                                "type": "string",
+                                                                "example": "Siyah"
+                                                            },
+                                                            "size": {
+                                                                "type": "string",
+                                                                "example": "42"
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ürün bulunamadı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/NotFound"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Domain not allowed",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7383,7 +7771,7 @@
                         "description": "TRY cinsinden döviz kuru",
                         "type": "number",
                         "format": "float",
-                        "example": 29.45
+                        "example": 29.449999999999999289457264239899814128875732421875
                     },
                     "is_default": {
                         "description": "Varsayılan para birimi mi?",
@@ -7742,6 +8130,10 @@
                     "description": {
                         "type": "string",
                         "example": "Yüksek kaliteli güvenlik ayakkabısı"
+                    },
+                    "short_description": {
+                        "type": "string",
+                        "example": "Kısa açıklama metni"
                     },
                     "sku": {
                         "type": "string",
@@ -8341,6 +8733,10 @@
         {
             "name": "Currencies",
             "description": "Para birimi yönetimi API uç noktaları - Public endpoints (Authentication not required)"
+        },
+        {
+            "name": "Customer",
+            "description": "Müşteri tipi ve profil API uç noktaları"
         },
         {
             "name": "Orders",

@@ -419,7 +419,7 @@ class ProductController extends Controller
      *         in="query",
      *         description="Fiyatlandırma bağlamı (JSON)",
      *         required=false,
-     *         @OA\Schema(type="string", example="{\"order_quantity\": 10}")
+     *         @OA\Schema(type="string", example="order_quantity: 10")
      *     ),
      *     @OA\Response(
      *         response=200,

@@ -10,6 +10,7 @@ use App\Models\Campaign;
 use App\ValueObjects\Campaign\CampaignResult;
 use App\ValueObjects\Campaign\CartContext;
 use App\ValueObjects\Pricing\Discount;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class FreeShippingHandler implements CampaignHandlerInterface
@@ -19,7 +20,22 @@ class FreeShippingHandler implements CampaignHandlerInterface
         return $campaign->type === CampaignType::FREE_SHIPPING->value;
     }
 
-    public function apply(Campaign $campaign, CartContext $context): CampaignResult
+    public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
+    {
+        return $this->validateCampaign($campaign) && $this->validateContext($context);
+    }
+
+    public function getSupportedType(): string
+    {
+        return CampaignType::FREE_SHIPPING->value;
+    }
+
+    public function getPriority(): int
+    {
+        return 30; // Düşük öncelik (shipping)
+    }
+
+    public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
             // Validation chain

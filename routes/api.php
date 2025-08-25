@@ -34,7 +34,7 @@ use App\Http\Controllers\Api\CustomerController;
 | Authentication API Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/auth')->middleware('throttle:auth')->group(function () {
+Route::prefix('v1/auth')->middleware(['api', 'domain.cors', 'throttle:auth'])->group(function () {
     // Public authentication routes with stricter rate limiting
     Route::post('/login', [AuthController::class, 'login'])->name('api.auth.login');
     Route::post('/register', [AuthController::class, 'register'])->name('api.auth.register');
