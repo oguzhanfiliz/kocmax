@@ -91,6 +91,17 @@ class Product extends Model
     // Brand sistemi kaldırıldı - VariantType olarak kullanılacak
 
     /**
+     * Scope to find by ID or slug
+     */
+    public function scopeFindByIdOrSlug($query, $identifier)
+    {
+        return $query->where(function ($q) use ($identifier) {
+            $q->where('id', $identifier)
+              ->orWhere('slug', $identifier);
+        });
+    }
+
+    /**
      * Product belongs to many categories
      */
     public function categories(): BelongsToMany

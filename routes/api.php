@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +121,16 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Customer Type API Routes (Public with Domain Protection)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/customer')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Customer type detection - optional auth
+    Route::get('/type', [CustomerController::class, 'type'])->name('api.customer.type');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Product API Routes (Public with Optional Auth for Smart Pricing)
 |--------------------------------------------------------------------------
 */
@@ -133,9 +144,17 @@ Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
     
-    // Product detail route - MUST come last to avoid conflicts
+    // Product pricing endpoint - supports both ID and slug
+    Route::get('/{product}/pricing', [ProductController::class, 'pricing'])
+         ->middleware('auth.optional')
+         ->where('product', '[0-9]+|[a-z0-9\-]+')
+         ->name('api.products.pricing');
+    
+    // Product detail route - supports both ID and slug - MUST come last to avoid conflicts
     Route::get('/{product}', [ProductController::class, 'show'])
-         ->middleware('auth.optional')->name('api.products.show');
+         ->middleware('auth.optional')
+         ->where('product', '[0-9]+|[a-z0-9\-]+') // Accepts both ID (numbers) and slug (letters, numbers, hyphens)
+         ->name('api.products.show');
 });
 
 /*

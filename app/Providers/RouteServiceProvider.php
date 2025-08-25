@@ -24,6 +24,13 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Product model binding - supports both ID and slug
+        Route::bind('product', function ($value) {
+            return \App\Models\Product::where('id', $value)
+                ->orWhere('slug', $value)
+                ->firstOrFail();
+        });
+
         // Dynamic rate limiting based on environment - Development'ta çok yüksek limitler
         RateLimiter::for('api', function (Request $request) {
             $limit = app()->environment('local') ? 10000 : 100; // Development vs Production

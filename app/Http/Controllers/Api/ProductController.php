@@ -394,6 +394,201 @@ class ProductController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/v1/products/{product}/pricing",
+     *     operationId="getProductPricing",
+     *     tags={"Products", "Public API"},
+     *     summary="Ürün fiyatlandırma bilgilerini al (Public)",
+     *     description="Müşteri tipine göre ürün fiyatlandırma bilgilerini döndürür. Authentication opsiyonel.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="product",
+     *         in="path",
+     *         description="Ürün ID veya slug",
+     *         required=true,
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\Parameter(
+     *         name="currency",
+     *         in="query",
+     *         description="Para birimi",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"TRY", "USD", "EUR"}, example="TRY")
+     *     ),
+     *     @OA\Parameter(
+     *         name="context",
+     *         in="query",
+     *         description="Fiyatlandırma bağlamı (JSON)",
+     *         required=false,
+     *         @OA\Schema(type="string", example="{\"order_quantity\": 10}")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="İstek başarıyla tamamlandı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Ürün fiyatlandırma bilgileri başarıyla getirildi"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Güvenlik Ayakkabısı"),
+     *                 @OA\Property(property="slug", type="string", example="guvenlik-ayakkabisi"),
+     *                 @OA\Property(property="pricing", type="object",
+     *                     @OA\Property(property="base_price", type="number", format="float", example=150.00),
+     *                     @OA\Property(property="your_price", type="number", format="float", example=127.50),
+     *                     @OA\Property(property="currency", type="string", example="TRY"),
+     *                     @OA\Property(property="base_price_formatted", type="string", example="150,00 ₺"),
+     *                     @OA\Property(property="your_price_formatted", type="string", example="127,50 ₺"),
+     *                     @OA\Property(property="discount_percentage", type="number", format="float", example=15.0),
+     *                     @OA\Property(property="is_dealer_price", type="boolean", example=true),
+     *                     @OA\Property(property="customer_type", type="string", example="b2b"),
+     *                     @OA\Property(property="bulk_discounts", type="array", @OA\Items(
+     *                         @OA\Property(property="min_quantity", type="integer", example=10),
+     *                         @OA\Property(property="discount_percentage", type="number", format="float", example=5.0)
+     *                     ))
+     *                 ),
+     *                 @OA\Property(property="variants", type="array", @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="42 Numara Siyah"),
+     *                     @OA\Property(property="price", type="number", format="float", example=150.00),
+     *                     @OA\Property(property="stock", type="integer", example=25),
+     *                     @OA\Property(property="color", type="string", example="Siyah"),
+     *                     @OA\Property(property="size", type="string", example="42"),
+     *                     @OA\Property(property="is_active", type="boolean", example=true)
+     *                 ))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Ürün bulunamadı",
+     *         @OA\JsonContent(ref="#/components/responses/NotFound")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/responses/ValidationError")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Domain not allowed",
+     *         @OA\JsonContent(ref="#/components/responses/DomainNotAllowed")
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Rate limit exceeded",
+     *         @OA\JsonContent(ref="#/components/responses/RateLimitExceeded")
+     *     )
+     * )
+     */
+    public function pricing(Request $request, Product $product): JsonResponse
+    {
+        $validated = $request->validate([
+            'currency' => 'nullable|in:TRY,USD,EUR',
+            'context' => 'nullable|string',
+        ]);
+
+        // Parse context if provided
+        $context = [];
+        if (!empty($validated['context'])) {
+            $context = json_decode($validated['context'], true) ?? [];
+        }
+
+        // 🎯 Smart Pricing: Detect customer type for pricing
+        $customerInfo = $this->customerTypeDetector->detectFromRequest($request, $context);
+        
+        // Set context for resource transformation
+        $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
+
+        $product->load(['variants.images', 'categories', 'images']);
+
+        // Calculate pricing data
+        $pricingData = $this->calculateProductPricing($product, $customerInfo, $validated['currency'] ?? 'TRY');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ürün fiyatlandırma bilgileri başarıyla getirildi',
+            'data' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'pricing' => $pricingData,
+                'variants' => $product->variants->map(function ($variant) {
+                    return [
+                        'id' => $variant->id,
+                        'name' => $variant->name,
+                        'price' => app(\App\Services\CurrencyConversionService::class)->convertPrice(
+                            (float) ($variant->source_price ?? $variant->price),
+                            $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
+                            'TRY'
+                        ),
+                        'stock' => (int) $variant->stock,
+                        'color' => $variant->color,
+                        'size' => $variant->size,
+                        'is_active' => (bool) $variant->is_active,
+                    ];
+                }),
+            ],
+        ]);
+    }
+
+    /**
+     * Calculate product pricing based on customer type
+     */
+    private function calculateProductPricing(Product $product, array $customerInfo, string $currency = 'TRY'): array
+    {
+        $conversionService = app(\App\Services\CurrencyConversionService::class);
+        
+        // Convert base price to TRY
+        $basePriceTRY = $conversionService->convertPrice(
+            (float) $product->base_price,
+            $product->base_currency ?? 'TRY',
+            'TRY'
+        );
+
+        // Calculate customer-specific pricing
+        $customerType = $customerInfo['type'] ?? 'guest';
+        $isDealer = $customerInfo['is_dealer'] ?? false;
+        
+        // Base pricing
+        $pricing = [
+            'base_price' => $basePriceTRY,
+            'your_price' => $basePriceTRY,
+            'currency' => 'TRY',
+            'base_price_formatted' => $this->formatPrice($basePriceTRY, 'TRY'),
+            'your_price_formatted' => $this->formatPrice($basePriceTRY, 'TRY'),
+            'discount_percentage' => 0,
+            'is_dealer_price' => $isDealer,
+            'customer_type' => $customerType,
+            'bulk_discounts' => [],
+        ];
+
+        // Apply customer type discounts
+        if ($customerType === 'b2b' || $customerType === 'wholesale') {
+            $discountPercentage = $customerType === 'wholesale' ? 5.0 : 0.0;
+            $pricing['discount_percentage'] = $discountPercentage;
+            $pricing['your_price'] = $basePriceTRY * (1 - $discountPercentage / 100);
+            $pricing['your_price_formatted'] = $this->formatPrice($pricing['your_price'], 'TRY');
+        }
+
+        // Add bulk discounts
+        $pricing['bulk_discounts'] = [
+            ['min_quantity' => 10, 'discount_percentage' => 5.0],
+            ['min_quantity' => 50, 'discount_percentage' => 10.0],
+            ['min_quantity' => 100, 'discount_percentage' => 15.0],
+        ];
+
+        return $pricing;
+    }
+
+    /**
+     * Format price with currency
+     */
+    private function formatPrice(float $price, string $currency = 'TRY'): string
+    {
+        return number_format($price, 2, ',', '.') . ' ' . ($currency === 'TRY' ? '₺' : $currency);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/v1/products/search-suggestions",
      *     operationId="getProductSuggestions",
      *     tags={"Products", "Public API"},
