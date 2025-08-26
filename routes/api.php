@@ -29,6 +29,18 @@ use App\Http\Controllers\Api\CustomerController;
 |
 */
 
+// Global preflight handler for all API routes (reflect Origin, allow credentials)
+Route::middleware(['api', 'domain.cors'])->options('v1/{any}', function () {
+    $origin = request()->header('Origin', '*');
+    return response('', 204)
+        ->header('Access-Control-Allow-Origin', $origin)
+        ->header('Vary', 'Origin')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Key, Origin, Accept')
+        ->header('Access-Control-Allow-Credentials', 'true')
+        ->header('Access-Control-Max-Age', '86400');
+})->where('any', '.*');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication API Routes
