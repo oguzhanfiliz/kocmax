@@ -23,7 +23,7 @@ class DealerApplicationController extends Controller
         private DealerApplicationService $dealerApplicationService
     ) {
         $this->middleware('auth:sanctum')->except(['store']);
-        $this->middleware('throttle:dealer-applications')->only(['store']);
+        // $this->middleware('throttle:dealer-applications')->only(['store']); // Geçici olarak kapatıldı
     }
 
     /**
