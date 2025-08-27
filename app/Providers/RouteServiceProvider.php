@@ -73,6 +73,24 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute($limit)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Dealer application rate limiting - çok katı limit
+        RateLimiter::for('dealer-applications', function (Request $request) {
+            $limit = app()->environment('local') ? 100 : 3; // Development vs Production
+            $key = $request->user()?->id ?: $request->ip();
+            
+            return [
+                Limit::perHour($limit)->by($key)->response(function () {
+                    return response()->json([
+                        'error' => 'Too many dealer applications',
+                        'message' => 'Çok fazla bayi başvurusu yaptınız. Lütfen 1 saat bekleyin.',
+                        'retry_after' => 3600
+                    ], 429);
+                }),
+                // Günlük limit de ekle
+                Limit::perDay(app()->environment('local') ? 500 : 5)->by($key)
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

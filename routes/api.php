@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\DealerApplicationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -220,9 +221,40 @@ Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
     Route::post('/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.post-avatar'); // Frontend compatibility
     Route::delete('/avatar', [UserController::class, 'deleteAvatar'])->name('api.users.delete-avatar');
     
-    // Dealer application management
+    // Dealer application management - deprecated, use /dealer-applications endpoint
     Route::get('/dealer-status', [UserController::class, 'dealerStatus'])->name('api.users.dealer-status');
     Route::post('/dealer-application', [UserController::class, 'submitDealerApplication'])->name('api.users.dealer-application');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Dealer Application API Routes 
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/dealer-applications')->middleware(['api', 'domain.cors'])->group(function () {
+    // Public dealer application endpoint (includes user registration)
+    Route::post('/', [DealerApplicationController::class, 'store'])
+         ->middleware('throttle:dealer-applications')
+         ->name('api.dealer-applications.store');
+    
+    // Check if can apply (public endpoint)
+    Route::get('/can-apply', [DealerApplicationController::class, 'canApply'])
+         ->name('api.dealer-applications.can-apply');
+    
+    // Get status reference data (public endpoint)
+    Route::get('/statuses', [DealerApplicationController::class, 'statuses'])
+         ->name('api.dealer-applications.statuses');
+    
+    // Protected dealer application endpoints 
+    Route::middleware('auth:sanctum')->group(function () {
+        // Get current user's dealer application status
+        Route::get('/', [DealerApplicationController::class, 'index'])
+             ->name('api.dealer-applications.index');
+        
+        // Get specific dealer application details
+        Route::get('/{dealerApplication}', [DealerApplicationController::class, 'show'])
+             ->name('api.dealer-applications.show');
+    });
 });
 
 /*

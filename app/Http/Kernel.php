@@ -72,5 +72,6 @@ class Kernel extends HttpKernel
         'currency' => \App\Http\Middleware\CurrencyMiddleware::class,
         'domain.cors' => \App\Http\Middleware\DomainRestrictedCors::class,
         'cors' => \Illuminate\Http\Middleware\HandleCors::class,
+        'throttle.dealer-applications' => \App\Http\Middleware\ThrottleDealerApplication::class,
     ];
 }

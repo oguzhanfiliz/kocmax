@@ -105,3 +105,9 @@ Route::get('storage/{path}', function (Request $request, $path) {
 |*/
 
 
+// Ana sayfayı Filament Admin giriş ekranına yönlendir
+Route::get('/', function () {
+    return redirect('/admin/login');
+});
+
+

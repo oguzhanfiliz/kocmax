@@ -1,82 +1,182 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Observers;
 
 use App\Models\DealerApplication;
+use App\Jobs\SendDealerApplicationApprovedEmail;
+use App\Jobs\SendDealerApplicationRejectedEmail;
+use App\Jobs\SendDealerApplicationCreatedEmail;
+use App\Services\DealerApplication\DealerApplicationService;
+use App\Enums\DealerApplicationStatus;
+use Illuminate\Support\Facades\Log;
 
 class DealerApplicationObserver
 {
     /**
      * Handle the DealerApplication "created" event.
-     * DealerApplication "created" olayını yönetir.
      */
     public function created(DealerApplication $dealerApplication): void
     {
-        // This space is intentionally left blank.
-        // Burası kasıtlı olarak boş bırakılmıştır.
+        try {
+            // Admin'lere yeni başvuru bildirim e-postası gönder (queue ile)
+            SendDealerApplicationCreatedEmail::dispatch($dealerApplication);
+            
+            // Başvuru oluşturma logunu kaydet
+            Log::info('Yeni bayi başvurusu oluşturuldu', [
+                'application_id' => $dealerApplication->id,
+                'user_id' => $dealerApplication->user_id,
+                'company_name' => $dealerApplication->company_name,
+                'tax_number' => $dealerApplication->tax_number,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('DealerApplication created event hatası', [
+                'application_id' => $dealerApplication->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
      * Handle the DealerApplication "updated" event.
-     * DealerApplication "updated" olayını yönetir.
-     *
-     * This method is triggered when a DealerApplication model is updated.
-     * Bu yöntem, bir DealerApplication modeli güncellendiğinde tetiklenir.
-     *
-     * It checks if the 'status' attribute has been changed. If so, it sends an email to the user
-     * and updates the user's dealer code if the application is approved.
-     * 'status' özniteliğinin değiştirilip değiştirilmediğini kontrol eder. Eğer öyleyse, kullanıcıya bir e-posta gönderir
-     * ve başvuru onaylanırsa kullanıcının bayi kodunu günceller.
-     *
-     * @param  \App\Models\DealerApplication  $dealerApplication
-     * @return void
      */
     public function updated(DealerApplication $dealerApplication): void
     {
-        // Check if the 'status' attribute was changed.
-        // 'status' özniteliğinin değiştirilip değiştirilmediğini kontrol et.
-        if ($dealerApplication->isDirty('status')) {
-            // If the new status is 'approved', update the user's dealer code and send an approval email.
-            // Yeni durum 'onaylandı' ise, kullanıcının bayi kodunu güncelle ve bir onay e-postası gönder.
-            if ($dealerApplication->status === 'approved') {
-                $dealerApplication->user->update(['dealer_code' => 'DEALER-' . uniqid()]);
-                \Illuminate\Support\Facades\Mail::to($dealerApplication->user->email)->send(new \App\Mail\DealerApplicationApproved($dealerApplication));
+        try {
+            // Durum değişikliği kontrolü
+            if ($dealerApplication->isDirty('status')) {
+                $originalStatus = $dealerApplication->getOriginal('status');
+                $newStatus = $dealerApplication->status;
+                
+                Log::info('Bayi başvurusu durum değişikliği', [
+                    'application_id' => $dealerApplication->id,
+                    'user_id' => $dealerApplication->user_id,
+                    'old_status' => $originalStatus,
+                    'new_status' => $newStatus,
+                    'company_name' => $dealerApplication->company_name,
+                ]);
+                
+                if ($newStatus === DealerApplicationStatus::APPROVED) {
+                    // Service üzerinden onaylama işlemini yap
+                    app(DealerApplicationService::class)->approveApplication($dealerApplication);
+                    
+                    // Onay e-postasını queue ile gönder
+                    SendDealerApplicationApprovedEmail::dispatch($dealerApplication);
+                    
+                } elseif ($newStatus === DealerApplicationStatus::REJECTED) {
+                    // Service üzerinden red işlemini yap  
+                    app(DealerApplicationService::class)->rejectApplication($dealerApplication);
+                    
+                    // Red e-postasını queue ile gönder
+                    SendDealerApplicationRejectedEmail::dispatch($dealerApplication);
+                }
             }
-            // If the new status is 'rejected', send a rejection email.
-            // Yeni durum 'reddedildi' ise, bir ret e-postası gönder.
-            elseif ($dealerApplication->status === 'rejected') {
-                \Illuminate\Support\Facades\Mail::to($dealerApplication->user->email)->send(new \App\Mail\DealerApplicationRejected($dealerApplication));
+            
+            // Diğer önemli alan değişiklikleri için log
+            $importantFields = ['company_name', 'tax_number', 'authorized_person_name', 'email'];
+            $changedFields = [];
+            
+            foreach ($importantFields as $field) {
+                if ($dealerApplication->isDirty($field)) {
+                    $changedFields[$field] = [
+                        'old' => $dealerApplication->getOriginal($field),
+                        'new' => $dealerApplication->$field,
+                    ];
+                }
             }
+            
+            if (!empty($changedFields)) {
+                Log::info('Bayi başvurusu önemli alan güncellemesi', [
+                    'application_id' => $dealerApplication->id,
+                    'user_id' => $dealerApplication->user_id,
+                    'changed_fields' => $changedFields,
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('DealerApplication updated event hatası', [
+                'application_id' => $dealerApplication->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
     /**
      * Handle the DealerApplication "deleted" event.
-     * DealerApplication "deleted" olayını yönetir.
      */
     public function deleted(DealerApplication $dealerApplication): void
     {
-        // This space is intentionally left blank.
-        // Burası kasıtlı olarak boş bırakılmıştır.
+        try {
+            Log::warning('Bayi başvurusu silindi', [
+                'application_id' => $dealerApplication->id,
+                'user_id' => $dealerApplication->user_id,
+                'company_name' => $dealerApplication->company_name,
+                'tax_number' => $dealerApplication->tax_number,
+                'status' => $dealerApplication->status,
+            ]);
+            
+            // Eğer onaylanmış bir başvuru siliniyorsa kullanıcının bayi statüsünü kaldır
+            if ($dealerApplication->isApproved()) {
+                $dealerApplication->user->update([
+                    'is_approved_dealer' => false,
+                    'dealer_code' => null,
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('DealerApplication deleted event hatası', [
+                'application_id' => $dealerApplication->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
      * Handle the DealerApplication "restored" event.
-     * DealerApplication "restored" olayını yönetir.
      */
     public function restored(DealerApplication $dealerApplication): void
     {
-        // This space is intentionally left blank.
-        // Burası kasıtlı olarak boş bırakılmıştır.
+        try {
+            Log::info('Bayi başvurusu geri yüklendi', [
+                'application_id' => $dealerApplication->id,
+                'user_id' => $dealerApplication->user_id,
+                'company_name' => $dealerApplication->company_name,
+                'status' => $dealerApplication->status,
+            ]);
+            
+            // Eğer onaylanmış bir başvuru geri yükleniyorsa kullanıcının bayi statüsünü geri ver
+            if ($dealerApplication->isApproved()) {
+                app(DealerApplicationService::class)->approveApplication($dealerApplication);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('DealerApplication restored event hatası', [
+                'application_id' => $dealerApplication->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
      * Handle the DealerApplication "force deleted" event.
-     * DealerApplication "force deleted" olayını yönetir.
      */
     public function forceDeleted(DealerApplication $dealerApplication): void
     {
-        // This space is intentionally left blank.
-        // Burası kasıtlı olarak boş bırakılmıştır.
+        try {
+            Log::critical('Bayi başvurusu kalıcı olarak silindi', [
+                'application_id' => $dealerApplication->id,
+                'user_id' => $dealerApplication->user_id,
+                'company_name' => $dealerApplication->company_name,
+                'tax_number' => $dealerApplication->tax_number,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('DealerApplication forceDeleted event hatası', [
+                'application_id' => $dealerApplication->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

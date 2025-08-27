@@ -410,22 +410,11 @@ class UserController extends Controller
      */
     public function dealerStatus(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load(['latestDealerApplication', 'pricingTier']);
         
         return response()->json([
             'success' => true,
-            'data' => [
-                'is_dealer' => $user->is_dealer,
-                'is_approved_dealer' => $user->is_approved_dealer,
-                'dealer_application_status' => $this->getDealerApplicationStatus($user),
-                'dealer_application_date' => $user->dealer_application_date,
-                'dealer_approval_date' => $user->dealer_approval_date,
-                'pricing_tier' => $user->pricingTier ? [
-                    'id' => $user->pricingTier->id,
-                    'name' => $user->pricingTier->name,
-                    'discount_percentage' => $user->pricingTier->discount_percentage
-                ] : null
-            ],
+            'data' => $user->dealer_status,
             'message' => 'Bayi durumu başarıyla alındı'
         ]);
     }

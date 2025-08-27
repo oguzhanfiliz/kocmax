@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -110,6 +111,40 @@ class User extends Authenticatable implements FilamentUser
     public function isDealer(): bool
     {
         return $this->hasRole('dealer') || $this->is_approved_dealer;
+    }
+
+    /**
+     * Get user's dealer applications.
+     */
+    public function dealerApplications(): HasMany
+    {
+        return $this->hasMany(DealerApplication::class);
+    }
+
+    /**
+     * Get user's latest dealer application.
+     */
+    public function latestDealerApplication(): HasOne
+    {
+        return $this->hasOne(DealerApplication::class)->latestOfMany();
+    }
+
+    /**
+     * Get dealer status information for API.
+     */
+    public function getDealerStatusAttribute(): array
+    {
+        $application = $this->latestDealerApplication;
+        
+        return [
+            'is_dealer' => $this->is_approved_dealer ?? false,
+            'dealer_code' => $this->dealer_code,
+            'has_application' => !is_null($application),
+            'application_status' => $application?->status?->value,
+            'application_status_label' => $application?->status?->getLabel(),
+            'application_date' => $application?->created_at?->toISOString(),
+            'company_name' => $application?->company_name ?? $this->company_name,
+        ];
     }
 
     /**
