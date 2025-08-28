@@ -127,6 +127,25 @@ Uygulama http://localhost:8000 adresinde çalışacak.
 - URL: http://localhost:8000/admin
 - Test kullanıcısı: `php artisan make:test-user` komutuyla oluşturulabilir
 
+### Sıfırdan Klon Sonrası Hızlı Yetkilendirme Kurulumu
+
+Proje sıfırdan klonlandıktan sonra, rol/izin (RBAC) altyapısının hazır hale gelmesi için aşağıdaki komutları sırasıyla çalıştırın:
+
+```bash
+# 1) PHP bağımlılıklarını yükle
+composer install
+
+# 2) Filament Shield ile tüm izin ve rollerin oluşturulması
+php artisan shield:generate --all
+
+# 3) Admin rolü için gerekli izinlerin tohumlanması
+php artisan db:seed --class=PermissionSeederForAdminRole
+```
+
+Notlar:
+- Bu adımlardan önce `.env` dosyanızı hazırlayıp veritabanı bağlantınızı sağlamış olmanız gerekir.
+- Gerekirse migration ve seed işlemlerini (`php artisan migrate --seed`) önce çalıştırın.
+
 ### Önemli Komutlar
 
 #### Geliştirme

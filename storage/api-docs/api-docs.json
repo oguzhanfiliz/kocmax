@@ -3588,17 +3588,17 @@
                                                         "USD": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.0340000000000000024424906541753443889319896697998046875
+                                                            "example": 0.034
                                                         },
                                                         "EUR": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.0309999999999999997779553950749686919152736663818359375
+                                                            "example": 0.031
                                                         },
                                                         "GBP": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.0269999999999999996946886682280819513835012912750244140625
+                                                            "example": 0.027
                                                         }
                                                     },
                                                     "type": "object"
@@ -3687,7 +3687,7 @@
                                                 "converted_amount": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 3.4199999999999999289457264239899814128875732421875
+                                                    "example": 3.42
                                                 },
                                                 "from_currency": {
                                                     "type": "string",
@@ -3700,7 +3700,7 @@
                                                 "exchange_rate": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 0.0340000000000000024424906541753443889319896697998046875
+                                                    "example": 0.034
                                                 },
                                                 "converted_at": {
                                                     "type": "string",
@@ -3941,6 +3941,546 @@
                         "domain_protection": []
                     }
                 ]
+            }
+        },
+        "/api/v1/dealer-applications": {
+            "get": {
+                "tags": [
+                    "Dealer Applications"
+                ],
+                "summary": "Kullanıcının bayi başvuru durumunu getir",
+                "description": "Kimliği doğrulanmış kullanıcının bayi başvurusunun mevcut durumunu döndürür.",
+                "operationId": "getDealerApplicationsIndex",
+                "responses": {
+                    "200": {
+                        "description": "Başvuru durumu başarıyla alındı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "has_application": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "can_apply": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "is_dealer": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "dealer_code": {
+                                            "type": "string",
+                                            "example": "BAYI-ABC-2025-0456",
+                                            "nullable": true
+                                        },
+                                        "application": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 456
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                },
+                                                "status_label": {
+                                                    "type": "string",
+                                                    "example": "Beklemede"
+                                                },
+                                                "status_color": {
+                                                    "type": "string",
+                                                    "example": "warning"
+                                                },
+                                                "status_emoji": {
+                                                    "type": "string",
+                                                    "example": "⏳"
+                                                },
+                                                "company_name": {
+                                                    "type": "string",
+                                                    "example": "ABC İş Güvenliği Ltd. Şti."
+                                                },
+                                                "authorized_person_name": {
+                                                    "type": "string",
+                                                    "example": "Ahmet Yılmaz"
+                                                },
+                                                "authorized_person_phone": {
+                                                    "type": "string",
+                                                    "example": "05321234567"
+                                                },
+                                                "tax_number": {
+                                                    "type": "string",
+                                                    "example": "1234567890"
+                                                },
+                                                "tax_office": {
+                                                    "type": "string",
+                                                    "example": "Kadıköy"
+                                                },
+                                                "business_field": {
+                                                    "type": "string",
+                                                    "example": "İş Güvenliği Danışmanlığı"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Dealer Applications"
+                ],
+                "summary": "Bayi başvurusu oluştur (kullanıcı kaydı ile)",
+                "description": "Public endpoint: Yeni kullanıcı oluşturur ve bayi başvurusu kaydeder. multipart/form-data bekler.",
+                "operationId": "storeDealerApplication",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "user_name",
+                                    "user_email",
+                                    "user_password",
+                                    "user_password_confirmation",
+                                    "user_phone",
+                                    "company_name",
+                                    "authorized_person_name",
+                                    "authorized_person_phone",
+                                    "tax_number",
+                                    "tax_office",
+                                    "address",
+                                    "email",
+                                    "business_field",
+                                    "trade_registry_document",
+                                    "tax_plate_document"
+                                ],
+                                "properties": {
+                                    "user_name": {
+                                        "type": "string",
+                                        "example": "Ahmet Yılmaz"
+                                    },
+                                    "user_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ahmet@example.com"
+                                    },
+                                    "user_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "user_password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "user_phone": {
+                                        "type": "string",
+                                        "example": "05321234567"
+                                    },
+                                    "company_name": {
+                                        "type": "string",
+                                        "example": "ABC İş Güvenliği Ltd. Şti."
+                                    },
+                                    "authorized_person_name": {
+                                        "type": "string",
+                                        "example": "Ahmet Yılmaz"
+                                    },
+                                    "authorized_person_phone": {
+                                        "type": "string",
+                                        "example": "05321234567"
+                                    },
+                                    "tax_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "tax_office": {
+                                        "type": "string",
+                                        "example": "Kadıköy"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Kadıköy Mah. İnönü Cad. No:123 Kadıköy/İstanbul"
+                                    },
+                                    "landline_phone": {
+                                        "type": "string",
+                                        "example": "02161234567",
+                                        "nullable": true
+                                    },
+                                    "website": {
+                                        "type": "string",
+                                        "example": "https://www.example.com",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ahmet@example.com"
+                                    },
+                                    "business_field": {
+                                        "type": "string",
+                                        "example": "İş Güvenliği Danışmanlığı"
+                                    },
+                                    "reference_companies": {
+                                        "type": "string",
+                                        "example": "XYZ Şirketi, ABC Şirketi",
+                                        "nullable": true
+                                    },
+                                    "trade_registry_document": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "tax_plate_document": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Başvuru ve kullanıcı başarıyla oluşturuldu",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bayi başvurunuz ve kullanıcı hesabınız başarıyla oluşturuldu. Başvurunuz incelemeye alınmıştır."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Ahmet Yılmaz"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "ahmet@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "05321234567"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "application": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 456
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                },
+                                                "status_label": {
+                                                    "type": "string",
+                                                    "example": "Beklemede"
+                                                },
+                                                "company_name": {
+                                                    "type": "string",
+                                                    "example": "ABC İş Güvenliği Ltd. Şti."
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/dealer-applications/{dealerApplication}": {
+            "get": {
+                "tags": [
+                    "Dealer Applications"
+                ],
+                "summary": "Bayi başvuru detayını getir",
+                "description": "Kimliği doğrulanmış kullanıcının kendi başvurusunun detayını döndürür.",
+                "operationId": "showDealerApplication",
+                "parameters": [
+                    {
+                        "name": "dealerApplication",
+                        "in": "path",
+                        "description": "Başvuru ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 456
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Başvuru detayı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "application": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "approved"
+                                                },
+                                                "status_label": {
+                                                    "type": "string",
+                                                    "example": "Onaylandı"
+                                                },
+                                                "status_color": {
+                                                    "type": "string",
+                                                    "example": "success"
+                                                },
+                                                "status_emoji": {
+                                                    "type": "string",
+                                                    "example": "✅"
+                                                },
+                                                "company_name": {
+                                                    "type": "string"
+                                                },
+                                                "authorized_person_name": {
+                                                    "type": "string"
+                                                },
+                                                "authorized_person_phone": {
+                                                    "type": "string"
+                                                },
+                                                "tax_number": {
+                                                    "type": "string"
+                                                },
+                                                "tax_office": {
+                                                    "type": "string"
+                                                },
+                                                "address": {
+                                                    "type": "string"
+                                                },
+                                                "landline_phone": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "website": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "business_field": {
+                                                    "type": "string"
+                                                },
+                                                "reference_companies": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/dealer-applications/can-apply": {
+            "get": {
+                "tags": [
+                    "Dealer Applications"
+                ],
+                "summary": "Başvuru yapabilir mi?",
+                "description": "Public endpoint: Giriş yapmamış veya yapmış kullanıcı için başvuru yapılabilir mi bilgisini döndürür.",
+                "operationId": "canApplyDealer",
+                "responses": {
+                    "200": {
+                        "description": "Bilgi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "can_apply": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bayi başvurusu yapabilirsiniz."
+                                        },
+                                        "is_dealer": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "dealer_code": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dealer-applications/statuses": {
+            "get": {
+                "tags": [
+                    "Dealer Applications"
+                ],
+                "summary": "Başvuru status referansları",
+                "description": "Public endpoint: Başvuru status referanslarını döndürür.",
+                "operationId": "dealerApplicationStatuses",
+                "responses": {
+                    "200": {
+                        "description": "Status listesi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "statuses": {
+                                            "properties": {
+                                                "pending": {
+                                                    "properties": {
+                                                        "value": {
+                                                            "type": "string",
+                                                            "example": "pending"
+                                                        },
+                                                        "label": {
+                                                            "type": "string",
+                                                            "example": "Beklemede"
+                                                        },
+                                                        "color": {
+                                                            "type": "string",
+                                                            "example": "warning"
+                                                        },
+                                                        "emoji": {
+                                                            "type": "string",
+                                                            "example": "⏳"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "approved": {
+                                                    "properties": {
+                                                        "value": {
+                                                            "type": "string",
+                                                            "example": "approved"
+                                                        },
+                                                        "label": {
+                                                            "type": "string",
+                                                            "example": "Onaylandı"
+                                                        },
+                                                        "color": {
+                                                            "type": "string",
+                                                            "example": "success"
+                                                        },
+                                                        "emoji": {
+                                                            "type": "string",
+                                                            "example": "✅"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "rejected": {
+                                                    "properties": {
+                                                        "value": {
+                                                            "type": "string",
+                                                            "example": "rejected"
+                                                        },
+                                                        "label": {
+                                                            "type": "string",
+                                                            "example": "Reddedildi"
+                                                        },
+                                                        "color": {
+                                                            "type": "string",
+                                                            "example": "danger"
+                                                        },
+                                                        "emoji": {
+                                                            "type": "string",
+                                                            "example": "❌"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/v1/orders": {
@@ -7771,7 +8311,7 @@
                         "description": "TRY cinsinden döviz kuru",
                         "type": "number",
                         "format": "float",
-                        "example": 29.449999999999999289457264239899814128875732421875
+                        "example": 29.45
                     },
                     "is_default": {
                         "description": "Varsayılan para birimi mi?",
@@ -8773,6 +9313,10 @@
         {
             "name": "Protected API",
             "description": "Authenticated endpoints requiring Bearer token"
+        },
+        {
+            "name": "Dealer Applications",
+            "description": "Dealer Applications"
         }
     ]
 }

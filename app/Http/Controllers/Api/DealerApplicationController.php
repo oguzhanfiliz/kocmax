@@ -27,6 +27,40 @@ class DealerApplicationController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/dealer-applications",
+     *     summary="Kullanıcının bayi başvuru durumunu getir",
+     *     description="Kimliği doğrulanmış kullanıcının bayi başvurusunun mevcut durumunu döndürür.",
+     *     operationId="getDealerApplicationsIndex",
+     *     tags={"Dealer Applications"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Başvuru durumu başarıyla alındı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="has_application", type="boolean", example=true),
+     *             @OA\Property(property="can_apply", type="boolean", example=false),
+     *             @OA\Property(property="is_dealer", type="boolean", example=false),
+     *             @OA\Property(property="dealer_code", type="string", nullable=true, example="BAYI-ABC-2025-0456"),
+     *             @OA\Property(property="application", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=456),
+     *                 @OA\Property(property="status", type="string", example="pending"),
+     *                 @OA\Property(property="status_label", type="string", example="Beklemede"),
+     *                 @OA\Property(property="status_color", type="string", example="warning"),
+     *                 @OA\Property(property="status_emoji", type="string", example="⏳"),
+     *                 @OA\Property(property="company_name", type="string", example="ABC İş Güvenliği Ltd. Şti."),
+     *                 @OA\Property(property="authorized_person_name", type="string", example="Ahmet Yılmaz"),
+     *                 @OA\Property(property="authorized_person_phone", type="string", example="05321234567"),
+     *                 @OA\Property(property="tax_number", type="string", example="1234567890"),
+     *                 @OA\Property(property="tax_office", type="string", example="Kadıköy"),
+     *                 @OA\Property(property="business_field", type="string", example="İş Güvenliği Danışmanlığı"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
      * Get current user's dealer application status.
      */
     public function index(): JsonResponse
@@ -76,6 +110,63 @@ class DealerApplicationController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/v1/dealer-applications",
+     *     summary="Bayi başvurusu oluştur (kullanıcı kaydı ile)",
+     *     description="Public endpoint: Yeni kullanıcı oluşturur ve bayi başvurusu kaydeder. multipart/form-data bekler.",
+     *     operationId="storeDealerApplication",
+     *     tags={"Dealer Applications"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"user_name","user_email","user_password","user_password_confirmation","user_phone","company_name","authorized_person_name","authorized_person_phone","tax_number","tax_office","address","email","business_field","trade_registry_document","tax_plate_document"},
+     *                 @OA\Property(property="user_name", type="string", example="Ahmet Yılmaz"),
+     *                 @OA\Property(property="user_email", type="string", format="email", example="ahmet@example.com"),
+     *                 @OA\Property(property="user_password", type="string", format="password", example="password123"),
+     *                 @OA\Property(property="user_password_confirmation", type="string", format="password", example="password123"),
+     *                 @OA\Property(property="user_phone", type="string", example="05321234567"),
+     *                 @OA\Property(property="company_name", type="string", example="ABC İş Güvenliği Ltd. Şti."),
+     *                 @OA\Property(property="authorized_person_name", type="string", example="Ahmet Yılmaz"),
+     *                 @OA\Property(property="authorized_person_phone", type="string", example="05321234567"),
+     *                 @OA\Property(property="tax_number", type="string", example="1234567890"),
+     *                 @OA\Property(property="tax_office", type="string", example="Kadıköy"),
+     *                 @OA\Property(property="address", type="string", example="Kadıköy Mah. İnönü Cad. No:123 Kadıköy/İstanbul"),
+     *                 @OA\Property(property="landline_phone", type="string", nullable=true, example="02161234567"),
+     *                 @OA\Property(property="website", type="string", nullable=true, example="https://www.example.com"),
+     *                 @OA\Property(property="email", type="string", format="email", example="ahmet@example.com"),
+     *                 @OA\Property(property="business_field", type="string", example="İş Güvenliği Danışmanlığı"),
+     *                 @OA\Property(property="reference_companies", type="string", nullable=true, example="XYZ Şirketi, ABC Şirketi"),
+     *                 @OA\Property(property="trade_registry_document", type="string", format="binary"),
+     *                 @OA\Property(property="tax_plate_document", type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Başvuru ve kullanıcı başarıyla oluşturuldu",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Bayi başvurunuz ve kullanıcı hesabınız başarıyla oluşturuldu. Başvurunuz incelemeye alınmıştır."),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=123),
+     *                 @OA\Property(property="name", type="string", example="Ahmet Yılmaz"),
+     *                 @OA\Property(property="email", type="string", example="ahmet@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="05321234567")
+     *             ),
+     *             @OA\Property(property="application", type="object",
+     *                 @OA\Property(property="id", type="integer", example=456),
+     *                 @OA\Property(property="status", type="string", example="pending"),
+     *                 @OA\Property(property="status_label", type="string", example="Beklemede"),
+     *                 @OA\Property(property="company_name", type="string", example="ABC İş Güvenliği Ltd. Şti."),
+     *                 @OA\Property(property="created_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation Error"),
+     *     @OA\Response(response=500, description="Server Error")
+     * )
      * Create a new dealer application with user registration.
      */
     public function store(StoreDealerApplicationRequest $request): JsonResponse
@@ -180,6 +271,45 @@ class DealerApplicationController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/dealer-applications/{dealerApplication}",
+     *     summary="Bayi başvuru detayını getir",
+     *     description="Kimliği doğrulanmış kullanıcının kendi başvurusunun detayını döndürür.",
+     *     operationId="showDealerApplication",
+     *     tags={"Dealer Applications"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="dealerApplication", in="path", required=true, description="Başvuru ID",
+     *         @OA\Schema(type="integer", example=456)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Başvuru detayı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="application", type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="status", type="string", example="approved"),
+     *                 @OA\Property(property="status_label", type="string", example="Onaylandı"),
+     *                 @OA\Property(property="status_color", type="string", example="success"),
+     *                 @OA\Property(property="status_emoji", type="string", example="✅"),
+     *                 @OA\Property(property="company_name", type="string"),
+     *                 @OA\Property(property="authorized_person_name", type="string"),
+     *                 @OA\Property(property="authorized_person_phone", type="string"),
+     *                 @OA\Property(property="tax_number", type="string"),
+     *                 @OA\Property(property="tax_office", type="string"),
+     *                 @OA\Property(property="address", type="string"),
+     *                 @OA\Property(property="landline_phone", type="string", nullable=true),
+     *                 @OA\Property(property="website", type="string", nullable=true),
+     *                 @OA\Property(property="email", type="string"),
+     *                 @OA\Property(property="business_field", type="string"),
+     *                 @OA\Property(property="reference_companies", type="string", nullable=true),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
      * Display the specified dealer application.
      */
     public function show(DealerApplication $dealerApplication): JsonResponse
@@ -218,6 +348,23 @@ class DealerApplicationController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/dealer-applications/can-apply",
+     *     summary="Başvuru yapabilir mi?",
+     *     description="Public endpoint: Giriş yapmamış veya yapmış kullanıcı için başvuru yapılabilir mi bilgisini döndürür.",
+     *     operationId="canApplyDealer",
+     *     tags={"Dealer Applications"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Bilgi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="can_apply", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Bayi başvurusu yapabilirsiniz."),
+     *             @OA\Property(property="is_dealer", type="boolean", example=false),
+     *             @OA\Property(property="dealer_code", type="string", nullable=true)
+     *         )
+     *     )
+     * )
      * Check if user can apply for dealer status.
      */
     public function canApply(): JsonResponse
@@ -248,6 +395,39 @@ class DealerApplicationController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/dealer-applications/statuses",
+     *     summary="Başvuru status referansları",
+     *     description="Public endpoint: Başvuru status referanslarını döndürür.",
+     *     operationId="dealerApplicationStatuses",
+     *     tags={"Dealer Applications"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status listesi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="statuses", type="object",
+     *                 @OA\Property(property="pending", type="object",
+     *                     @OA\Property(property="value", type="string", example="pending"),
+     *                     @OA\Property(property="label", type="string", example="Beklemede"),
+     *                     @OA\Property(property="color", type="string", example="warning"),
+     *                     @OA\Property(property="emoji", type="string", example="⏳")
+     *                 ),
+     *                 @OA\Property(property="approved", type="object",
+     *                     @OA\Property(property="value", type="string", example="approved"),
+     *                     @OA\Property(property="label", type="string", example="Onaylandı"),
+     *                     @OA\Property(property="color", type="string", example="success"),
+     *                     @OA\Property(property="emoji", type="string", example="✅")
+     *                 ),
+     *                 @OA\Property(property="rejected", type="object",
+     *                     @OA\Property(property="value", type="string", example="rejected"),
+     *                     @OA\Property(property="label", type="string", example="Reddedildi"),
+     *                     @OA\Property(property="color", type="string", example="danger"),
+     *                     @OA\Property(property="emoji", type="string", example="❌")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
      * Get application statuses for reference.
      */
     public function statuses(): JsonResponse
