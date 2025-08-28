@@ -58,6 +58,13 @@ class ProductController extends Controller
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Parameter(
+     *         name="category_slug",
+     *         in="query",
+     *         description="Kategori slug'ına göre filtrele",
+     *         required=false,
+     *         @OA\Schema(type="string", example="is-guvenlik-ayakkabilari")
+     *     ),
+     *     @OA\Parameter(
      *         name="categories",
      *         in="query",
      *         description="Birden fazla kategori ID'sine göre filtrele (virgülle ayrılmış)",
@@ -175,6 +182,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'search' => 'nullable|string|max:255',
             'category_id' => 'nullable|integer|exists:categories,id',
+            'category_slug' => 'nullable|string|exists:categories,slug',
             'categories' => 'nullable|string',
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0',
@@ -212,6 +220,11 @@ class ProductController extends Controller
         // Category filter
         if (!empty($validated['category_id'])) {
             $query->whereHas('categories', fn($q) => $q->where('categories.id', $validated['category_id']));
+        }
+
+        // Category slug filter
+        if (!empty($validated['category_slug'])) {
+            $query->whereHas('categories', fn($q) => $q->where('categories.slug', $validated['category_slug']));
         }
 
         // Multiple categories filter

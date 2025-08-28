@@ -12,7 +12,8 @@ class StoreDealerApplicationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        // Bu endpoint herkese açıktır (kayıt + başvuru). Kimlik doğrulaması gerekmez.
+        return true;
     }
 
     /**
