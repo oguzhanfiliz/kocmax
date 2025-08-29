@@ -136,7 +136,7 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         $monthsAsCustomer = $customerSince->diffInMonths(now());
         
         $totalOrders = $customer->orders()->completed()->count();
-        $totalSpent = $customer->orders()->completed()->sum('total_amount');
+        $totalSpent = (float) ($customer->orders()->completed()->sum('total_amount') ?? 0);
 
         // Loyalty discount based on relationship duration
         if ($monthsAsCustomer >= 12) {

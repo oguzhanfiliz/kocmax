@@ -51,18 +51,21 @@ class CampaignPricingService
             }
 
             // CartContext oluştur
-            $cartContext = new CartContext(
-                items: collect($cartItems)->map(function ($item) {
-                    return [
-                        'product_id' => $item['variant']->product_id,
-                        'variant_id' => $item['variant']->id,
-                        'quantity' => $item['quantity'],
-                        'price' => $item['variant']->price,
-                        'category_ids' => $item['variant']->product->categories->pluck('id')->toArray()
-                    ];
-                }),
+            $cartItemsArray = collect($cartItems)->map(function ($item) {
+                return [
+                    'product_id' => $item['variant']->product_id,
+                    'variant_id' => $item['variant']->id,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['variant']->price,
+                    'category_ids' => $item['variant']->product->categories->pluck('id')->toArray()
+                ];
+            })->toArray();
+
+            $cartContext = CartContext::fromItems(
+                items: $cartItemsArray,
                 totalAmount: $totalAmount,
                 customerType: $customerType,
+                customerId: $user?->id,
                 metadata: $context
             );
 

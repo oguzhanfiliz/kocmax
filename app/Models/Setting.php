@@ -178,22 +178,36 @@ class Setting extends Model
      */
     public static function getValue(string $key, mixed $default = null): mixed
     {
-        return Cache::remember("setting_{$key}", 3600, function () use ($key, $default) {
+        $cacheKey = 'setting_' . md5($key);
+        
+        try {
+            return Cache::remember($cacheKey, 3600, function () use ($key, $default) {
+                try {
+                    $setting = static::where('key', $key)->first();
+                    $value = $setting?->value ?? $default;
+                    
+                    // Ensure array values are properly formatted
+                    if (is_array($value)) {
+                        return $value;
+                    }
+                    
+                    return $value;
+                } catch (\Exception $e) {
+                    \Log::warning("Error getting setting {$key}: " . $e->getMessage());
+                    return $default;
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::warning("Cache error for setting {$key}: " . $e->getMessage());
+            // Fallback to direct database query
             try {
                 $setting = static::where('key', $key)->first();
-                $value = $setting?->value ?? $default;
-                
-                // Ensure array values are properly formatted
-                if (is_array($value)) {
-                    return $value;
-                }
-                
-                return $value;
-            } catch (\Exception $e) {
-                \Log::warning("Error getting setting {$key}: " . $e->getMessage());
+                return $setting?->value ?? $default;
+            } catch (\Exception $dbError) {
+                \Log::error("Database error for setting {$key}: " . $dbError->getMessage());
                 return $default;
             }
-        });
+        }
     }
 
     /**
@@ -201,17 +215,35 @@ class Setting extends Model
      */
     public static function setValue(string $key, mixed $value, ?string $group = null): bool
     {
-        $setting = static::firstOrNew(['key' => $key]);
-        
-        if (!$setting->exists) {
-            $setting->group = $group ?? 'general';
-            $setting->type = static::inferType($value);
+        try {
+            $setting = static::firstOrNew(['key' => $key]);
+            
+            if (!$setting->exists) {
+                $setting->group = $group ?? 'general';
+                $setting->type = static::inferType($value);
+            }
+            
+            $setting->value = $value;
+            $setting->updated_by = auth()->id();
+            
+            $saved = $setting->save();
+            
+            if ($saved) {
+                // Clear related caches
+                try {
+                    Cache::forget('setting_' . md5($key));
+                    Cache::forget("settings_group_{$setting->group}");
+                    Cache::forget('public_settings');
+                } catch (\Exception $e) {
+                    \Log::warning("Cache clear error for setting {$key}: " . $e->getMessage());
+                }
+            }
+            
+            return $saved;
+        } catch (\Exception $e) {
+            \Log::error("Error setting value for key {$key}: " . $e->getMessage());
+            return false;
         }
-        
-        $setting->value = $value;
-        $setting->updated_by = auth()->id();
-        
-        return $setting->save();
     }
 
     /**

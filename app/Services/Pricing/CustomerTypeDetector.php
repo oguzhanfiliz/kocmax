@@ -118,7 +118,7 @@ class CustomerTypeDetector
 
         // Determine customer tier based on order history and type
         $totalOrders = $customer->orders()->completed()->count();
-        $totalSpent = $customer->orders()->completed()->sum('total_amount');
+        $totalSpent = (float) ($customer->orders()->completed()->sum('total_amount') ?? 0);
 
         if ($customerType->isB2B()) {
             return match(true) {

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('product_variants', function (Blueprint $table) {
             // Add source currency fields
             $table->string('source_currency', 3)->default('TRY')->after('currency_code');
-            $table->decimal('source_price', 10, 2)->after('price');
+            $table->decimal('source_price', 10, 2)->default(0)->after('price');
             
             // Index for performance
             $table->index(['source_currency']);

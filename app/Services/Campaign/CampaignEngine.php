@@ -51,7 +51,7 @@ class CampaignEngine
             }
 
             // Aktif kampanyaları getir
-            $activeCampaigns = $this->getActiveCampaigns($context->getCustomerType());
+            $activeCampaigns = $this->getActiveCampaigns($context);
             
             $results = new Collection();
 
@@ -171,10 +171,10 @@ class CampaignEngine
         }
     }
 
-    private function getActiveCampaigns(string $customerType): Collection
+    private function getActiveCampaigns(CartContext $context): Collection
     {
         return Campaign::active()
-            ->forCustomerType($customerType)
+            ->forCustomerType($context->getCustomerType())
             ->whereIn('type', $this->handlers->keys())
             ->get();
     }

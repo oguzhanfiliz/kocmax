@@ -18,7 +18,7 @@ class CartOverviewWidget extends BaseWidget
         try {
             $activeCarts = Cart::where('updated_at', '>=', now()->subHours(24))->count();
             $abandonedCarts = Cart::whereBetween('updated_at', [now()->subWeek(), now()->subHours(24)])->count();
-            $totalCartValue = Cart::where('updated_at', '>=', now()->subDay())->sum('total_amount') ?? 0;
+            $totalCartValue = (float) (Cart::where('updated_at', '>=', now()->subDay())->sum('total_amount') ?? 0);
             
             // Cart conversion rate (carts converted to orders in last 30 days)
             $cartsWithOrders = DB::table('carts')
@@ -27,13 +27,13 @@ class CartOverviewWidget extends BaseWidget
                 ->count();
             
             $totalCartsLast30Days = Cart::where('created_at', '>=', now()->subDays(30))->count();
-            $conversionRate = $totalCartsLast30Days > 0 ? ($cartsWithOrders / $totalCartsLast30Days) * 100 : 0;
+            $conversionRate = (float) ($totalCartsLast30Days > 0 ? ($cartsWithOrders / $totalCartsLast30Days) * 100 : 0);
         } catch (\Exception $e) {
             // Hata durumunda varsayılan değerler
             $activeCarts = 0;
             $abandonedCarts = 0;
-            $totalCartValue = 0;
-            $conversionRate = 0;
+            $totalCartValue = 0.0;
+            $conversionRate = 0.0;
         }
 
         return [

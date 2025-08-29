@@ -196,11 +196,11 @@ class CustomerPricingTier extends Model
 
     private function getTotalRevenue(): float
     {
-        return Order::whereHas('user', function ($query) {
+        return (float) (Order::whereHas('user', function ($query) {
                 $query->where('pricing_tier_id', $this->id);
             })
             ->where('status', 'completed')
-            ->sum('total_amount') ?? 0;
+            ->sum('total_amount') ?? 0);
     }
 
     private function getAverageOrderValue(): float

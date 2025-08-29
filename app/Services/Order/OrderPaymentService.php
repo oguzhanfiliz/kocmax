@@ -239,12 +239,12 @@ class OrderPaymentService
     private function getCurrentCreditUsage($user): float
     {
         // Calculate current credit usage from unpaid B2B orders
-        return Order::where('user_id', $user->id)
+        return (float) (Order::where('user_id', $user->id)
             ->where('customer_type', 'B2B')
             ->where('payment_method', 'credit')
             ->where('payment_status', '!=', 'paid')
             ->whereNotIn('status', ['cancelled', 'delivered'])
-            ->sum('total_amount');
+            ->sum('total_amount') ?? 0);
     }
 
     private function updateCreditUsage($user, float $amount): void

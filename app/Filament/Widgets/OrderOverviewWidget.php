@@ -25,10 +25,10 @@ class OrderOverviewWidget extends BaseWidget
         $pendingOrders = Order::where('status', 'pending')->count();
         
         // Bu ayki toplam satış
-        $monthlySales = Order::whereMonth('created_at', now()->month)
+        $monthlySales = (float) (Order::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->where('payment_status', 'paid')
-            ->sum('total_amount');
+            ->sum('total_amount') ?? 0);
 
         // İşlenen siparişler (bugün)
         $processedToday = Order::whereDate('updated_at', today())

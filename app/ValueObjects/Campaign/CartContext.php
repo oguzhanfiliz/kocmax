@@ -12,6 +12,7 @@ class CartContext
         private readonly Collection $items, // Cart items with product, variant, quantity
         private readonly float $totalAmount,
         private readonly string $customerType = 'guest',
+        private readonly ?int $customerId = null,
         private readonly array $metadata = []
     ) {}
 
@@ -28,6 +29,11 @@ class CartContext
     public function getCustomerType(): string
     {
         return $this->customerType;
+    }
+
+    public function getCustomerId(): ?int
+    {
+        return $this->customerId;
     }
 
     public function getMetadata(): array
@@ -89,7 +95,43 @@ class CartContext
             $this->items,
             $this->totalAmount,
             $this->customerType,
+            $this->customerId,
             $metadata
         );
+    }
+
+    /**
+     * Factory method for easy creation from cart data
+     */
+    public static function fromCart(array $cartData): self
+    {
+        $items = collect($cartData['items'] ?? []);
+        $totalAmount = (float) ($cartData['total'] ?? 0);
+        $customerType = $cartData['customer_type'] ?? 'guest';
+        $customerId = $cartData['customer_id'] ?? null;
+        
+        return new self($items, $totalAmount, $customerType, $customerId, $cartData);
+    }
+
+    /**
+     * Factory method for creating from array of items
+     */
+    public static function fromItems(array $items, float $totalAmount, string $customerType = 'guest', ?int $customerId = null, array $metadata = []): self
+    {
+        return new self(collect($items), $totalAmount, $customerType, $customerId, $metadata);
+    }
+
+    /**
+     * Convert to array for logging/debugging
+     */
+    public function toArray(): array
+    {
+        return [
+            'items' => $this->items->toArray(),
+            'total_amount' => $this->totalAmount,
+            'customer_type' => $this->customerType,
+            'customer_id' => $this->customerId,
+            'metadata' => $this->metadata,
+        ];
     }
 }

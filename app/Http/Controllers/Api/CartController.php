@@ -563,12 +563,12 @@ class CartController extends Controller
                     'unit_price' => $item->unit_price,
                     'total_price' => $item->total_price,
                 ];
-            })->toArray();
+            });
 
             $customerType = $user && $user->is_approved_dealer ? 'b2b' : ($user ? 'b2c' : 'guest');
             
-            $context = new CartContext(
-                items: $cartItems,
+            $context = CartContext::fromItems(
+                items: $cartItems->toArray(),
                 totalAmount: $cart->total_amount,
                 customerType: $customerType,
                 customerId: $user?->id
