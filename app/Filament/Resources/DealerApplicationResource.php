@@ -162,21 +162,31 @@ class DealerApplicationResource extends Resource
                     ->description('Bayi başvurusu için gerekli belgeler')
                     ->schema([
                         Grid::make(2)->schema([
-                            Forms\Components\FileUpload::make('trade_registry_document_path')
+                            Forms\Components\TextInput::make('trade_registry_document_path')
                                 ->label('Ticaret Sicil Gazetesi')
-                                ->required()
-                                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                                ->maxSize(5120)
-                                ->directory('dealer-applications/trade-registry')
-                                ->visibility('private'),
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->suffixAction(
+                                    Forms\Components\Actions\Action::make('download_trade_registry_modal')
+                                        ->label('İndir')
+                                        ->icon('heroicon-o-arrow-down-tray')
+                                        ->visible(fn ($record) => $record && $record->trade_registry_document_path)
+                                        ->url(fn ($record) => $record && $record->trade_registry_document_path ? route('admin.files.show', ['path' => $record->trade_registry_document_path]) : '#')
+                                        ->openUrlInNewTab()
+                                ),
                             
-                            Forms\Components\FileUpload::make('tax_plate_document_path')
+                            Forms\Components\TextInput::make('tax_plate_document_path')
                                 ->label('Vergi Levhası')
-                                ->required()
-                                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                                ->maxSize(5120)
-                                ->directory('dealer-applications/tax-plate')
-                                ->visibility('private'),
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->suffixAction(
+                                    Forms\Components\Actions\Action::make('download_tax_plate_modal')
+                                        ->label('İndir')
+                                        ->icon('heroicon-o-arrow-down-tray')
+                                        ->visible(fn ($record) => $record && $record->tax_plate_document_path)
+                                        ->url(fn ($record) => $record && $record->tax_plate_document_path ? route('admin.files.show', ['path' => $record->tax_plate_document_path]) : '#')
+                                        ->openUrlInNewTab()
+                                ),
                         ]),
                     ])
                     ->columns(1),
@@ -281,6 +291,19 @@ class DealerApplicationResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('download_trade_registry')
+                    ->label('Ticaret Sicil Gazetesi')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn (DealerApplication $record): bool => (bool) $record->trade_registry_document_path)
+                    ->url(fn (DealerApplication $record): string => route('admin.files.show', ['path' => $record->trade_registry_document_path]))
+                    ->openUrlInNewTab(),
+
+                Tables\Actions\Action::make('download_tax_plate')
+                    ->label('Vergi Levhası')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->visible(fn (DealerApplication $record): bool => (bool) $record->tax_plate_document_path)
+                    ->url(fn (DealerApplication $record): string => route('admin.files.show', ['path' => $record->tax_plate_document_path]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('approve')
                     ->label('Onayla')
                     ->color('success')

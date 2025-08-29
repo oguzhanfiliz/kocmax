@@ -1,6 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
+// Admin dosya indirme (Filament oturumuyla korunur)
+Route::middleware(['web', 'auth'])
+    ->get('/admin/files/{path}', [\App\Http\Controllers\Admin\AdminFileController::class, 'show'])
+    ->where('path', '.*')
+    ->name('admin.files.show');
+
 use Illuminate\Http\Request;
 
 /*

@@ -79,8 +79,10 @@ class DealerApplicationService
             'dealer_code' => $dealerCode,
         ]);
 
-        // Status'u approved yap
-        $application->update(['status' => DealerApplicationStatus::APPROVED]);
+        // Status'u approved yap - Observer'ı tetiklememek için withoutEvents kullan
+        $application->withoutEvents(function () use ($application) {
+            $application->update(['status' => DealerApplicationStatus::APPROVED]);
+        });
 
         Log::info('Bayi başvurusu onaylandı', [
             'application_id' => $application->id,
@@ -109,8 +111,10 @@ class DealerApplicationService
             ]);
         }
 
-        // Status'u rejected yap
-        $application->update(['status' => DealerApplicationStatus::REJECTED]);
+        // Status'u rejected yap - Observer'ı tetiklememek için withoutEvents kullan
+        $application->withoutEvents(function () use ($application) {
+            $application->update(['status' => DealerApplicationStatus::REJECTED]);
+        });
 
         Log::info('Bayi başvurusu reddedildi', [
             'application_id' => $application->id,

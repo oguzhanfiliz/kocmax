@@ -44,7 +44,7 @@ class DealerApplicationObserver
     public function updated(DealerApplication $dealerApplication): void
     {
         try {
-            // Durum değişikliği kontrolü
+            // Durum değişikliği kontrolü - sonsuz döngüyü önlemek için
             if ($dealerApplication->isDirty('status')) {
                 $originalStatus = $dealerApplication->getOriginal('status');
                 $newStatus = $dealerApplication->status;
@@ -57,17 +57,12 @@ class DealerApplicationObserver
                     'company_name' => $dealerApplication->company_name,
                 ]);
                 
+                // Sadece e-posta gönderimi yap, service çağrısı yapma
                 if ($newStatus === DealerApplicationStatus::APPROVED) {
-                    // Service üzerinden onaylama işlemini yap
-                    app(DealerApplicationService::class)->approveApplication($dealerApplication);
-                    
                     // Onay e-postasını queue ile gönder
                     SendDealerApplicationApprovedEmail::dispatch($dealerApplication);
                     
                 } elseif ($newStatus === DealerApplicationStatus::REJECTED) {
-                    // Service üzerinden red işlemini yap  
-                    app(DealerApplicationService::class)->rejectApplication($dealerApplication);
-                    
                     // Red e-postasını queue ile gönder
                     SendDealerApplicationRejectedEmail::dispatch($dealerApplication);
                 }
