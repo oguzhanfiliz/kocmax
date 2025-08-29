@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class ThrottleDealerApplication
@@ -15,6 +16,26 @@ class ThrottleDealerApplication
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Localhost ve development için rate limiting'i devre dışı bırak
+        if ($request->header('Origin') === 'http://localhost:3000' || 
+            $request->header('Origin') === 'https://localhost:3000' ||
+            $request->ip() === '127.0.0.1' ||
+            $request->ip() === '::1' ||
+            $request->ip() === 'localhost' ||
+            str_contains($request->ip(), '192.168.') ||
+            str_contains($request->ip(), '10.') ||
+            app()->environment() === 'local' ||
+            app()->environment() === 'development') {
+            
+            Log::info('Rate limiting devre dışı - localhost/development', [
+                'ip' => $request->ip(),
+                'origin' => $request->header('Origin'),
+                'environment' => app()->environment()
+            ]);
+            
+            return $next($request);
+        }
+        
         $key = $this->resolveRequestSignature($request);
         
         $maxAttempts = 3; // 3 başvuru

@@ -14,6 +14,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Infolist;
 use App\Filament\Widgets\CacheManagementWidget;
 use App\Filament\Widgets\CartOverviewWidget;
+use App\Filament\Actions\ClearRateLimitsAction;
 use App\Filament\Widgets\OrderOverviewWidget;
 use App\Filament\Widgets\PricingOverviewWidget;
 use App\Filament\Widgets\SalesTrendChartWidget;
@@ -229,6 +230,39 @@ class Dashboard extends BaseDashboard
                                 ->title('Hata!')
                                 ->warning()
                                 ->body('Filament önbellek temizlenemedi. Manuel temizleme gerekebilir.')
+                                ->send();
+                        }
+                    }),
+                    
+                Action::make('clear_rate_limits')
+                    ->label('Rate Limitleri Temizle')
+                    ->icon('heroicon-o-shield-exclamation')
+                    ->color('danger')
+                    ->tooltip('Tüm rate limiting cache\'lerini temizler')
+                    ->requiresConfirmation()
+                    ->modalHeading('Rate Limitleri Temizle')
+                    ->modalDescription('Tüm rate limiting cache\'lerini temizlemek istediğinizden emin misiniz? Bu işlem tüm kullanıcıların rate limitlerini sıfırlar.')
+                    ->modalSubmitActionLabel('Evet, Temizle')
+                    ->modalCancelActionLabel('İptal')
+                    ->action(function () {
+                        try {
+                            $exitCode = Artisan::call('rate-limits:clear', ['--all' => true]);
+                            
+                            if ($exitCode === 0) {
+                                Notification::make()
+                                    ->title('Rate Limitler Temizlendi!')
+                                    ->success()
+                                    ->body('Tüm rate limiting cache\'leri başarıyla temizlendi.')
+                                    ->send();
+                            } else {
+                                throw new \Exception('Komut başarısız oldu. Exit code: ' . $exitCode);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('Rate limits clear error: ' . $e->getMessage());
+                            Notification::make()
+                                ->title('Hata!')
+                                ->danger()
+                                ->body('Rate limitler temizlenirken bir hata oluştu: ' . $e->getMessage())
                                 ->send();
                         }
                     }),

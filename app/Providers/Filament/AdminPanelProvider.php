@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\Setting;
+use App\Filament\Actions\ClearRateLimitsAction;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -67,6 +68,10 @@ class AdminPanelProvider extends PanelProvider
                 'İçerik Yönetimi',
                 'Sistem',
                 'Genel Ayarlar'
-            ]);
+            ])
+            ->globalSearchKeyBindings([
+                'ctrl+k',
+            ])
+            ->sidebarCollapsibleOnDesktop();
     }
 }

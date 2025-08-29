@@ -234,7 +234,6 @@ Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
 Route::prefix('v1/dealer-applications')->middleware(['api', 'domain.cors'])->group(function () {
     // Public dealer application endpoint (includes user registration)
     Route::post('/', [DealerApplicationController::class, 'store'])
-         ->middleware('throttle:dealer-applications')
          ->name('api.dealer-applications.store');
     
     // Check if can apply (public endpoint)
@@ -346,6 +345,17 @@ Route::prefix('v1/settings')->middleware(['api', 'throttle:public'])->group(func
 | Slider API Routes (Public with Domain Protection)
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| File Access Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/files')->middleware(['api', 'auth:sanctum'])->group(function () {
+    Route::get('/{path}', [App\Http\Controllers\Api\FileController::class, 'show'])
+         ->where('path', '.*')
+         ->name('api.files.show');
+});
+
 Route::prefix('v1/sliders')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
     // Public slider routes - accessible by frontend without authentication
     Route::get('/', [SliderController::class, 'index'])->name('api.sliders.index');

@@ -202,14 +202,109 @@ class DealerApplicationController extends Controller
             $tradeRegistryPath = null;
             $taxPlatePath = null;
 
+            // Debug: Dosya bilgilerini logla
+            Log::info('=== DOSYA YÜKLEME DEBUG BAŞLANGIÇ ===');
+            Log::info('Request Content-Type: ' . $request->header('Content-Type'));
+            Log::info('Request Method: ' . $request->method());
+            Log::info('Request URL: ' . $request->fullUrl());
+            
+            Log::info('Dosya kontrolleri:', [
+                'has_trade_registry' => $request->hasFile('trade_registry_document'),
+                'has_tax_plate' => $request->hasFile('tax_plate_document'),
+            ]);
+            
+            Log::info('Tüm dosyalar:', [
+                'all_files' => $request->allFiles(),
+                'files_array' => $request->file(),
+            ]);
+            
+            Log::info('Tüm input verileri:', [
+                'all_input' => $request->all(),
+            ]);
+            
+            // Dosya detayları
             if ($request->hasFile('trade_registry_document')) {
-                $tradeRegistryPath = $request->file('trade_registry_document')
-                    ->store('dealer-applications/trade-registry', 'private');
+                $tradeFile = $request->file('trade_registry_document');
+                Log::info('Trade registry dosya detayları:', [
+                    'original_name' => $tradeFile->getClientOriginalName(),
+                    'mime_type' => $tradeFile->getMimeType(),
+                    'size' => $tradeFile->getSize(),
+                    'is_valid' => $tradeFile->isValid(),
+                    'error' => $tradeFile->getError(),
+                ]);
             }
-
+            
             if ($request->hasFile('tax_plate_document')) {
-                $taxPlatePath = $request->file('tax_plate_document')
-                    ->store('dealer-applications/tax-plate', 'private');
+                $taxFile = $request->file('tax_plate_document');
+                Log::info('Tax plate dosya detayları:', [
+                    'original_name' => $taxFile->getClientOriginalName(),
+                    'mime_type' => $taxFile->getMimeType(),
+                    'size' => $taxFile->getSize(),
+                    'is_valid' => $taxFile->isValid(),
+                    'error' => $taxFile->getError(),
+                ]);
+            }
+            
+            Log::info('=== DOSYA YÜKLEME DEBUG BİTİŞ ===');
+
+            try {
+                // Laravel'in built-in dosya yükleme sistemi
+                if ($request->hasFile('trade_registry_document') && $request->file('trade_registry_document')->isValid()) {
+                    $tradeRegistryPath = $request->file('trade_registry_document')
+                        ->store('dealer-applications/trade-registry', 'private');
+                    
+                    // Eğer store() false döndürürse, alternatif yöntem kullan
+                    if ($tradeRegistryPath === false) {
+                        $tradeFile = $request->file('trade_registry_document');
+                        $tradeFileName = time() . '_' . $tradeFile->getClientOriginalName();
+                        $tradeRegistryPath = 'dealer-applications/trade-registry/' . $tradeFileName;
+                        
+                        $success = Storage::disk('private')->put($tradeRegistryPath, file_get_contents($tradeFile->getRealPath()));
+                        
+                        if (!$success) {
+                            throw new \Exception('Trade registry dosyası yüklenemedi');
+                        }
+                    }
+                    
+                    Log::info('Trade registry dosyası yüklendi', [
+                        'path' => $tradeRegistryPath,
+                        'exists' => Storage::disk('private')->exists($tradeRegistryPath)
+                    ]);
+                } else {
+                    Log::warning('Trade registry dosyası bulunamadı veya geçersiz');
+                }
+
+                if ($request->hasFile('tax_plate_document') && $request->file('tax_plate_document')->isValid()) {
+                    $taxPlatePath = $request->file('tax_plate_document')
+                        ->store('dealer-applications/tax-plate', 'private');
+                    
+                    // Eğer store() false döndürürse, alternatif yöntem kullan
+                    if ($taxPlatePath === false) {
+                        $taxFile = $request->file('tax_plate_document');
+                        $taxFileName = time() . '_' . $taxFile->getClientOriginalName();
+                        $taxPlatePath = 'dealer-applications/tax-plate/' . $taxFileName;
+                        
+                        $success = Storage::disk('private')->put($taxPlatePath, file_get_contents($taxFile->getRealPath()));
+                        
+                        if (!$success) {
+                            throw new \Exception('Tax plate dosyası yüklenemedi');
+                        }
+                    }
+                    
+                    Log::info('Tax plate dosyası yüklendi', [
+                        'path' => $taxPlatePath,
+                        'exists' => Storage::disk('private')->exists($taxPlatePath)
+                    ]);
+                } else {
+                    Log::warning('Tax plate dosyası bulunamadı veya geçersiz');
+                }
+            } catch (\Exception $fileException) {
+                Log::error('Dosya yükleme hatası', [
+                    'error' => $fileException->getMessage(),
+                    'trace' => $fileException->getTraceAsString(),
+                ]);
+                
+                throw new \Exception('Dosya yükleme işlemi başarısız oldu. Lütfen tekrar deneyin.');
             }
 
             // Application data'yı hazırla
