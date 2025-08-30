@@ -41,7 +41,7 @@ class ProductController extends Controller
      *     operationId="getProducts",
      *     tags={"Products", "Public API"},
      *     summary="Filtreleme ve arama ile ürün listesini al (Public)",
-     *     description="Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Authentication gerektirmez, guest pricing kullanır. Production'da domain koruması aktiftir.",
+     *     description="Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Akıllı fiyatlandırma sistemi ile müşteri tipine göre fiyatlar hesaplanır. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
      *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="search",
@@ -337,21 +337,28 @@ class ProductController extends Controller
      *     operationId="getProduct",
      *     tags={"Products", "Public API"},
      *     summary="Tek ürün ayrıntılarını al (Public)",
-     *     description="Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Authentication gerektirmez, guest pricing kullanır.",
+     *     description="Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Akıllı fiyatlandırma sistemi ile müşteri tipine göre fiyatlar hesaplanır. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
      *     security={{"domain_protection": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="Ürün ID'si",
+     *         description="Ürün ID'si veya slug",
      *         required=true,
-     *         @OA\Schema(type="integer", example=1)
+     *         @OA\Schema(type="string", example="1")
      *     ),
      *     @OA\Parameter(
      *         name="currency",
      *         in="query",
-     *         description="Fiyat gösterimi için para birimi",
+     *         description="Fiyat gösterimi için para birimi (şu anda sadece TRY destekleniyor)",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"TRY", "USD", "EUR"}, example="TRY")
+     *         @OA\Schema(type="string", enum={"TRY"}, example="TRY")
+     *     ),
+     *     @OA\Parameter(
+     *         name="quantity",
+     *         in="query",
+     *         description="Fiyat hesaplaması için adet (varsayılan: 1)",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\Response(
      *         response=200,

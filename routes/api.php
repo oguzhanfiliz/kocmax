@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DealerApplicationController;
+use App\Http\Controllers\Api\PricingSystemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,10 +145,22 @@ Route::prefix('v1/customer')->middleware(['api', 'domain.cors', 'throttle:public
 
 /*
 |--------------------------------------------------------------------------
+| Pricing System API Routes (Public)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/pricing')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+    // Pricing system endpoints
+    Route::get('/customer-types', [PricingSystemController::class, 'getCustomerTypes'])->name('api.pricing.customer-types');
+    Route::get('/rules', [PricingSystemController::class, 'getPricingRules'])->name('api.pricing.rules');
+    Route::get('/calculate', [PricingSystemController::class, 'calculatePricing'])->name('api.pricing.calculate');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Product API Routes (Public with Optional Auth for Smart Pricing)
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
+Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public', 'pricing.headers'])->group(function () {
     // 🎯 Smart Pricing: Optional authentication - if user is logged in, show personalized prices
     // Public product catalog routes with optional auth middleware
     Route::get('/', [ProductController::class, 'index'])

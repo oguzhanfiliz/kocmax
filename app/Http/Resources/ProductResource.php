@@ -43,6 +43,22 @@ use App\Services\Pricing\CustomerTypeDetectorService;
  *         @OA\Property(property="name", type="string", example="Güvenlik Ekipmanları"),
  *         @OA\Property(property="slug", type="string", example="guvenlik-ekipmanlari")
  *     )),
+ *     @OA\Property(property="pricing", type="object",
+ *         @OA\Property(property="base_price", type="number", format="float", example=150.00, description="Ürünün liste fiyatı"),
+ *         @OA\Property(property="your_price", type="number", format="float", example=127.50, description="Müşteri tipine göre hesaplanan fiyat"),
+ *         @OA\Property(property="your_price_formatted", type="string", example="127,50 ₺", description="Formatlanmış fiyat"),
+ *         @OA\Property(property="base_price_formatted", type="string", example="150,00 ₺", description="Formatlanmış liste fiyatı"),
+ *         @OA\Property(property="currency", type="string", example="TRY", description="Para birimi"),
+ *         @OA\Property(property="price_type", type="string", example="👤 Bireysel Fiyat", description="Fiyat tipi etiketi"),
+ *         @OA\Property(property="customer_type", type="string", enum={"B2C", "B2B", "WHOLESALE", "RETAIL"}, example="B2C", description="Müşteri tipi"),
+ *         @OA\Property(property="discount_percentage", type="number", format="float", example=15.0, description="İndirim yüzdesi"),
+ *         @OA\Property(property="discount_amount", type="number", format="float", example=22.50, description="İndirim tutarı"),
+ *         @OA\Property(property="savings_amount", type="number", format="float", example=22.50, description="Tasarruf tutarı"),
+ *         @OA\Property(property="smart_pricing_enabled", type="boolean", example=true, description="Akıllı fiyatlandırma aktif mi"),
+ *         @OA\Property(property="is_dealer_price", type="boolean", example=false, description="Bayi fiyatı mı"),
+ *         @OA\Property(property="pricing_tier", type="string", nullable=true, example="Premium", description="Fiyatlandırma katmanı"),
+ *         @OA\Property(property="quantity", type="integer", example=1, description="Hesaplama için kullanılan adet")
+ *     ),
  *     @OA\Property(property="variants", type="array", @OA\Items(
  *         @OA\Property(property="id", type="integer", example=1),
  *         @OA\Property(property="name", type="string", example="42 Numara Siyah"),
@@ -51,7 +67,23 @@ use App\Services\Pricing\CustomerTypeDetectorService;
  *         @OA\Property(property="stock", type="integer", example=25),
  *         @OA\Property(property="color", type="string", example="Siyah"),
  *         @OA\Property(property="size", type="string", example="42"),
- *         @OA\Property(property="is_active", type="boolean", example=true)
+ *         @OA\Property(property="is_active", type="boolean", example=true),
+ *         @OA\Property(property="pricing", type="object",
+ *             @OA\Property(property="base_price", type="number", format="float", example=150.00),
+ *             @OA\Property(property="your_price", type="number", format="float", example=127.50),
+ *             @OA\Property(property="your_price_formatted", type="string", example="127,50 ₺"),
+ *             @OA\Property(property="base_price_formatted", type="string", example="150,00 ₺"),
+ *             @OA\Property(property="currency", type="string", example="TRY"),
+ *             @OA\Property(property="price_type", type="string", example="👤 Bireysel Fiyat"),
+ *             @OA\Property(property="customer_type", type="string", enum={"B2C", "B2B", "WHOLESALE", "RETAIL"}, example="B2C"),
+ *             @OA\Property(property="discount_percentage", type="number", format="float", example=15.0),
+ *             @OA\Property(property="discount_amount", type="number", format="float", example=22.50),
+ *             @OA\Property(property="savings_amount", type="number", format="float", example=22.50),
+ *             @OA\Property(property="smart_pricing_enabled", type="boolean", example=true),
+ *             @OA\Property(property="is_dealer_price", type="boolean", example=false),
+ *             @OA\Property(property="pricing_tier", type="string", nullable=true, example="Premium"),
+ *             @OA\Property(property="quantity", type="integer", example=1)
+ *         )
  *     )),
  *     @OA\Property(property="variants_count", type="integer", example=5),
  *     @OA\Property(property="in_stock", type="boolean", example=true),
@@ -184,6 +216,8 @@ class ProductResource extends JsonResource
                             'alt_text' => $image->alt_text,
                             'is_primary' => (bool) $image->is_primary,
                         ]) : [],
+                    // 🔥 Varyant için de pricing rules uygula
+                    'pricing' => $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled),
                 ])
             ),
             'variants_count' => $this->whenCounted('variants'),
@@ -215,6 +249,9 @@ class ProductResource extends JsonResource
         $basePrice = (float) $this->base_price;
         $user = $customerInfo['user'];
         
+        // Quantity parametresini al (default: 1)
+        $quantity = (int) request()->get('quantity', 1);
+        
         // Base currency conversion (respect product base currency, e.g., EUR → TRY)
         $sourceCurrency = $this->base_currency ?? 'TRY';
         $basePriceConverted = $this->pricingService->convertPrice($basePrice, $sourceCurrency, $currency);
@@ -234,8 +271,8 @@ class ProductResource extends JsonResource
             ];
         }
         
-        // 🔥 Smart Pricing Logic
-        $discountPercentage = $this->customerTypeDetector->getDiscountPercentage($user);
+        // 🔥 Smart Pricing Logic - PricingRule'lardan indirim al
+        $discountPercentage = $this->customerTypeDetector->getDiscountPercentage($user, $quantity);
         $discountAmount = $basePriceConverted * ($discountPercentage / 100);
         $yourPrice = $basePriceConverted - $discountAmount;
         $priceType = $this->customerTypeDetector->getTypeLabel($customerInfo['type']);
@@ -254,6 +291,65 @@ class ProductResource extends JsonResource
             'smart_pricing_enabled' => true,
             'is_dealer_price' => $customerInfo['is_dealer'],
             'pricing_tier' => $user?->pricingTier?->name,
+            'quantity' => $quantity,
+        ];
+    }
+
+    /**
+     * 🎯 Varyant için smart pricing calculation
+     */
+    private function calculateVariantPricing($variant, array $customerInfo, bool $smartPricingEnabled): array
+    {
+        $basePrice = (float) ($variant->source_price ?? $variant->price);
+        $user = $customerInfo['user'];
+        
+        // Quantity parametresini al (default: 1)
+        $quantity = (int) request()->get('quantity', 1);
+        
+        // Base currency conversion
+        $sourceCurrency = $variant->source_currency ?? ($variant->currency_code ?? 'TRY');
+        $basePriceConverted = app(\App\Services\CurrencyConversionService::class)->convertPrice(
+            $basePrice, 
+            $sourceCurrency, 
+            'TRY'
+        );
+        
+        if (!$smartPricingEnabled) {
+            // Legacy mode - just return base price
+            return [
+                'base_price' => $basePriceConverted,
+                'your_price' => $basePriceConverted,
+                'your_price_formatted' => $this->formatPrice($basePriceConverted, 'TRY'),
+                'currency' => 'TRY',
+                'price_type' => 'Liste Fiyatı',
+                'discount_percentage' => 0.0,
+                'discount_amount' => 0.0,
+                'savings_amount' => 0.0,
+                'smart_pricing_enabled' => false,
+            ];
+        }
+        
+        // 🔥 Smart Pricing Logic - PricingRule'lardan indirim al
+        $discountPercentage = $this->customerTypeDetector->getDiscountPercentage($user, $quantity);
+        $discountAmount = $basePriceConverted * ($discountPercentage / 100);
+        $yourPrice = $basePriceConverted - $discountAmount;
+        $priceType = $this->customerTypeDetector->getTypeLabel($customerInfo['type']);
+        
+        return [
+            'base_price' => $basePriceConverted,
+            'your_price' => $yourPrice,
+            'your_price_formatted' => $this->formatPrice($yourPrice, 'TRY'),
+            'base_price_formatted' => $this->formatPrice($basePriceConverted, 'TRY'),
+            'currency' => 'TRY',
+            'price_type' => $priceType,
+            'customer_type' => $customerInfo['type'],
+            'discount_percentage' => $discountPercentage,
+            'discount_amount' => $discountAmount,
+            'savings_amount' => $discountAmount,
+            'smart_pricing_enabled' => true,
+            'is_dealer_price' => $customerInfo['is_dealer'],
+            'pricing_tier' => $user?->pricingTier?->name,
+            'quantity' => $quantity,
         ];
     }
 

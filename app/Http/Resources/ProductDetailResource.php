@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Services\MultiCurrencyPricingService;
+use App\Services\Pricing\CustomerTypeDetectorService;
 
 /**
  * @OA\Schema(
@@ -63,11 +64,13 @@ use App\Services\MultiCurrencyPricingService;
 class ProductDetailResource extends JsonResource
 {
     private MultiCurrencyPricingService $pricingService;
+    private CustomerTypeDetectorService $customerTypeDetector;
 
     public function __construct($resource)
     {
         parent::__construct($resource);
         $this->pricingService = app(MultiCurrencyPricingService::class);
+        $this->customerTypeDetector = app(CustomerTypeDetectorService::class);
     }
 
     public function toArray($request): array
@@ -115,6 +118,8 @@ class ProductDetailResource extends JsonResource
                             'is_primary' => (bool) $image->is_primary,
                             'sort_order' => $image->sort_order,
                         ]) : [],
+                    // 🔥 Varyant için de pricing rules uygula
+                    'pricing' => $this->calculateVariantPricing($variant),
                 ])
             ),
             'reviews' => $this->whenLoaded('reviews', function () {
@@ -187,6 +192,71 @@ class ProductDetailResource extends JsonResource
                 ];
             }),
         ]);
+    }
+
+    /**
+     * 🎯 Varyant için smart pricing calculation
+     */
+    private function calculateVariantPricing($variant): array
+    {
+        $basePrice = (float) ($variant->source_price ?? $variant->price);
+        
+        // Customer info'yu al
+        $customerInfo = app()->bound('api_customer_info') ? app('api_customer_info') : [
+            'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
+        ];
+        $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : true;
+        
+        $user = $customerInfo['user'];
+        
+        // Quantity parametresini al (default: 1)
+        $quantity = (int) request()->get('quantity', 1);
+        
+        // Base currency conversion
+        $sourceCurrency = $variant->source_currency ?? ($variant->currency_code ?? 'TRY');
+        $basePriceConverted = app(\App\Services\CurrencyConversionService::class)->convertPrice(
+            $basePrice, 
+            $sourceCurrency, 
+            'TRY'
+        );
+        
+        if (!$smartPricingEnabled) {
+            // Legacy mode - just return base price
+            return [
+                'base_price' => $basePriceConverted,
+                'your_price' => $basePriceConverted,
+                'your_price_formatted' => $this->formatPrice($basePriceConverted, 'TRY'),
+                'currency' => 'TRY',
+                'price_type' => 'Liste Fiyatı',
+                'discount_percentage' => 0.0,
+                'discount_amount' => 0.0,
+                'savings_amount' => 0.0,
+                'smart_pricing_enabled' => false,
+            ];
+        }
+        
+        // 🔥 Smart Pricing Logic - PricingRule'lardan indirim al
+        $discountPercentage = $this->customerTypeDetector->getDiscountPercentage($user, $quantity);
+        $discountAmount = $basePriceConverted * ($discountPercentage / 100);
+        $yourPrice = $basePriceConverted - $discountAmount;
+        $priceType = $this->customerTypeDetector->getTypeLabel($customerInfo['type']);
+        
+        return [
+            'base_price' => $basePriceConverted,
+            'your_price' => $yourPrice,
+            'your_price_formatted' => $this->formatPrice($yourPrice, 'TRY'),
+            'base_price_formatted' => $this->formatPrice($basePriceConverted, 'TRY'),
+            'currency' => 'TRY',
+            'price_type' => $priceType,
+            'customer_type' => $customerInfo['type'],
+            'discount_percentage' => $discountPercentage,
+            'discount_amount' => $discountAmount,
+            'savings_amount' => $discountAmount,
+            'smart_pricing_enabled' => true,
+            'is_dealer_price' => $customerInfo['is_dealer'],
+            'pricing_tier' => $user?->pricingTier?->name,
+            'quantity' => $quantity,
+        ];
     }
 
     private function formatPrice(float $price, string $currency): string

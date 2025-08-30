@@ -24,6 +24,8 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="company_name", type="string", nullable=true, example="ABC Company"),
  *     @OA\Property(property="tax_number", type="string", nullable=true, example="1234567890"),
  *     @OA\Property(property="business_type", type="string", nullable=true, example="Safety Equipment Retailer"),
+ *     @OA\Property(property="customer_type", type="string", enum={"b2b", "b2c", "guest", "wholesale", "retail"}, example="b2b", description="Müşteri tipi"),
+ *     @OA\Property(property="customer_type_label", type="string", example="Business to Business", description="Müşteri tipi etiketi"),
  *     @OA\Property(property="pricing_tier", type="object", nullable=true,
  *         @OA\Property(property="id", type="integer"),
  *         @OA\Property(property="name", type="string"),
@@ -58,6 +60,10 @@ class UserResource extends JsonResource
             'company_name' => $this->company_name,
             'tax_number' => $this->tax_number,
             'business_type' => $this->business_type,
+            
+            // Customer type information
+            'customer_type' => $this->getCustomerType()->value,
+            'customer_type_label' => $this->getCustomerType()->getLabel(),
             
             // Pricing tier information
             'pricing_tier' => $this->whenLoaded('pricingTier', function () {

@@ -34,7 +34,7 @@ class CustomerTypeDetectorService
     public function getCustomerType(?User $user): string
     {
         if (!$user) {
-            return 'guest';
+            return 'B2C';
         }
         
         if ($user->is_approved_dealer) {
@@ -60,19 +60,40 @@ class CustomerTypeDetectorService
     /**
      * Müşteri tipine göre indirim yüzdesi hesapla
      */
-    public function getDiscountPercentage(?User $user): float
+    public function getDiscountPercentage(?User $user, int $quantity = 1): float
     {
-        if (!$user || !$user->is_approved_dealer) {
-            return 0.0;
+        $customerType = $this->getCustomerType($user);
+        
+        // PricingRule'lardan indirim al
+        $pricingRule = $this->getApplicablePricingRule($customerType, $quantity);
+        if ($pricingRule) {
+            return $pricingRule->actions['discount_percentage'] ?? 0.0;
         }
         
-        // Pricing tier'dan indirim al
-        if ($user->pricingTier) {
+        // Eğer user varsa pricing tier'dan indirim al (fallback)
+        if ($user && $user->pricingTier && $user->pricingTier->isActive()) {
             return $user->pricingTier->discount_percentage ?? 0.0;
         }
         
-        // Default dealer discount (fallback)
-        return config('pricing.default_dealer_discount', 15.0);
+        // Eğer user varsa custom discount varsa
+        if ($user && $user->custom_discount_percentage > 0) {
+            return $user->custom_discount_percentage;
+        }
+        
+        // Hiçbir indirim yok
+        return 0.0;
+    }
+
+    /**
+     * Uygulanabilir pricing rule'ı bul
+     */
+    private function getApplicablePricingRule(string $customerType, int $quantity): ?\App\Models\PricingRule
+    {
+        return \App\Models\PricingRule::where('is_active', true)
+            ->where('conditions->customer_types', 'like', '%"' . strtolower($customerType) . '"%')
+            ->where('conditions->min_quantity', '<=', $quantity)
+            ->orderBy('priority', 'desc')
+            ->first();
     }
     
     /**
@@ -81,9 +102,10 @@ class CustomerTypeDetectorService
     public function getTypeLabel(string $customerType): string
     {
         return match ($customerType) {
-            'B2B' => 'Bayi Fiyatı',
-            'B2C' => 'Perakende Fiyatı',
-            'guest' => 'Liste Fiyatı',
+            'B2B' => '🏢 Bayi Fiyatı',
+            'B2C' => '👤 Bireysel Fiyat',
+            'WHOLESALE' => '📦 Toptan Fiyat',
+            'RETAIL' => '🛍️ Perakende Fiyat',
             default => 'Standart Fiyat'
         };
     }
