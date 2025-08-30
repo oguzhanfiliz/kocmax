@@ -365,6 +365,7 @@ class ProductResource extends Resource
         $relations = [
             RelationManagers\ImagesRelationManager::class,
             RelationManagers\VariantsRelationManager::class,
+            RelationManagers\CertificatesRelationManager::class,
         ];
 
         // Yorumlar özelliği aktifse Reviews relation manager'ı ekle

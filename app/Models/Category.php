@@ -213,30 +213,65 @@ class Category extends Model
      */
     public static function getTreeForSelect(): array
     {
-        return \Cache::remember('categories_tree_select', 1800, function () {
-            // Sadece gerekli alanları seç ve bellek kullanımını azalt
-            $allCategories = self::select(['id', 'name', 'parent_id', 'sort_order'])
-                ->where('is_active', true)
-                ->orderBy('parent_id', 'asc')
-                ->orderBy('sort_order', 'asc')
-                ->orderBy('name', 'asc')
-                ->limit(500) // Maksimum kategori sayısı
-                ->get();
-            
-            // Kategorileri parent_id'ye göre grupla
-            $categoriesByParent = $allCategories->groupBy('parent_id');
-            
-            $result = [];
-            
-            // Root kategorilerden başla
-            if (isset($categoriesByParent[null])) {
-                foreach ($categoriesByParent[null] as $category) {
-                    self::buildTreeArrayOptimized($category, $result, 0, $categoriesByParent);
+        try {
+            return \Cache::remember('categories_tree_select', 1800, function () {
+                // Sadece gerekli alanları seç ve bellek kullanımını azalt
+                $allCategories = self::select(['id', 'name', 'parent_id', 'sort_order'])
+                    ->where('is_active', true)
+                    ->orderBy('parent_id', 'asc')
+                    ->orderBy('sort_order', 'asc')
+                    ->orderBy('name', 'asc')
+                    ->limit(500) // Maksimum kategori sayısı
+                    ->get();
+                
+                // Kategorileri parent_id'ye göre grupla
+                $categoriesByParent = $allCategories->groupBy('parent_id');
+                
+                $result = [];
+                
+                // Root kategorilerden başla
+                if (isset($categoriesByParent[null])) {
+                    foreach ($categoriesByParent[null] as $category) {
+                        self::buildTreeArrayOptimized($category, $result, 0, $categoriesByParent);
+                    }
                 }
-            }
+                
+                return $result;
+            });
+        } catch (\Exception $e) {
+            // Cache hatası durumunda direkt veritabanından al
+            \Log::warning('Category cache failed, using direct database query', [
+                'error' => $e->getMessage()
+            ]);
             
-            return $result;
-        });
+            return self::getTreeForSelectDirect();
+        }
+    }
+
+    /**
+     * Get categories for select directly from database (fallback)
+     */
+    private static function getTreeForSelectDirect(): array
+    {
+        $allCategories = self::select(['id', 'name', 'parent_id', 'sort_order'])
+            ->where('is_active', true)
+            ->orderBy('parent_id', 'asc')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('name', 'asc')
+            ->limit(500)
+            ->get();
+        
+        $categoriesByParent = $allCategories->groupBy('parent_id');
+        
+        $result = [];
+        
+        if (isset($categoriesByParent[null])) {
+            foreach ($categoriesByParent[null] as $category) {
+                self::buildTreeArrayOptimized($category, $result, 0, $categoriesByParent);
+            }
+        }
+        
+        return $result;
     }
 
     /**

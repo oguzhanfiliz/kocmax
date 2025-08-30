@@ -144,6 +144,22 @@ class Product extends Model
     }
 
     /**
+     * Product has many certificates
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(ProductCertificate::class)->ordered();
+    }
+
+    /**
+     * Product has many active certificates
+     */
+    public function activeCertificates(): HasMany
+    {
+        return $this->hasMany(ProductCertificate::class)->active()->ordered();
+    }
+
+    /**
      * Product has many approved reviews
      */
     public function approvedReviews(): HasMany

@@ -202,7 +202,7 @@ class ProductController extends Controller
         // Set context for resource transformation
         $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
 
-        $query = Product::with(['variants.images', 'categories', 'images'])
+        $query = Product::with(['variants.images', 'categories', 'images', 'activeCertificates'])
             ->where('is_active', true);
 
         // Search functionality
@@ -396,7 +396,8 @@ class ProductController extends Controller
             'categories', 
             'images', 
             'reviews.user',
-            'variants.variantOptions.variantType'
+            'variants.variantOptions.variantType',
+            'activeCertificates'
         ]);
 
         return (new ProductDetailResource($product))->additional([

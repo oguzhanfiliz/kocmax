@@ -79,6 +79,11 @@ class ProductDetailResource extends JsonResource
 
         // Add detailed information
         return array_merge($baseData, [
+            'seo' => [
+                'meta_title' => $this->meta_title,
+                'meta_description' => $this->meta_description,
+                'meta_keywords' => $this->meta_keywords,
+            ],
             'variants' => $this->whenLoaded('variants', fn() => 
                 $this->variants->map(fn($variant) => [
                     'id' => $variant->id,
@@ -142,6 +147,18 @@ class ProductDetailResource extends JsonResource
                     ]),
                 ];
             }),
+            'certificates' => $this->whenLoaded('activeCertificates', fn() => 
+                $this->activeCertificates->map(fn($certificate) => [
+                    'id' => $certificate->id,
+                    'name' => $certificate->name,
+                    'description' => $certificate->description,
+                    'file_name' => $certificate->file_name,
+                    'file_type' => $certificate->file_type,
+                    'file_size_human' => $certificate->file_size_human,
+                    'file_url' => $certificate->file_url,
+                    'sort_order' => $certificate->sort_order,
+                ])
+            ),
             'specifications' => $this->specifications ?? (object) [],
             'meta' => $this->whenLoaded('variants', function () use ($currency) {
                 $variants = $this->variants;

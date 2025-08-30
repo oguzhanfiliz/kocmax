@@ -115,5 +115,8 @@ class AppServiceProvider extends ServiceProvider
         // Observer'lar geçici olarak devre dışı - bellek sorunu çözümü için
         // \App\Models\Product::observe(\App\Observers\ProductObserver::class);
         // \App\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
+        
+        // ProductCertificate Observer
+        \App\Models\ProductCertificate::observe(\App\Observers\ProductCertificateObserver::class);
     }
 }

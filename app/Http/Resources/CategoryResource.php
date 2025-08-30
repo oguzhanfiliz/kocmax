@@ -94,6 +94,13 @@ class CategoryResource extends JsonResource
             'products_count' => $this->whenCounted('products'),
             'children_count' => $this->whenCounted('children'),
             
+            // 🔍 SEO Information
+            'seo' => [
+                'meta_title' => $this->meta_title,
+                'meta_description' => $this->meta_description,
+                'meta_keywords' => $this->meta_keywords,
+            ],
+            
             // Parent category information
             'parent' => $this->whenLoaded('parent', function () {
                 return $this->parent ? [
