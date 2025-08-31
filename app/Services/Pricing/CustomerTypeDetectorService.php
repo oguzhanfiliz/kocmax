@@ -23,7 +23,7 @@ class CustomerTypeDetectorService
             'type' => $this->getCustomerType($user),
             'user' => $user,
             'is_authenticated' => $user !== null,
-            'is_dealer' => $user && $user->is_approved_dealer,
+            'is_dealer' => $this->isDealer($user),
             'pricing_tier_id' => $user?->pricing_tier_id,
         ];
     }
@@ -37,11 +37,82 @@ class CustomerTypeDetectorService
             return 'B2C';
         }
         
-        if ($user->is_approved_dealer) {
+        // Customer type override varsa öncelik ver
+        if (!empty($user->customer_type_override)) {
+            return strtoupper($user->customer_type_override);
+        }
+        
+        // Roller kontrol et
+        if ($user->hasRole('wholesale')) {
+            return 'WHOLESALE';
+        }
+        
+        if ($user->hasRole('dealer') || $user->is_approved_dealer) {
             return 'B2B';
         }
         
+        if ($user->hasRole('retail')) {
+            return 'RETAIL';
+        }
+        
+        // Company bilgisi varsa B2B kabul et
+        if (!empty($user->company_name) || !empty($user->tax_number)) {
+            return 'B2B';
+        }
+        
+        // Lifetime value yüksekse wholesale
+        if (($user->lifetime_value ?? 0) >= 50000) {
+            return 'WHOLESALE';
+        }
+        
         return 'B2C';
+    }
+    
+    /**
+     * User'ın dealer olup olmadığını kontrol et
+     */
+    public function isDealer(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+        
+        $customerType = $this->getCustomerType($user);
+        return in_array($customerType, ['B2B', 'WHOLESALE']);
+    }
+    
+    /**
+     * Customer tier belirle
+     */
+    public function getCustomerTier(?User $user): string
+    {
+        if (!$user) {
+            return 'guest';
+        }
+
+        $customerType = $this->getCustomerType($user);
+        
+        // Determine customer tier based on order history and type
+        $totalOrders = $user->orders()->completed()->count();
+        $totalSpent = (float) ($user->orders()->completed()->sum('total_amount') ?? 0);
+
+        if (in_array($customerType, ['B2B', 'WHOLESALE'])) {
+            return match(true) {
+                $totalSpent >= 500000 => 'b2b_vip',
+                $totalSpent >= 250000 => 'b2b_premium',
+                $totalSpent >= 100000 => 'b2b_gold',
+                $totalSpent >= 50000 => 'b2b_silver',
+                default => 'b2b_standard'
+            };
+        }
+
+        return match(true) {
+            $totalOrders >= 50 => 'b2c_vip',
+            $totalOrders >= 25 => 'b2c_gold',
+            $totalOrders >= 10 => 'b2c_silver',
+            $totalOrders >= 5 => 'b2c_bronze',
+            default => 'b2c_standard'
+        };
     }
     
     /**
@@ -106,6 +177,7 @@ class CustomerTypeDetectorService
             'B2C' => '👤 Bireysel Fiyat',
             'WHOLESALE' => '📦 Toptan Fiyat',
             'RETAIL' => '🛍️ Perakende Fiyat',
+            'GUEST' => 'Liste Fiyatı',
             default => 'Standart Fiyat'
         };
     }

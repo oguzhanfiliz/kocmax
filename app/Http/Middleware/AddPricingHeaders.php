@@ -6,57 +6,62 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use App\Services\Pricing\CustomerTypeDetectorService;
 
 class AddPricingHeaders
 {
+    private CustomerTypeDetectorService $customerTypeDetector;
+
+    public function __construct(CustomerTypeDetectorService $customerTypeDetector)
+    {
+        $this->customerTypeDetector = $customerTypeDetector;
+    }
+
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
         
-        // Development modda sadece temel headers
+        // 🔒 Güvenli Token-Based Pricing: Sadece token'dan gelen user bilgilerine güven
         if ($user = $request->user()) {
-            $customerType = $this->determineCustomerType($user);
-            $response->headers->set('X-Customer-Type', $customerType);
-            $response->headers->set('X-Is-Dealer', in_array($customerType, ['B2B', 'WHOLESALE']) ? 'true' : 'false');
+            // Token'dan gelen user bilgilerine göre customer type belirle
+            $customerType = $this->customerTypeDetector->getCustomerType($user);
+            $isDealer = $this->customerTypeDetector->isDealer($user);
+            
+            // Response header'larına ekle
+            $response->headers->set('X-Customer-Type', strtoupper($customerType));
+            $response->headers->set('X-Is-Dealer', $isDealer ? 'true' : 'false');
+            
+            // 🔒 Token manipulation koruması için hash ekle
+            $pricingToken = $this->generatePricingToken($user, $customerType);
+            $response->headers->set('X-Pricing-Token', $pricingToken);
+            
         } else {
-            $response->headers->set('X-Customer-Type', 'B2C');
+            // Guest kullanıcılar için sadece temel bilgiler
+            $response->headers->set('X-Customer-Type', 'GUEST');
             $response->headers->set('X-Is-Dealer', 'false');
         }
         
         return $response;
     }
     
-    private function determineCustomerType($user): string
+    /**
+     * 🔒 Token manipulation koruması için pricing token oluştur
+     */
+    private function generatePricingToken($user, string $customerType): string
     {
-        // Customer type override varsa öncelik ver
-        if (!empty($user->customer_type_override)) {
-            return strtoupper($user->customer_type_override);
-        }
+        $data = [
+            'user_id' => $user->id,
+            'customer_type' => $customerType,
+            'is_approved_dealer' => $user->is_approved_dealer ?? false,
+            'company_name' => $user->company_name,
+            'tax_number' => $user->tax_number,
+            'lifetime_value' => $user->lifetime_value ?? 0,
+            'timestamp' => time(),
+        ];
         
-        // Roller kontrol et
-        if ($user->hasRole('wholesale')) {
-            return 'WHOLESALE';
-        }
+        // HMAC ile imzala (app key ile)
+        $signature = hash_hmac('sha256', json_encode($data), config('app.key'));
         
-        if ($user->hasRole('dealer') || $user->is_approved_dealer) {
-            return 'B2B';
-        }
-        
-        if ($user->hasRole('retail')) {
-            return 'RETAIL';
-        }
-        
-        // Company bilgisi varsa B2B kabul et
-        if (!empty($user->company_name) || !empty($user->tax_number)) {
-            return 'B2B';
-        }
-        
-        // Lifetime value yüksekse wholesale
-        if (($user->lifetime_value ?? 0) >= 50000) {
-            return 'WHOLESALE';
-        }
-        
-        // Default B2C
-        return 'B2C';
+        return base64_encode(json_encode($data) . '.' . $signature);
     }
 }
