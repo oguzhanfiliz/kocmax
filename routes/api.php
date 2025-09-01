@@ -320,6 +320,7 @@ Route::prefix('v1/wishlist')->middleware('auth:sanctum')->group(function () {
 Route::prefix('v1/campaigns')->middleware(['auth:sanctum', 'throttle:campaigns'])->group(function () {
     // All campaign routes now require authentication with specific rate limiting
     Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
+    Route::get('/available', [CampaignController::class, 'available'])->name('api.campaigns.available');
     Route::get('/{campaign}', [CampaignController::class, 'show'])->name('api.campaigns.show')
           ->where('campaign', '[A-Za-z0-9\-_]+'); // ID or slug
     Route::post('/{campaign}/validate', [CampaignController::class, 'validateCampaign'])->name('api.campaigns.validate')

@@ -500,4 +500,99 @@ class CampaignController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/campaigns/available",
+     *     summary="Kullanıcıya uygun kampanyaları listele",
+     *     description="Kullanıcının sepetine uygulanabilir kampanyaları getirir (ücretsiz kargo kampanyaları dahil)",
+     *     tags={"Campaigns"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Available campaigns successfully retrieved",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Available campaigns retrieved successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="available_campaigns",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="500₺ Üzeri Ücretsiz Kargo"),
+     *                         @OA\Property(property="type", type="string", example="free_shipping"),
+     *                         @OA\Property(property="threshold", type="number", format="float", example=500.00),
+     *                         @OA\Property(property="minimum_amount", type="number", format="float", example=500.00),
+     *                         @OA\Property(property="description", type="string", example="500 TL ve üzeri alışverişlerinizde kargo bedava!"),
+     *                         @OA\Property(property="customer_types", type="array", @OA\Items(type="string")),
+     *                         @OA\Property(property="is_active", type="boolean", example=true)
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Kimlik doğrulama gerekli",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     )
+     * )
+     */
+    public function available(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $customerType = $user && $user->is_approved_dealer ? 'b2b' : 'b2c';
+
+            // Kullanıcının sepetine uygulanabilir kampanyaları getir
+            $campaigns = Campaign::query()
+                ->active()
+                ->forCustomerType($customerType)
+                ->orderBy('priority', 'asc')
+                ->get();
+
+            $availableCampaigns = $campaigns->map(function (Campaign $campaign) {
+                // Free shipping kampanyalarında threshold bilgisini çıkar
+                $threshold = $campaign->minimum_cart_amount;
+                
+                // Eğer kampanya adında threshold varsa onu parse et
+                if (!$threshold && preg_match('/(\d+)[\s]*[₺tl]/i', $campaign->name, $matches)) {
+                    $threshold = (float) $matches[1];
+                }
+
+                return [
+                    'id' => $campaign->id,
+                    'name' => $campaign->name,
+                    'type' => $campaign->type,
+                    'threshold' => $threshold,
+                    'minimum_amount' => $campaign->minimum_cart_amount,
+                    'description' => $campaign->description,
+                    'customer_types' => $campaign->customer_types,
+                    'is_active' => $campaign->status === 'active',
+                    'starts_at' => $campaign->starts_at?->toISOString(),
+                    'ends_at' => $campaign->ends_at?->toISOString(),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Available campaigns retrieved successfully',
+                'data' => [
+                    'available_campaigns' => $availableCampaigns->toArray(),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Available campaigns alınırken hata oluştu',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
