@@ -583,6 +583,87 @@ class VariantsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('clone_with_sizes')
+                    ->label('Bu Varyantın Bedenlerini Oluştur')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->color('info')
+                    ->modalHeading('Varyant Kopyalama - Farklı Bedenler')
+                    ->modalDescription('Mevcut varyantın tüm özelliklerini koruyarak farklı bedenler oluşturun.')
+                    ->modalSubmitActionLabel('Oluştur')
+                    ->modalCancelActionLabel('İptal')
+                    ->form([
+                        Forms\Components\Section::make('Kaynak Varyant Bilgileri')
+                            ->description('Aşağıdaki bilgiler yeni oluşturulacak varyantlara kopyalanacak')
+                            ->schema([
+                                Forms\Components\Placeholder::make('source_info')
+                                    ->label('📋 Kopyalanacak Bilgiler')
+                                    ->content(function ($record): string {
+                                        $info = [];
+                                        $info[] = "🎨 Renk: " . ($record->color ?? 'Belirtilmemiş');
+                                        $info[] = "💰 Fiyat: " . $record->getFormattedSourcePrice();
+                                        $info[] = "📦 Stok: " . ($record->stock ?? 0);
+                                        $info[] = "🏷️ SKU Yapısı: " . $record->sku;
+                                        if ($record->images()->count() > 0) {
+                                            $info[] = "🖼️ Görsel Sayısı: " . $record->images()->count();
+                                        }
+                                        return implode("\n", $info);
+                                    })
+                                    ->columnSpanFull(),
+                            ]),
+                        Forms\Components\Section::make('Yeni Bedenler')
+                            ->schema([
+                                Forms\Components\CheckboxList::make('new_sizes')
+                                    ->label('Oluşturulacak Bedenler/Ayakkabı Numaraları')
+                                    ->options([
+                                        // Tekstil bedenler
+                                        'XS' => 'XS',
+                                        'S' => 'S', 
+                                        'M' => 'M',
+                                        'L' => 'L',
+                                        'XL' => 'XL',
+                                        'XXL' => 'XXL',
+                                        'XXXL' => 'XXXL',
+                                        // Ayakkabı numaraları
+                                        '36' => '36 Numara',
+                                        '37' => '37 Numara', 
+                                        '38' => '38 Numara',
+                                        '39' => '39 Numara',
+                                        '40' => '40 Numara',
+                                        '41' => '41 Numara',
+                                        '42' => '42 Numara',
+                                        '43' => '43 Numara',
+                                        '44' => '44 Numara',
+                                        '45' => '45 Numara',
+                                        '46' => '46 Numara',
+                                        '47' => '47 Numara',
+                                        '48' => '48 Numara',
+                                    ])
+                                    ->columns(6)
+                                    ->required()
+                                    ->helperText('Seçilen bedenler için aynı renk ve özelliklerle yeni varyantlar oluşturulacak'),
+                                Forms\Components\Toggle::make('skip_existing')
+                                    ->label('Mevcut Kombinasyonları Atla')
+                                    ->default(true)
+                                    ->helperText('Bu renk ve beden kombinasyonu zaten varsa atla'),
+                            ]),
+                        Forms\Components\Section::make('İsteğe Bağlı Ayarlar')
+                            ->schema([
+                                Forms\Components\TextInput::make('stock_override')
+                                    ->label('Yeni Varyantlar İçin Stok (İsteğe Bağlı)')
+                                    ->numeric()
+                                    ->placeholder('Kaynak varyantın stoku kullanılacak')
+                                    ->helperText('Boş bırakırsanız kaynak varyantın stok miktarı kopyalanır'),
+                                Forms\Components\Toggle::make('copy_images')
+                                    ->label('Görselleri Kopyala')
+                                    ->default(true)
+                                    ->helperText('Kaynak varyantın görsellerini yeni varyantlara kopyala'),
+                            ])
+                            ->columns(2),
+                    ])
+                    ->action(function (array $data, $record) {
+                        $this->cloneVariantWithSizes($record, $data);
+                    })
+                    ->visible(fn ($record) => !empty($record->color)), // Sadece rengi olan varyantlarda göster
                 Tables\Actions\EditAction::make()
                     ->modalHeading('Varyantı Düzenle')
                     ->modalDescription('Varyantı düzenleyiniz.')
@@ -853,6 +934,128 @@ class VariantsRelationManager extends RelationManager
             \Filament\Notifications\Notification::make()
                 ->title('Hiç Varyant Oluşturulmadı')
                 ->body('Seçilen kombinasyonlar zaten mevcut.')
+                ->warning()
+                ->send();
+        }
+    }
+
+    protected function cloneVariantWithSizes($sourceVariant, array $data): void
+    {
+        $newSizes = $data['new_sizes'] ?? [];
+        $skipExisting = $data['skip_existing'] ?? true;
+        $stockOverride = $data['stock_override'] ?? null;
+        $copyImages = $data['copy_images'] ?? true;
+
+        if (empty($newSizes)) {
+            \Filament\Notifications\Notification::make()
+                ->title('Hata')
+                ->body('En az bir beden seçmelisiniz.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $product = $this->getOwnerRecord();
+        $createdCount = 0;
+        $skippedCount = 0;
+
+        foreach ($newSizes as $newSize) {
+            // Mevcut kombinasyonu kontrol et
+            if ($skipExisting) {
+                $existingVariant = $product->variants()
+                    ->where('color', $sourceVariant->color)
+                    ->where('size', $newSize)
+                    ->first();
+
+                if ($existingVariant) {
+                    $skippedCount++;
+                    continue;
+                }
+            }
+
+            // Yeni varyant verilerini hazırla
+            $newVariantData = [
+                'name' => ($sourceVariant->color ?? 'Standart') . ' - ' . $newSize,
+                'sku' => $this->generateVariantSku(['color' => $sourceVariant->color, 'size' => $newSize]),
+                'color' => $sourceVariant->color,
+                'size' => $newSize,
+                
+                // Fiyat bilgilerini kopyala
+                'price' => $sourceVariant->price,
+                'source_price' => $sourceVariant->source_price,
+                'source_currency' => $sourceVariant->source_currency ?? ($sourceVariant->currency_code ?? 'TRY'),
+                'currency_code' => $sourceVariant->currency_code ?? 'TRY',
+                'cost' => $sourceVariant->cost,
+                
+                // Stok bilgileri
+                'stock' => $stockOverride !== null ? $stockOverride : ($sourceVariant->stock ?? 0),
+                'min_stock_level' => $sourceVariant->min_stock_level ?? 0,
+                
+                // Durum bilgileri
+                'is_active' => $sourceVariant->is_active ?? true,
+                'is_default' => false, // Kopyalanan varyantlar varsayılan olamaz
+                'sort_order' => $createdCount,
+                
+                // Fiziksel özellikler
+                'weight' => $sourceVariant->weight,
+                'length' => $sourceVariant->length,
+                'width' => $sourceVariant->width,
+                'height' => $sourceVariant->height,
+                'dimensions' => $sourceVariant->dimensions,
+                
+                // Paket boyutları
+                'box_quantity' => $sourceVariant->box_quantity,
+                'product_weight' => $sourceVariant->product_weight,
+                'package_quantity' => $sourceVariant->package_quantity,
+                'package_weight' => $sourceVariant->package_weight,
+                'package_length' => $sourceVariant->package_length,
+                'package_width' => $sourceVariant->package_width,
+                'package_height' => $sourceVariant->package_height,
+                
+                // Diğer bilgiler
+                'barcode' => null, // Barkod unique olmalı, yeni oluşturulsun
+            ];
+
+            // Yeni varyantı oluştur
+            $newVariant = $product->variants()->create($newVariantData);
+
+            // Varyant seçeneklerini kopyala (VariantOptions ilişkisi)
+            if ($sourceVariant->variantOptions && $sourceVariant->variantOptions->count() > 0) {
+                $optionIds = $sourceVariant->variantOptions->pluck('id')->toArray();
+                $newVariant->variantOptions()->attach($optionIds);
+            }
+
+            // Görselleri kopyala
+            if ($copyImages && $sourceVariant->images && $sourceVariant->images->count() > 0) {
+                foreach ($sourceVariant->images as $index => $image) {
+                    $newVariant->images()->create([
+                        'image_url' => $image->image_url,
+                        'sort_order' => $image->sort_order ?? $index,
+                        'is_primary' => $image->is_primary ?? ($index === 0),
+                        'alt_text' => $newVariant->name . ' - Görsel ' . ($index + 1),
+                    ]);
+                }
+            }
+
+            $createdCount++;
+        }
+
+        // Bildirim gönder
+        if ($createdCount > 0) {
+            $message = "{$createdCount} adet varyant başarıyla oluşturuldu.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} adet mevcut kombinasyon atlandı.";
+            }
+            
+            \Filament\Notifications\Notification::make()
+                ->title('Varyant Kopyalama Tamamlandı')
+                ->body($message)
+                ->success()
+                ->send();
+        } else {
+            \Filament\Notifications\Notification::make()
+                ->title('Hiç Varyant Oluşturulmadı')
+                ->body($skippedCount > 0 ? 'Tüm seçilen kombinasyonlar zaten mevcut.' : 'Bir hata oluştu.')
                 ->warning()
                 ->send();
         }
