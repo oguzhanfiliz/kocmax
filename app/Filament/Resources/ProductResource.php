@@ -208,6 +208,68 @@ class ProductResource extends Resource
                             ->default(0),
                     ])
                     ->columns(3),
+
+                Section::make('Paket Boyutları')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('box_quantity')
+                                    ->label('Kutu Adeti')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->suffix('Adet')
+                                    ->helperText('1 kutuda kaç adet ürün bulunur'),
+                                Forms\Components\TextInput::make('product_weight')
+                                    ->label('Ürün Ağırlığı')
+                                    ->numeric()
+                                    ->step(0.001)
+                                    ->suffix('gr')
+                                    ->helperText('Tek ürünün ağırlığı (gram)'),
+                            ]),
+                        Forms\Components\Fieldset::make('Koli Bilgileri')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('package_quantity')
+                                            ->label('Koli Adeti')
+                                            ->numeric()
+                                            ->minValue(1)
+                                            ->suffix('Adet')
+                                            ->helperText('1 kolide kaç adet ürün bulunur'),
+                                        Forms\Components\TextInput::make('package_weight')
+                                            ->label('Koli Ağırlığı')
+                                            ->numeric()
+                                            ->step(0.001)
+                                            ->suffix('kg')
+                                            ->helperText('Dolu kolinin toplam ağırlığı'),
+                                    ]),
+                                Forms\Components\Fieldset::make('Koli Ölçüleri')
+                                    ->schema([
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('package_length')
+                                                    ->label('Uzunluk')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                                Forms\Components\TextInput::make('package_width')
+                                                    ->label('Genişlik')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                                Forms\Components\TextInput::make('package_height')
+                                                    ->label('Yükseklik')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                            ]),
+                                    ])
+                                    ->columns(1),
+                            ]),
+                    ])
+                    ->description('Bu bilgiler tüm varyantlar için varsayılan olarak kullanılır. Her varyant bu değerleri override edebilir.')
+                    ->collapsible()
+                    ->icon('heroicon-o-cube'),
                 
                 Section::make('Durumlar')
                     ->schema([

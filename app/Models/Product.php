@@ -25,6 +25,13 @@ class Product extends Model
         'base_price',
         'base_currency',
         'weight',
+        'box_quantity',
+        'product_weight',
+        'package_quantity',
+        'package_weight',
+        'package_length',
+        'package_width',
+        'package_height',
         'is_active',
         'is_featured',
         'is_new',
@@ -39,6 +46,13 @@ class Product extends Model
     protected $casts = [
         'base_price' => 'decimal:2',
         'weight' => 'decimal:3',
+        'box_quantity' => 'integer',
+        'product_weight' => 'decimal:3',
+        'package_quantity' => 'integer',
+        'package_weight' => 'decimal:3',
+        'package_length' => 'decimal:1',
+        'package_width' => 'decimal:1',
+        'package_height' => 'decimal:1',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'is_new' => 'boolean',
@@ -507,5 +521,107 @@ class Product extends Model
 
         // Sync with all required categories (including parents)
         $this->categories()->sync($allRequiredCategories->unique()->values()->toArray());
+    }
+
+    /**
+     * Paket boyutları bilgilerini al (varyanttan önce ürün seviyesinden)
+     */
+    public function getPackageDimensions(): array
+    {
+        return [
+            'box_quantity' => $this->box_quantity,
+            'product_weight' => $this->product_weight,
+            'package_quantity' => $this->package_quantity,
+            'package_weight' => $this->package_weight,
+            'package_length' => $this->package_length,
+            'package_width' => $this->package_width,
+            'package_height' => $this->package_height,
+            'package_size' => $this->getPackageSizeFormatted(),
+        ];
+    }
+
+    /**
+     * Koli ölçülerini formatla (53x40x41 cm)
+     */
+    public function getPackageSizeFormatted(): ?string
+    {
+        if (!$this->package_length || !$this->package_width || !$this->package_height) {
+            return null;
+        }
+
+        return "{$this->package_length}x{$this->package_width}x{$this->package_height} cm";
+    }
+
+    /**
+     * Tüm varyantlara ürün seviyesi paket boyutlarını uygula
+     */
+    public function applyPackageDimensionsToAllVariants(): void
+    {
+        $packageData = [
+            'box_quantity' => $this->box_quantity,
+            'product_weight' => $this->product_weight,
+            'package_quantity' => $this->package_quantity,
+            'package_weight' => $this->package_weight,
+            'package_length' => $this->package_length,
+            'package_width' => $this->package_width,
+            'package_height' => $this->package_height,
+        ];
+
+        // Sadece null olan alanları güncelle (varyant seviyesindeki özelleştirmeler korunsun)
+        $this->variants()->chunk(100, function ($variants) use ($packageData) {
+            foreach ($variants as $variant) {
+                $updateData = [];
+                foreach ($packageData as $field => $value) {
+                    if (is_null($variant->$field) && !is_null($value)) {
+                        $updateData[$field] = $value;
+                    }
+                }
+                if (!empty($updateData)) {
+                    $variant->update($updateData);
+                }
+            }
+        });
+    }
+
+    /**
+     * İlgili PackageIconsHelper ikonlarıyla paket boyutlarını döndür
+     */
+    public function getPackageDimensionsWithIcons(): array
+    {
+        $dimensions = $this->getPackageDimensions();
+        $iconHelper = \App\Helpers\PackageIconsHelper::class;
+        
+        return [
+            'box_quantity' => [
+                'value' => $dimensions['box_quantity'],
+                'icon' => $iconHelper::getBoxQuantityIcon(),
+                'label' => 'Kutu Adeti',
+                'formatted' => $dimensions['box_quantity'] ? $dimensions['box_quantity'] . ' Adet' : null,
+            ],
+            'product_weight' => [
+                'value' => $dimensions['product_weight'],
+                'icon' => $iconHelper::getProductWeightIcon(),
+                'label' => 'Ürün Ağırlığı',
+                'formatted' => $dimensions['product_weight'] ? $dimensions['product_weight'] . ' gr.' : null,
+            ],
+            'package_quantity' => [
+                'value' => $dimensions['package_quantity'],
+                'icon' => $iconHelper::getPackageQuantityIcon(),
+                'label' => 'Koli Adeti',
+                'formatted' => $dimensions['package_quantity'] ? $dimensions['package_quantity'] . ' Adet' : null,
+            ],
+            'package_weight' => [
+                'value' => $dimensions['package_weight'],
+                'icon' => $iconHelper::getPackageWeightIcon(),
+                'label' => 'Koli Ağırlığı',
+                'formatted' => $dimensions['package_weight'] ? $dimensions['package_weight'] . ' Kg.' : null,
+            ],
+            'package_size' => [
+                'value' => $dimensions['package_size'],
+                'icon' => $iconHelper::getPackageSizeIcon(),
+                'label' => 'Koli Ölçüsü',
+                'formatted' => $dimensions['package_size'],
+            ],
+        ];
     }
 }

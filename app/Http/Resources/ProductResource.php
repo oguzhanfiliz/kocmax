@@ -218,6 +218,8 @@ class ProductResource extends JsonResource
                         ]) : [],
                     // 🔥 Varyant için de pricing rules uygula
                     'pricing' => $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled),
+                    // 📦 Varyant paket boyutları (inheritance ile)
+                    'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
                 ])
             ),
             'variants_count' => $this->whenCounted('variants'),
@@ -236,6 +238,10 @@ class ProductResource extends JsonResource
                     'sort_order' => $certificate->sort_order,
                 ])
             ),
+            
+            // 📦 Paket boyutları bilgileri
+            'package_dimensions' => $this->getPackageDimensionsWithIcons(),
+            
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

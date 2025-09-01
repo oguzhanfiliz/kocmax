@@ -120,6 +120,8 @@ class ProductDetailResource extends JsonResource
                         ]) : [],
                     // 🔥 Varyant için de pricing rules uygula
                     'pricing' => $this->calculateVariantPricing($variant),
+                    // 📦 Varyant paket boyutları (inheritance ile)
+                    'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
                 ])
             ),
             'reviews' => $this->whenLoaded('reviews', function () {

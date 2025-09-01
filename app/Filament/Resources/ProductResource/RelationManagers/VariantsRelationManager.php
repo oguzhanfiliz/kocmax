@@ -203,6 +203,74 @@ class VariantsRelationManager extends RelationManager
                     ])
                     ->columns(1),
 
+                Forms\Components\Section::make('Paket Boyutları')
+                    ->description('Bu varyanta özel paket boyutları girebilirsiniz. Boş bırakılırsa ürün seviyesindeki değerler kullanılır.')
+                    ->schema([
+                        Forms\Components\Placeholder::make('inheritance_info')
+                            ->label('📦 Paket Boyutları Miras Sistemi')
+                            ->content('Bu alanlar boş bırakılırsa ürün seviyesindeki paket boyutları kullanılır. Sadece bu varyanta özel değerler varsa doldurabilirsiniz.')
+                            ->columnSpanFull(),
+                            
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('box_quantity')
+                                    ->label('Kutu Adeti')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->suffix('Adet')
+                                    ->helperText('Bu varyant için kutu başı ürün adedi'),
+                                Forms\Components\TextInput::make('product_weight')
+                                    ->label('Ürün Ağırlığı')
+                                    ->numeric()
+                                    ->step(0.001)
+                                    ->suffix('gr')
+                                    ->helperText('Bu varyant için tek ürün ağırlığı'),
+                            ]),
+                            
+                        Forms\Components\Fieldset::make('Koli Bilgileri')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('package_quantity')
+                                            ->label('Koli Adeti')
+                                            ->numeric()
+                                            ->minValue(1)
+                                            ->suffix('Adet')
+                                            ->helperText('Bu varyant için koli başı ürün adedi'),
+                                        Forms\Components\TextInput::make('package_weight')
+                                            ->label('Koli Ağırlığı')
+                                            ->numeric()
+                                            ->step(0.001)
+                                            ->suffix('kg')
+                                            ->helperText('Bu varyant için dolu koli ağırlığı'),
+                                    ]),
+                                Forms\Components\Fieldset::make('Koli Ölçüleri')
+                                    ->schema([
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('package_length')
+                                                    ->label('Uzunluk')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                                Forms\Components\TextInput::make('package_width')
+                                                    ->label('Genişlik')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                                Forms\Components\TextInput::make('package_height')
+                                                    ->label('Yükseklik')
+                                                    ->numeric()
+                                                    ->step(0.1)
+                                                    ->suffix('cm'),
+                                            ]),
+                                    ])
+                                    ->columns(1),
+                            ]),
+                    ])
+                    ->icon('heroicon-o-cube')
+                    ->collapsible(), // Varsayılan olarak açık yap
+
                 Forms\Components\Section::make('Durumlar')
                     ->schema([
                         Forms\Components\Toggle::make('is_active')

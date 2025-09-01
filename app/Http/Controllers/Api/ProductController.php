@@ -400,6 +400,7 @@ class ProductController extends Controller
 
         $product->load([
             'variants.images', 
+            'variants.product', // Paket boyutları inheritance için gerekli
             'categories', 
             'images', 
             'reviews.user',
