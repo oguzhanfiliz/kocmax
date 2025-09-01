@@ -24,14 +24,12 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $siteTitle = Setting::getValue('site_title', 'MUTFAK YAPIM');
-        
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName($siteTitle)
+            ->brandName('MUTFAK YAPIM')
             ->domain(null) // Same domain
             ->authGuard('web')
             ->authPasswordBroker('users')
