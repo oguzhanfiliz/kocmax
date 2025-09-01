@@ -6,6 +6,11 @@ namespace App\Services\Order;
 
 use App\Models\Order;
 use App\Enums\OrderStatus;
+use App\Mail\OrderCreatedMail;
+use App\Mail\OrderStatusChangedMail;
+use App\Mail\OrderShippedMail;
+use App\Mail\OrderDeliveredMail;
+use App\Mail\OrderCancelledMail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -25,9 +30,12 @@ class OrderNotificationService
                 'total_amount' => $order->total_amount
             ]);
 
-            // TODO: Implement email notification
-            // Mail::to($order->user ?? $order->billing_email)
-            //     ->send(new OrderCreatedMail($order));
+            // Send email notification
+            $recipient = $order->user ? $order->user->email : $order->billing_email;
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderCreatedMail($order));
+                Log::info('Order created email sent', ['recipient' => $recipient]);
+            }
 
             // TODO: Implement SMS notification if phone provided
             // if ($order->shipping_phone) {
@@ -58,9 +66,12 @@ class OrderNotificationService
                 'message' => $message
             ]);
 
-            // TODO: Implement email notification
-            // Mail::to($order->user ?? $order->billing_email)
-            //     ->send(new OrderStatusChangedMail($order, $message));
+            // Send email notification
+            $recipient = $order->user ? $order->user->email : $order->billing_email;
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderStatusChangedMail($order, $message));
+                Log::info('Order status changed email sent', ['recipient' => $recipient]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to send order status changed notification', [
@@ -84,9 +95,12 @@ class OrderNotificationService
                 'tracking_number' => $order->tracking_number
             ]);
 
-            // TODO: Implement shipping notification
-            // Mail::to($order->user ?? $order->billing_email)
-            //     ->send(new OrderShippedMail($order));
+            // Send email notification
+            $recipient = $order->user ? $order->user->email : $order->billing_email;
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderShippedMail($order));
+                Log::info('Order shipped email sent', ['recipient' => $recipient]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to send order shipped notification', [
@@ -107,9 +121,12 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // TODO: Implement delivery notification
-            // Mail::to($order->user ?? $order->billing_email)
-            //     ->send(new OrderDeliveredMail($order));
+            // Send email notification
+            $recipient = $order->user ? $order->user->email : $order->billing_email;
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderDeliveredMail($order));
+                Log::info('Order delivered email sent', ['recipient' => $recipient]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to send order delivered notification', [
@@ -130,9 +147,12 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // TODO: Implement cancellation notification
-            // Mail::to($order->user ?? $order->billing_email)
-            //     ->send(new OrderCancelledMail($order));
+            // Send email notification
+            $recipient = $order->user ? $order->user->email : $order->billing_email;
+            if ($recipient) {
+                Mail::to($recipient)->send(new OrderCancelledMail($order));
+                Log::info('Order cancelled email sent', ['recipient' => $recipient]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to send order cancelled notification', [

@@ -67,6 +67,18 @@ class RouteServiceProvider extends ServiceProvider
             });
         });
 
+        // Contact form rate limiting - spam koruması için katı limit
+        RateLimiter::for('contact', function (Request $request) {
+            $limit = app()->environment('local') ? 100 : 5; // Development vs Production
+            return Limit::perMinute($limit)->by($request->ip())->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Çok fazla mesaj gönderiyorsunuz. Lütfen bir dakika bekleyin.',
+                    'retry_after' => 60
+                ], 429);
+            });
+        });
+
         // Authenticated users için çok yüksek limit - Development'ta neredeyse unlimited
         RateLimiter::for('authenticated', function (Request $request) {
             $limit = app()->environment('local') ? 50000 : 1000; // Development vs Production

@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DealerApplicationController;
 use App\Http\Controllers\Api\PricingSystemController;
+use App\Http\Controllers\Api\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -386,4 +387,14 @@ Route::prefix('v1/search')->middleware(['api', 'domain.cors', 'throttle:public']
     Route::get('/popular', [SearchController::class, 'popular'])->name('api.search.popular');
     Route::get('/autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
     Route::post('/record', [SearchController::class, 'record'])->name('api.search.record');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Contact API Routes (Public with Domain Protection & Rate Limiting)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/contact')->middleware(['api', 'domain.cors', 'throttle:contact'])->group(function () {
+    // Contact form submission - public endpoint with strict rate limiting
+    Route::post('/', [ContactController::class, 'store'])->name('api.contact.store');
 });
