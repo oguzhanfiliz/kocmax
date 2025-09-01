@@ -74,7 +74,11 @@ class SkuGeneratorService
     public function generateVariantSku(string $baseSku, array $combination): string
     {
         $suffix = collect($combination)->map(function ($value) {
-            return Str::upper(Str::substr(preg_replace('/[^a-zA-Z0-9]/', '', $value), 0, 3));
+            // UTF-8 safe substring ve Türkçe karakter dönüşümü
+            $cleanValue = preg_replace('/[^a-zA-ZÇĞİÖŞÜçğıöşü0-9]/', '', $value);
+            $shortValue = mb_substr($cleanValue, 0, 3, 'UTF-8');
+            $upperValue = mb_strtoupper($shortValue, 'UTF-8');
+            return $this->transliterateString($upperValue);
         })->implode('-');
 
         $variantSku = "{$baseSku}-{$suffix}";
@@ -88,6 +92,17 @@ class SkuGeneratorService
         }
 
         return $variantSku;
+    }
+
+    /**
+     * Türkçe karakterleri ASCII karşılıkları ile değiştir
+     */
+    protected function transliterateString(string $text): string
+    {
+        $turkish = ['Ç', 'Ğ', 'İ', 'Ö', 'Ş', 'Ü', 'ç', 'ğ', 'ı', 'ö', 'ş', 'ü'];
+        $ascii = ['C', 'G', 'I', 'O', 'S', 'U', 'c', 'g', 'i', 'o', 's', 'u'];
+        
+        return str_replace($turkish, $ascii, $text);
     }
 }
 

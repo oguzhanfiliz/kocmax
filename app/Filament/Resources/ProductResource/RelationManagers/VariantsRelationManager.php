@@ -849,11 +849,16 @@ class VariantsRelationManager extends RelationManager
         $suffix = '';
 
         if (!empty($data['color'])) {
-            $suffix .= '-' . strtoupper(substr($data['color'], 0, 3));
+            // UTF-8 safe substring ve Türkçe karakter dönüşümü
+            $colorCode = mb_strtoupper(mb_substr($data['color'], 0, 3, 'UTF-8'), 'UTF-8');
+            // Türkçe karakterleri ASCII karşılıkları ile değiştir
+            $colorCode = $this->transliterateString($colorCode);
+            $suffix .= '-' . $colorCode;
         }
 
         if (!empty($data['size'])) {
-            $suffix .= '-' . strtoupper(str_replace([' ', '.'], '', $data['size']));
+            $sizeCode = strtoupper(str_replace([' ', '.'], '', $data['size']));
+            $suffix .= '-' . $sizeCode;
         }
 
         if (empty($suffix)) {
@@ -861,6 +866,17 @@ class VariantsRelationManager extends RelationManager
         }
 
         return $baseSku . $suffix;
+    }
+
+    /**
+     * Türkçe karakterleri ASCII karşılıkları ile değiştir
+     */
+    protected function transliterateString(string $text): string
+    {
+        $turkish = ['Ç', 'Ğ', 'İ', 'Ö', 'Ş', 'Ü', 'ç', 'ğ', 'ı', 'ö', 'ş', 'ü'];
+        $ascii = ['C', 'G', 'I', 'O', 'S', 'U', 'c', 'g', 'i', 'o', 's', 'u'];
+        
+        return str_replace($turkish, $ascii, $text);
     }
 
     protected function createBulkVariants(array $data): void

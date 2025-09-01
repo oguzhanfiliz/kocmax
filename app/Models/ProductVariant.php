@@ -23,6 +23,7 @@ class ProductVariant extends Model
         'cost',
         'source_currency',
         'source_price',
+        'currency_code',
         'stock',
         'min_stock_level',
         'color',
