@@ -332,7 +332,7 @@ class Setting extends Model
     public static function createEssentialSettings(): void
     {
         $essentialSettings = [
-            ['key' => 'site_title', 'label' => 'Site Başlığı', 'value' => 'E-Ticaret Sitesi', 'type' => 'string', 'group' => 'general'],
+            ['key' => 'site_title', 'label' => 'Site Başlığı', 'value' => 'MUTFAK YAPIM', 'type' => 'string', 'group' => 'general'],
             ['key' => 'site_description', 'label' => 'Site Açıklaması', 'value' => 'Modern e-ticaret platformu', 'type' => 'string', 'group' => 'general'],
             ['key' => 'site_logo', 'label' => 'Site Logosu', 'value' => '', 'type' => 'image', 'group' => 'general'],
             ['key' => 'site_favicon', 'label' => 'Site Favicon', 'value' => '/images/favicon.ico', 'type' => 'image', 'group' => 'general'],

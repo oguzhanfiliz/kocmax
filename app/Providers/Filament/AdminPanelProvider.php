@@ -24,7 +24,7 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $siteTitle = Setting::getValue('site_title', 'İş Sağlığı Güvenliği Kıyafetleri E-Ticaret');
+        $siteTitle = Setting::getValue('site_title', 'MUTFAK YAPIM');
         
         return $panel
             ->default()

@@ -35,7 +35,7 @@ class SettingController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="site_title", type="string", example="B2B/B2C E-Ticaret"),
+     *                 @OA\Property(property="site_title", type="string", example="MUTFAK YAPIM"),
      *                 @OA\Property(property="site_description", type="string", example="İş güvenliği ürünleri"),
      *                 @OA\Property(property="contact_phone", type="string", example="+90 555 123 4567"),
      *                 @OA\Property(property="contact_email", type="string", example="info@site.com"),
@@ -95,7 +95,7 @@ class SettingController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="general", type="object",
-     *                     @OA\Property(property="site_title", type="string", example="B2B/B2C E-Ticaret"),
+     *                     @OA\Property(property="site_title", type="string", example="MUTFAK YAPIM"),
      *                     @OA\Property(property="site_description", type="string", example="İş güvenliği ürünleri")
      *                 ),
      *                 @OA\Property(property="contact", type="object",
@@ -161,7 +161,7 @@ class SettingController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="key", type="string", example="site_title"),
-     *                 @OA\Property(property="value", type="string", example="B2B/B2C E-Ticaret"),
+     *                 @OA\Property(property="value", type="string", example="MUTFAK YAPIM"),
      *                 @OA\Property(property="group", type="string", example="general")
      *             ),
      *             @OA\Property(property="message", type="string", example="Ayar başarıyla getirildi")
@@ -225,7 +225,7 @@ class SettingController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="site", type="object",
-     *                     @OA\Property(property="title", type="string", example="B2B/B2C E-Ticaret"),
+     *                     @OA\Property(property="title", type="string", example="MUTFAK YAPIM"),
      *                     @OA\Property(property="description", type="string", example="İş güvenliği ürünleri"),
      *                     @OA\Property(property="logo", type="string", example="/images/logo.png")
      *                 ),
