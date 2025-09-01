@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => env('PROJECT_NAME', 'E-Ticaret API') . ' - API Documentation',
+                'title' => env('PROJECT_NAME', 'MUTFAK YAPIM API') . ' - API Documentation',
             ],
 
             'routes' => [

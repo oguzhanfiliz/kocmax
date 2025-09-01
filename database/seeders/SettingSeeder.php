@@ -16,7 +16,7 @@ class SettingSeeder extends Seeder
             // Site Bilgileri (General)
             [
                 'key' => 'site_title',
-                'value' => 'B2B/B2C E-Ticaret Platformu',
+                'value' => 'MUTFAK YAPIM',
                 'type' => 'string',
                 'group' => 'general',
                 'label' => 'Site Başlığı',
@@ -26,7 +26,7 @@ class SettingSeeder extends Seeder
             ],
             [
                 'key' => 'site_description',
-                'value' => 'İş güvenliği ve koruyucu ekipman ürünlerinde Türkiye\'nin lider B2B/B2C e-ticaret platformu',
+                'value' => 'Mutfak ekipmanları ve iş güvenliği ürünlerinde Türkiye\'nin lider e-ticaret platformu',
                 'type' => 'string',
                 'group' => 'general',
                 'label' => 'Site Açıklaması',

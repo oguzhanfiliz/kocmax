@@ -11,7 +11,7 @@ use Illuminate\Routing\Controller as BaseController;
 /**
  * @OA\Info(
  *      version="2.0.0",
- *      title="B2B/B2C E-Commerce API Documentation",
+ *      title="MUTFAK YAPIM API Documentation",
  *      description="Comprehensive API for B2B and B2C e-commerce platform with multi-currency support, dealer management, advanced product catalog, and domain-based security. The API provides both public endpoints (for catalog browsing) and protected endpoints (for user-specific operations).",
  *      @OA\Contact(
  *          email="support@mutfakyapim.net",

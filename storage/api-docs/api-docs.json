@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "B2B/B2C E-Commerce API Documentation",
+        "title": "MUTFAK YAPIM API Documentation",
         "description": "Comprehensive API for B2B and B2C e-commerce platform with multi-currency support, dealer management, advanced product catalog, and domain-based security. The API provides both public endpoints (for catalog browsing) and protected endpoints (for user-specific operations).",
         "contact": {
             "name": "API Support Team",
@@ -3588,17 +3588,17 @@
                                                         "USD": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.034
+                                                            "example": 0.0340000000000000024424906541753443889319896697998046875
                                                         },
                                                         "EUR": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.031
+                                                            "example": 0.0309999999999999997779553950749686919152736663818359375
                                                         },
                                                         "GBP": {
                                                             "type": "number",
                                                             "format": "float",
-                                                            "example": 0.027
+                                                            "example": 0.0269999999999999996946886682280819513835012912750244140625
                                                         }
                                                     },
                                                     "type": "object"
@@ -3687,7 +3687,7 @@
                                                 "converted_amount": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 3.42
+                                                    "example": 3.4199999999999999289457264239899814128875732421875
                                                 },
                                                 "from_currency": {
                                                     "type": "string",
@@ -3700,7 +3700,7 @@
                                                 "exchange_rate": {
                                                     "type": "number",
                                                     "format": "float",
-                                                    "example": 0.034
+                                                    "example": 0.0340000000000000024424906541753443889319896697998046875
                                                 },
                                                 "converted_at": {
                                                     "type": "string",
@@ -4887,6 +4887,259 @@
                 }
             }
         },
+        "/api/v1/pricing/customer-types": {
+            "get": {
+                "tags": [
+                    "Pricing System"
+                ],
+                "summary": "Müşteri tiplerini listele",
+                "description": "Sistemde tanımlı müşteri tiplerini ve özelliklerini döndürür.",
+                "operationId": "getCustomerTypes",
+                "responses": {
+                    "200": {
+                        "description": "Müşteri tipleri başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Müşteri tipleri başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "type": {
+                                                        "description": "Müşteri tipi kodu",
+                                                        "type": "string",
+                                                        "example": "B2C"
+                                                    },
+                                                    "label": {
+                                                        "description": "Görüntülenecek etiket",
+                                                        "type": "string",
+                                                        "example": "👤 Bireysel Fiyat"
+                                                    },
+                                                    "description": {
+                                                        "description": "Açıklama",
+                                                        "type": "string",
+                                                        "example": "Bireysel müşteriler için fiyatlandırma"
+                                                    },
+                                                    "is_dealer": {
+                                                        "description": "Bayi mi",
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "requires_auth": {
+                                                        "description": "Kimlik doğrulama gerektirir mi",
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pricing/rules": {
+            "get": {
+                "tags": [
+                    "Pricing System"
+                ],
+                "summary": "Aktif fiyatlandırma kurallarını listele",
+                "description": "Sistemde tanımlı aktif fiyatlandırma kurallarını döndürür.",
+                "operationId": "getPricingRules",
+                "responses": {
+                    "200": {
+                        "description": "Fiyatlandırma kuralları başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Fiyatlandırma kuralları başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 23
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Perakende iskonto"
+                                                    },
+                                                    "customer_types": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "b2c"
+                                                        }
+                                                    },
+                                                    "min_quantity": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "discount_percentage": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 35
+                                                    },
+                                                    "priority": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pricing/calculate": {
+            "get": {
+                "tags": [
+                    "Pricing System"
+                ],
+                "summary": "Fiyat hesaplama testi",
+                "description": "Belirli bir ürün için müşteri tipine göre fiyat hesaplaması yapar.",
+                "operationId": "calculatePricing",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Ürün ID'si",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "customer_type",
+                        "in": "query",
+                        "description": "Müşteri tipi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "B2C",
+                                "B2B",
+                                "WHOLESALE",
+                                "RETAIL"
+                            ],
+                            "example": "B2C"
+                        }
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "query",
+                        "description": "Adet",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fiyat hesaplaması başarıyla tamamlandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Fiyat hesaplaması başarıyla tamamlandı"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "base_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 155
+                                                },
+                                                "your_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 100.75
+                                                },
+                                                "discount_percentage": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 35
+                                                },
+                                                "customer_type": {
+                                                    "type": "string",
+                                                    "example": "B2C"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "applied_rule": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 23
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Perakende iskonto"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/products": {
             "get": {
                 "tags": [
@@ -4894,7 +5147,7 @@
                     "Public API"
                 ],
                 "summary": "Filtreleme ve arama ile ürün listesini al (Public)",
-                "description": "Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Authentication gerektirmez, guest pricing kullanır. Production'da domain koruması aktiftir.",
+                "description": "Gelişmiş filtreleme seçenekleriyle sayfalanmış ürün listesini döndürür. Akıllı fiyatlandırma sistemi ile müşteri tipine göre fiyatlar hesaplanır. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
                 "operationId": "getProducts",
                 "parameters": [
                     {
@@ -4915,6 +5168,16 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "category_slug",
+                        "in": "query",
+                        "description": "Kategori slug'ına göre filtrele",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "is-guvenlik-ayakkabilari"
                         }
                     },
                     {
@@ -5153,32 +5416,40 @@
                     "Public API"
                 ],
                 "summary": "Tek ürün ayrıntılarını al (Public)",
-                "description": "Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Authentication gerektirmez, guest pricing kullanır.",
+                "description": "Belirli bir ürün hakkında ayrıntılı bilgi döndürür. Akıllı fiyatlandırma sistemi ile müşteri tipine göre fiyatlar hesaplanır. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
                 "operationId": "getProduct",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Ürün ID'si",
+                        "description": "Ürün ID'si veya slug",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "string",
+                            "example": "1"
                         }
                     },
                     {
                         "name": "currency",
                         "in": "query",
-                        "description": "Fiyat gösterimi için para birimi",
+                        "description": "Fiyat gösterimi için para birimi (şu anda sadece TRY destekleniyor)",
                         "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "TRY",
-                                "USD",
-                                "EUR"
+                                "TRY"
                             ],
                             "example": "TRY"
+                        }
+                    },
+                    {
+                        "name": "quantity",
+                        "in": "query",
+                        "description": "Fiyat hesaplaması için adet (varsayılan: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -5709,7 +5980,7 @@
                                             "properties": {
                                                 "site_title": {
                                                     "type": "string",
-                                                    "example": "B2B/B2C E-Ticaret"
+                                                    "example": "MUTFAK YAPIM"
                                                 },
                                                 "site_description": {
                                                     "type": "string",
@@ -5771,7 +6042,7 @@
                                                     "properties": {
                                                         "site_title": {
                                                             "type": "string",
-                                                            "example": "B2B/B2C E-Ticaret"
+                                                            "example": "MUTFAK YAPIM"
                                                         },
                                                         "site_description": {
                                                             "type": "string",
@@ -5860,7 +6131,7 @@
                                                 },
                                                 "value": {
                                                     "type": "string",
-                                                    "example": "B2B/B2C E-Ticaret"
+                                                    "example": "MUTFAK YAPIM"
                                                 },
                                                 "group": {
                                                     "type": "string",
@@ -5930,7 +6201,7 @@
                                                     "properties": {
                                                         "title": {
                                                             "type": "string",
-                                                            "example": "B2B/B2C E-Ticaret"
+                                                            "example": "MUTFAK YAPIM"
                                                         },
                                                         "description": {
                                                             "type": "string",
@@ -8311,7 +8582,7 @@
                         "description": "TRY cinsinden döviz kuru",
                         "type": "number",
                         "format": "float",
-                        "example": 29.45
+                        "example": 29.449999999999999289457264239899814128875732421875
                     },
                     "is_default": {
                         "description": "Varsayılan para birimi mi?",
@@ -8775,6 +9046,93 @@
                             "type": "object"
                         }
                     },
+                    "pricing": {
+                        "properties": {
+                            "base_price": {
+                                "description": "Ürünün liste fiyatı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 150
+                            },
+                            "your_price": {
+                                "description": "Müşteri tipine göre hesaplanan fiyat",
+                                "type": "number",
+                                "format": "float",
+                                "example": 127.5
+                            },
+                            "your_price_formatted": {
+                                "description": "Formatlanmış fiyat",
+                                "type": "string",
+                                "example": "127,50 ₺"
+                            },
+                            "base_price_formatted": {
+                                "description": "Formatlanmış liste fiyatı",
+                                "type": "string",
+                                "example": "150,00 ₺"
+                            },
+                            "currency": {
+                                "description": "Para birimi",
+                                "type": "string",
+                                "example": "TRY"
+                            },
+                            "price_type": {
+                                "description": "Fiyat tipi etiketi",
+                                "type": "string",
+                                "example": "👤 Bireysel Fiyat"
+                            },
+                            "customer_type": {
+                                "description": "Müşteri tipi",
+                                "type": "string",
+                                "enum": [
+                                    "B2C",
+                                    "B2B",
+                                    "WHOLESALE",
+                                    "RETAIL"
+                                ],
+                                "example": "B2C"
+                            },
+                            "discount_percentage": {
+                                "description": "İndirim yüzdesi",
+                                "type": "number",
+                                "format": "float",
+                                "example": 15
+                            },
+                            "discount_amount": {
+                                "description": "İndirim tutarı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.5
+                            },
+                            "savings_amount": {
+                                "description": "Tasarruf tutarı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.5
+                            },
+                            "smart_pricing_enabled": {
+                                "description": "Akıllı fiyatlandırma aktif mi",
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "is_dealer_price": {
+                                "description": "Bayi fiyatı mı",
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "pricing_tier": {
+                                "description": "Fiyatlandırma katmanı",
+                                "type": "string",
+                                "example": "Premium",
+                                "nullable": true
+                            },
+                            "quantity": {
+                                "description": "Hesaplama için kullanılan adet",
+                                "type": "integer",
+                                "example": 1
+                            }
+                        },
+                        "type": "object"
+                    },
                     "variants": {
                         "type": "array",
                         "items": {
@@ -8811,6 +9169,79 @@
                                 "is_active": {
                                     "type": "boolean",
                                     "example": true
+                                },
+                                "pricing": {
+                                    "properties": {
+                                        "base_price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 150
+                                        },
+                                        "your_price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 127.5
+                                        },
+                                        "your_price_formatted": {
+                                            "type": "string",
+                                            "example": "127,50 ₺"
+                                        },
+                                        "base_price_formatted": {
+                                            "type": "string",
+                                            "example": "150,00 ₺"
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "TRY"
+                                        },
+                                        "price_type": {
+                                            "type": "string",
+                                            "example": "👤 Bireysel Fiyat"
+                                        },
+                                        "customer_type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "B2C",
+                                                "B2B",
+                                                "WHOLESALE",
+                                                "RETAIL"
+                                            ],
+                                            "example": "B2C"
+                                        },
+                                        "discount_percentage": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
+                                        },
+                                        "discount_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 22.5
+                                        },
+                                        "savings_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 22.5
+                                        },
+                                        "smart_pricing_enabled": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "is_dealer_price": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "pricing_tier": {
+                                            "type": "string",
+                                            "example": "Premium",
+                                            "nullable": true
+                                        },
+                                        "quantity": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             },
                             "type": "object"
@@ -8902,6 +9333,23 @@
                         "type": "string",
                         "example": "Safety Equipment Retailer",
                         "nullable": true
+                    },
+                    "customer_type": {
+                        "description": "Müşteri tipi",
+                        "type": "string",
+                        "enum": [
+                            "b2b",
+                            "b2c",
+                            "guest",
+                            "wholesale",
+                            "retail"
+                        ],
+                        "example": "b2b"
+                    },
+                    "customer_type_label": {
+                        "description": "Müşteri tipi etiketi",
+                        "type": "string",
+                        "example": "Business to Business"
                     },
                     "pricing_tier": {
                         "properties": {
@@ -9281,6 +9729,10 @@
         {
             "name": "Orders",
             "description": "Sipariş yönetimi API uç noktaları"
+        },
+        {
+            "name": "Pricing System",
+            "description": "Akıllı Fiyatlandırma Sistemi API uç noktaları"
         },
         {
             "name": "Products",
