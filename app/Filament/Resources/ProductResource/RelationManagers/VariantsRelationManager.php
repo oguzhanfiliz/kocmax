@@ -610,10 +610,10 @@ class VariantsRelationManager extends RelationManager
                                     })
                                     ->columnSpanFull(),
                             ]),
-                        Forms\Components\Section::make('Yeni Bedenler')
+                        Forms\Components\Section::make('Yeni Bedenler ve Gözlük Özellikleri')
                             ->schema([
                                 Forms\Components\CheckboxList::make('new_sizes')
-                                    ->label('Oluşturulacak Bedenler/Ayakkabı Numaraları')
+                                    ->label('📏 Oluşturulacak Bedenler/Ayakkabı Numaraları (İsteğe Bağlı)')
                                     ->options([
                                         // Tekstil bedenler
                                         'XS' => 'XS',
@@ -639,13 +639,147 @@ class VariantsRelationManager extends RelationManager
                                         '48' => '48 Numara',
                                     ])
                                     ->columns(6)
-                                    ->required()
-                                    ->helperText('Seçilen bedenler için aynı renk ve özelliklerle yeni varyantlar oluşturulacak'),
+                                    ->helperText('Seçilirse, seçilen bedenler için varyantlar oluşturulur. Boş bırakılırsa sadece gözlük özellikleri ile varyant oluşturulur.'),
+                                
+                                Forms\Components\Placeholder::make('glass_separator')
+                                    ->label('👓 Gözlük Özellikleri')
+                                    ->content('Aşağıdaki gözlük özelliklerini seçerek her özellik için farklı fiyat belirleyebilirsiniz')
+                                    ->columnSpanFull()
+                                    ->visible(function () {
+                                        try {
+                                            $glassType = \App\Models\VariantType::where('slug', 'glass-options')
+                                                ->orWhere('name', 'LIKE', '%gözlük%')
+                                                ->orWhere('name', 'LIKE', '%glass%')
+                                                ->exists();
+                                            return $glassType;
+                                        } catch (\Exception $e) {
+                                            return false;
+                                        }
+                                    }),
+                                
+                                Forms\Components\CheckboxList::make('glass_options_simple')
+                                    ->label('Gözlük Özellikleri')
+                                    ->options(function () {
+                                        try {
+                                            $glassType = \App\Models\VariantType::where('slug', 'glass-options')
+                                                ->orWhere('name', 'LIKE', '%gözlük%')
+                                                ->orWhere('name', 'LIKE', '%glass%')
+                                                ->with('options')
+                                                ->first();
+                                            
+                                            if (!$glassType || !$glassType->options) {
+                                                return [];
+                                            }
+                                            
+                                            return $glassType->options->pluck('display_value', 'id')->toArray();
+                                        } catch (\Exception $e) {
+                                            return [];
+                                        }
+                                    })
+                                    ->columns(3)
+                                    ->helperText('Seçilen gözlük özellikleri için aşağıda fiyat belirleyebilirsiniz')
+                                    ->live()
+                                    ->visible(function () {
+                                        try {
+                                            $glassType = \App\Models\VariantType::where('slug', 'glass-options')
+                                                ->orWhere('name', 'LIKE', '%gözlük%')
+                                                ->orWhere('name', 'LIKE', '%glass%')
+                                                ->exists();
+                                            return $glassType;
+                                        } catch (\Exception $e) {
+                                            return false;
+                                        }
+                                    }),
+                                
+                                Forms\Components\Grid::make(2)
+                                    ->schema(function () {
+                                        try {
+                                            $glassType = \App\Models\VariantType::where('slug', 'glass-options')
+                                                ->orWhere('name', 'LIKE', '%gözlük%')
+                                                ->orWhere('name', 'LIKE', '%glass%')
+                                                ->with('options')
+                                                ->first();
+                                            
+                                            if (!$glassType || !$glassType->options) {
+                                                return [];
+                                            }
+                                            
+                                            $components = [];
+                                            foreach ($glassType->options as $option) {
+                                                $components[] = Forms\Components\Fieldset::make("glass_price_{$option->id}")
+                                                    ->label($option->display_value . ' Fiyat Ayarları')
+                                                    ->schema([
+                                                        Forms\Components\Select::make("glass_currency_{$option->id}")
+                                                            ->label('Para Birimi')
+                                                            ->options(fn() => \App\Helpers\CurrencyHelper::getActiveCurrencyOptions())
+                                                            ->default('TRY')
+                                                            ->live(),
+                                                        Forms\Components\TextInput::make("glass_price_{$option->id}")
+                                                            ->label(function (Forms\Get $get) use ($option): string {
+                                                                $currencyCode = $get("glass_currency_{$option->id}") ?? 'TRY';
+                                                                $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                                                return 'Fiyat (' . $symbol . ')';
+                                                            })
+                                                            ->numeric()
+                                                            ->step(0.01)
+                                                            ->prefix(function (Forms\Get $get) use ($option): string {
+                                                                $currencyCode = $get("glass_currency_{$option->id}") ?? 'TRY';
+                                                                return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                                            })
+                                                            ->placeholder('200.00'),
+                                                    ])
+                                                    ->columns(2)
+                                                    ->visible(function (Forms\Get $get) use ($option): bool {
+                                                        $selectedOptions = $get('glass_options_simple') ?? [];
+                                                        return in_array($option->id, $selectedOptions);
+                                                    });
+                                            }
+                                            return $components;
+                                        } catch (\Exception $e) {
+                                            return [];
+                                        }
+                                    })
+                                    ->visible(function () {
+                                        try {
+                                            $glassType = \App\Models\VariantType::where('slug', 'glass-options')
+                                                ->orWhere('name', 'LIKE', '%gözlük%')
+                                                ->orWhere('name', 'LIKE', '%glass%')
+                                                ->exists();
+                                            return $glassType;
+                                        } catch (\Exception $e) {
+                                            return false;
+                                        }
+                                    }),
+                                
                                 Forms\Components\Toggle::make('skip_existing')
                                     ->label('Mevcut Kombinasyonları Atla')
                                     ->default(true)
                                     ->helperText('Bu renk ve beden kombinasyonu zaten varsa atla'),
                             ]),
+                        Forms\Components\Section::make('Basit Fiyat Ayarı')
+                            ->description('Tüm yeni varyantlar için tek fiyat belirleyebilirsiniz')
+                            ->schema([
+                                Forms\Components\Select::make('price_source_currency')
+                                    ->label('Fiyat Para Birimi')
+                                    ->options(fn() => \App\Helpers\CurrencyHelper::getActiveCurrencyOptions())
+                                    ->default('TRY')
+                                    ->live(),
+                                Forms\Components\TextInput::make('new_price')
+                                    ->label(function (Forms\Get $get): string {
+                                        $currencyCode = $get('price_source_currency') ?? 'TRY';
+                                        $symbol = \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                        return 'Yeni Fiyat (' . $symbol . ')';
+                                    })
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->prefix(function (Forms\Get $get): string {
+                                        $currencyCode = $get('price_source_currency') ?? 'TRY';
+                                        return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
+                                    })
+                                    ->helperText('Boş bırakırsanız kaynak varyantın fiyatı kullanılır')
+                                    ->hint('Örn: 150.00'),
+                            ])
+                            ->columns(2),
                         Forms\Components\Section::make('İsteğe Bağlı Ayarlar')
                             ->schema([
                                 Forms\Components\TextInput::make('stock_override')
@@ -961,11 +1095,17 @@ class VariantsRelationManager extends RelationManager
         $skipExisting = $data['skip_existing'] ?? true;
         $stockOverride = $data['stock_override'] ?? null;
         $copyImages = $data['copy_images'] ?? true;
+        
+        // Fiyat ve gözlük özellikleri parametreleri
+        $newPrice = $data['new_price'] ?? null;
+        $priceCurrency = $data['price_source_currency'] ?? 'TRY';
+        $selectedGlassOptionIds = $data['glass_options_simple'] ?? [];
 
-        if (empty($newSizes)) {
+        // En az beden ya da gözlük özelliği seçilmeli
+        if (empty($newSizes) && empty($selectedGlassOptionIds)) {
             \Filament\Notifications\Notification::make()
                 ->title('Hata')
-                ->body('En az bir beden seçmelisiniz.')
+                ->body('En az bir beden veya gözlük özelliği seçmelisiniz.')
                 ->danger()
                 ->send();
             return;
@@ -975,34 +1115,152 @@ class VariantsRelationManager extends RelationManager
         $createdCount = 0;
         $skippedCount = 0;
 
-        foreach ($newSizes as $newSize) {
+        // Seçilen gözlük özelliklerini ve fiyatlarını filtrele
+        $selectedGlassOptions = [];
+        if (!empty($selectedGlassOptionIds)) {
+            foreach ($selectedGlassOptionIds as $optionId) {
+                $priceKey = "glass_price_{$optionId}";
+                $currencyKey = "glass_currency_{$optionId}";
+                
+                if (isset($data[$priceKey]) && !empty($data[$priceKey])) {
+                    $selectedGlassOptions[] = [
+                        'option_id' => $optionId,
+                        'price' => (float) $data[$priceKey],
+                        'currency' => $data[$currencyKey] ?? 'TRY'
+                    ];
+                }
+            }
+        }
+        
+        // Temel varyant fiyatını belirle
+        $basePriceToUse = $newPrice ? (float) $newPrice : (float) ($sourceVariant->price ?? $sourceVariant->source_price ?? 0);
+        
+        // Hangi durumlarda ne yapılacağını belirle
+        if (empty($selectedGlassOptions)) {
+            // Sadece beden varyantları oluştur (gözlük özelliği yok)
+            foreach ($newSizes as $newSize) {
+                $this->createSingleVariant($product, $sourceVariant, $newSize, $basePriceToUse, $priceCurrency, null, null, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+            }
+        } else {
+            // Gözlük özellikleri var
+            if (empty($newSizes)) {
+                // Sadece gözlük özellikleri ile varyant oluştur (beden yok)
+                foreach ($selectedGlassOptions as $glassOption) {
+                    $optionId = $glassOption['option_id'];
+                    $optionPrice = $glassOption['price'];
+                    $optionCurrency = $glassOption['currency'];
+                    
+                    $this->createSingleVariant($product, $sourceVariant, null, $optionPrice, $optionCurrency, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+                }
+            } else {
+                // Hem gözlük özellikleri hem bedenler var - her kombinasyonu oluştur
+                foreach ($selectedGlassOptions as $glassOption) {
+                    $optionId = $glassOption['option_id'];
+                    $optionPrice = $glassOption['price'];
+                    $optionCurrency = $glassOption['currency'];
+                    
+                    foreach ($newSizes as $newSize) {
+                        $this->createSingleVariant($product, $sourceVariant, $newSize, $optionPrice, $optionCurrency, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+                    }
+                }
+            }
+        }
+
+        // Bildirim gönder
+        if ($createdCount > 0) {
+            $message = "{$createdCount} adet varyant başarıyla oluşturuldu.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} adet mevcut kombinasyon atlandı.";
+            }
+            
+            \Filament\Notifications\Notification::make()
+                ->title('Varyant Kopyalama Tamamlandı')
+                ->body($message)
+                ->success()
+                ->send();
+        } else {
+            \Filament\Notifications\Notification::make()
+                ->title('Hiç Varyant Oluşturulmadı')
+                ->body($skippedCount > 0 ? 'Tüm seçilen kombinasyonlar zaten mevcut.' : 'Bir hata oluştu.')
+                ->warning()
+                ->send();
+        }
+    }
+
+    protected function createSingleVariant($product, $sourceVariant, $newSize, $price, $priceCurrency, $glassOptionId = null, $glassOption = null, $skipExisting = true, $stockOverride = null, $copyImages = true, &$createdCount, &$skippedCount): void
+    {
+        try {
             // Mevcut kombinasyonu kontrol et
             if ($skipExisting) {
-                $existingVariant = $product->variants()
-                    ->where('color', $sourceVariant->color)
-                    ->where('size', $newSize)
-                    ->first();
-
+                $query = $product->variants()
+                    ->where('color', $sourceVariant->color);
+                
+                // Beden varsa kontrol et
+                if ($newSize !== null) {
+                    $query->where('size', $newSize);
+                } else {
+                    // Beden yoksa, kaynak varyantın bedenini kullan
+                    $query->where('size', $sourceVariant->size);
+                }
+                
+                // Gözlük özelliği varsa onu da kontrol et
+                if ($glassOptionId) {
+                    $query->whereHas('variantOptions', function($q) use ($glassOptionId) {
+                        $q->where('variant_option_id', $glassOptionId);
+                    });
+                }
+                
+                $existingVariant = $query->first();
+                
                 if ($existingVariant) {
                     $skippedCount++;
-                    continue;
+                    return;
+                }
+            }
+
+            // Varyant adını oluştur
+            $nameParts = [];
+            if ($sourceVariant->color) {
+                $nameParts[] = $sourceVariant->color;
+            }
+            
+            // Beden varsa ekle, yoksa kaynak varyantın bedenini kullan
+            $sizeToUse = $newSize ?? $sourceVariant->size;
+            if ($sizeToUse) {
+                $nameParts[] = $sizeToUse . ($this->isShoeSize($sizeToUse) ? ' Numara' : '');
+            }
+            
+            if ($glassOption && isset($glassOption['option_id'])) {
+                $option = \App\Models\VariantOption::find($glassOption['option_id']);
+                if ($option) {
+                    $nameParts[] = $option->display_value;
+                }
+            }
+            
+            $variantName = implode(' + ', $nameParts);
+
+            // SKU oluştur
+            $skuParts = ['color' => $sourceVariant->color, 'size' => $sizeToUse];
+            $sku = $this->generateVariantSku($skuParts);
+            if ($glassOption && isset($glassOption['option_id'])) {
+                $option = \App\Models\VariantOption::find($glassOption['option_id']);
+                if ($option) {
+                    $sku .= '-' . strtoupper(substr($option->slug, 0, 3));
                 }
             }
 
             // Yeni varyant verilerini hazırla
             $newVariantData = [
-                'name' => $sourceVariant->color 
-                    ? $sourceVariant->color . ' - ' . $newSize 
-                    : $newSize . ' Numara',
-                'sku' => $this->generateVariantSku(['color' => $sourceVariant->color, 'size' => $newSize]),
+                'name' => $variantName,
+                'sku' => $sku,
                 'color' => $sourceVariant->color,
-                'size' => $newSize,
+                'size' => $sizeToUse,
                 
-                // Fiyat bilgilerini kopyala
-                'price' => $sourceVariant->price,
-                'source_price' => $sourceVariant->source_price,
-                'source_currency' => $sourceVariant->source_currency ?? ($sourceVariant->currency_code ?? 'TRY'),
-                'currency_code' => $sourceVariant->currency_code ?? 'TRY',
+                // Fiyat bilgileri
+                'price' => $price,
+                'source_price' => $price,
+                'source_currency' => $priceCurrency,
+                'currency_code' => $priceCurrency,
                 'cost' => $sourceVariant->cost,
                 
                 // Stok bilgileri
@@ -1037,10 +1295,15 @@ class VariantsRelationManager extends RelationManager
             // Yeni varyantı oluştur
             $newVariant = $product->variants()->create($newVariantData);
 
-            // Varyant seçeneklerini kopyala (VariantOptions ilişkisi)
+            // Mevcut varyant seçeneklerini kopyala
             if ($sourceVariant->variantOptions && $sourceVariant->variantOptions->count() > 0) {
                 $optionIds = $sourceVariant->variantOptions->pluck('id')->toArray();
                 $newVariant->variantOptions()->attach($optionIds);
+            }
+
+            // Gözlük özelliğini ekle
+            if ($glassOptionId) {
+                $newVariant->variantOptions()->attach($glassOptionId);
             }
 
             // Görselleri kopyala
@@ -1056,27 +1319,20 @@ class VariantsRelationManager extends RelationManager
             }
 
             $createdCount++;
-        }
 
-        // Bildirim gönder
-        if ($createdCount > 0) {
-            $message = "{$createdCount} adet varyant başarıyla oluşturuldu.";
-            if ($skippedCount > 0) {
-                $message .= " {$skippedCount} adet mevcut kombinasyon atlandı.";
-            }
-            
-            \Filament\Notifications\Notification::make()
-                ->title('Varyant Kopyalama Tamamlandı')
-                ->body($message)
-                ->success()
-                ->send();
-        } else {
-            \Filament\Notifications\Notification::make()
-                ->title('Hiç Varyant Oluşturulmadı')
-                ->body($skippedCount > 0 ? 'Tüm seçilen kombinasyonlar zaten mevcut.' : 'Bir hata oluştu.')
-                ->warning()
-                ->send();
+        } catch (\Exception $e) {
+            \Log::error('Single variant creation error: ' . $e->getMessage(), [
+                'source_variant_id' => $sourceVariant->id,
+                'new_size' => $newSize,
+                'glass_option_id' => $glassOptionId,
+                'error' => $e->getMessage()
+            ]);
         }
+    }
+
+    protected function isShoeSize($size): bool
+    {
+        return is_numeric($size) && (int) $size >= 30 && (int) $size <= 60;
     }
 
 }
