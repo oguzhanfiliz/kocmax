@@ -10,6 +10,7 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Models\Cart;
+use App\Models\ProductVariant;
 use App\Services\Order\OrderService;
 use App\Services\Checkout\CheckoutCoordinator;
 use App\Enums\OrderStatus;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -571,5 +573,266 @@ class OrderController extends Controller
                 'message' => 'Alışveriş tahmini hesaplanamadı: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Frontend sepet ödeme işlemi - External API simülasyonu
+     * Frontend'den sepet verileriyle sipariş oluşturur
+     */
+    public function processCheckoutPayment(Request $request): JsonResponse
+    {
+        try {
+            // Validation - artık hem address_id hem de manual address destekler
+            $validated = $request->validate([
+                'cart_items' => 'required|array|min:1',
+                'cart_items.*.product_variant_id' => 'required|integer',
+                'cart_items.*.quantity' => 'required|integer|min:1',
+                
+                // Address seçim yöntemi - address_id veya manual address
+                'shipping_address_id' => 'nullable|integer|exists:addresses,id',
+                'billing_address_id' => 'nullable|integer|exists:addresses,id',
+                
+                // Manuel address bilgileri (eğer address_id yoksa)
+                'shipping_address' => 'required_without:shipping_address_id|array',
+                'shipping_address.name' => 'required_with:shipping_address|string',
+                'shipping_address.phone' => 'required_with:shipping_address|string',
+                'shipping_address.address' => 'required_with:shipping_address|string',
+                'shipping_address.city' => 'required_with:shipping_address|string',
+                
+                'billing_address' => 'required_without:billing_address_id|array',
+                'billing_address.name' => 'required_with:billing_address|string',
+                'billing_address.phone' => 'required_with:billing_address|string',
+                'billing_address.address' => 'required_with:billing_address|string',
+                'billing_address.city' => 'required_with:billing_address|string',
+            ]);
+
+            $user = Auth::user();
+            
+            Log::info('Checkout payment process started', [
+                'user_id' => $user->id,
+                'cart_items_count' => count($validated['cart_items'])
+            ]);
+
+            // 1. Sepet toplam tutarını hesapla
+            $cartTotal = $this->calculateCartTotal($validated['cart_items']);
+            
+            // 2. External payment API simülasyonu
+            $paymentSuccess = $this->simulateExternalPaymentAPI();
+            
+            if (!$paymentSuccess) {
+                Log::warning('Payment simulation failed', ['user_id' => $user->id]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ödeme işlemi başarısız oldu. Lütfen tekrar deneyiniz.',
+                    'error_code' => 'PAYMENT_FAILED'
+                ], 400);
+            }
+
+            // 3. Ödeme başarılı - Sipariş oluştur
+            $order = $this->createOrderFromCart($validated, $user, $cartTotal);
+
+            Log::info('Order created successfully from checkout payment', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $user->id,
+                'total_amount' => $order->total_amount
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ödeme başarılı! Siparişiniz oluşturuldu.',
+                'data' => [
+                    'payment_status' => 'success',
+                    'order' => [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'total_amount' => number_format($order->total_amount, 2),
+                        'status' => $order->status,
+                        'payment_status' => $order->payment_status,
+                        'created_at' => $order->created_at->format('Y-m-d H:i:s')
+                    ]
+                ]
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gönderilen veriler eksik veya hatalı.',
+                'errors' => $e->errors(),
+                'error_code' => 'VALIDATION_FAILED'
+            ], 422);
+            
+        } catch (\Exception $e) {
+            Log::error('Checkout payment process failed', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyiniz.',
+                'error_code' => 'SYSTEM_ERROR'
+            ], 500);
+        }
+    }
+
+    /**
+     * External Payment API simülasyonu
+     * Gerçek implementasyonda burada external API çağrısı yapılacak
+     */
+    private function simulateExternalPaymentAPI(): bool
+    {
+        Log::info('Simulating external payment API call');
+        
+        // Simülasyon - %95 başarı oranı
+        // Gerçek implementasyonda external API'ye istek atılacak
+        $success = rand(1, 100) <= 95;
+        
+        Log::info('External payment API simulation result', ['success' => $success]);
+        
+        return $success;
+    }
+
+    /**
+     * Sepet toplam tutarını hesapla
+     */
+    private function calculateCartTotal(array $cartItems): float
+    {
+        $total = 0.0;
+        
+        foreach ($cartItems as $item) {
+            $variant = ProductVariant::find($item['product_variant_id']);
+            if ($variant) {
+                $total += (float) $variant->price * (int) $item['quantity'];
+            }
+        }
+        
+        return $total;
+    }
+
+    /**
+     * Sepet verilerinden sipariş oluştur
+     */
+    private function createOrderFromCart(array $validated, $user, float $totalAmount): Order
+    {
+        // Shipping ve billing address bilgilerini resolve et
+        $shippingAddressData = $this->resolveAddress($validated, 'shipping', $user);
+        $billingAddressData = $this->resolveAddress($validated, 'billing', $user);
+        
+        // Sipariş verilerini hazırla
+        $orderData = [
+            'user_id' => $user->id,
+            'order_number' => $this->generateOrderNumber(),
+            'total_amount' => $totalAmount,
+            'subtotal' => $totalAmount, // Basitleştirildi
+            'currency_code' => 'TRY',
+            'status' => 'pending',
+            'payment_method' => 'online',
+            'payment_status' => 'paid',
+            
+            // Shipping address
+            'shipping_name' => $shippingAddressData['name'],
+            'shipping_phone' => $shippingAddressData['phone'],
+            'shipping_address' => $shippingAddressData['address'],
+            'shipping_city' => $shippingAddressData['city'],
+            'shipping_state' => $shippingAddressData['state'] ?? '',
+            'shipping_zip' => $shippingAddressData['zip'] ?? '',
+            'shipping_country' => $shippingAddressData['country'] ?? 'TR',
+            
+            // Billing address  
+            'billing_name' => $billingAddressData['name'],
+            'billing_phone' => $billingAddressData['phone'],
+            'billing_address' => $billingAddressData['address'],
+            'billing_city' => $billingAddressData['city'],
+            'billing_state' => $billingAddressData['state'] ?? '',
+            'billing_zip' => $billingAddressData['zip'] ?? '',
+            'billing_country' => $billingAddressData['country'] ?? 'TR',
+            'billing_tax_number' => $billingAddressData['tax_number'] ?? null,
+            'billing_tax_office' => $billingAddressData['tax_office'] ?? null,
+        ];
+
+        // Order oluştur
+        $order = Order::create($orderData);
+        
+        // Order items oluştur
+        foreach ($validated['cart_items'] as $item) {
+            $variant = ProductVariant::with('product')->find($item['product_variant_id']);
+            
+            if ($variant) {
+                $order->items()->create([
+                    'product_id' => $variant->product_id,
+                    'product_variant_id' => $variant->id,
+                    'quantity' => $item['quantity'],
+                    'price' => $variant->price,
+                    'total' => $variant->price * $item['quantity'],
+                    'product_name' => $variant->product->name,
+                    'product_sku' => $variant->sku ?? '',
+                    'product_attributes' => [
+                        'color' => $variant->color,
+                        'size' => $variant->size
+                    ]
+                ]);
+            }
+        }
+        
+        return $order;
+    }
+
+    /**
+     * Address resolve et - ID'den veya manual data'dan
+     */
+    private function resolveAddress(array $validated, string $type, $user): array
+    {
+        $addressIdKey = $type . '_address_id';
+        $addressDataKey = $type . '_address';
+        
+        // Eğer address_id varsa o adresi kullan
+        if (!empty($validated[$addressIdKey])) {
+            $address = $user->addresses()->find($validated[$addressIdKey]);
+            
+            if (!$address) {
+                throw new \Exception("Seçilen {$type} adresi bulunamadı.");
+            }
+            
+            // Address modelinden data'ya çevir
+            return [
+                'name' => $address->full_name,
+                'phone' => $address->phone ?? '',
+                'address' => $address->address_line_1 . ($address->address_line_2 ? ', ' . $address->address_line_2 : ''),
+                'city' => $address->city,
+                'state' => $address->state ?? '',
+                'zip' => $address->postal_code ?? '',
+                'country' => $address->country ?? 'TR',
+                'tax_number' => $address->company_name ? '' : null, // Şirket varsa vergi no olabilir
+                'tax_office' => null
+            ];
+        }
+        
+        // Manuel address data kullan
+        if (!empty($validated[$addressDataKey])) {
+            return [
+                'name' => $validated[$addressDataKey]['name'],
+                'phone' => $validated[$addressDataKey]['phone'] ?? '',
+                'address' => $validated[$addressDataKey]['address'],
+                'city' => $validated[$addressDataKey]['city'],
+                'state' => $validated[$addressDataKey]['state'] ?? '',
+                'zip' => $validated[$addressDataKey]['zip'] ?? '',
+                'country' => $validated[$addressDataKey]['country'] ?? 'TR',
+                'tax_number' => $validated[$addressDataKey]['tax_number'] ?? null,
+                'tax_office' => $validated[$addressDataKey]['tax_office'] ?? null
+            ];
+        }
+        
+        throw new \Exception("Geçerli bir {$type} adresi sağlanmalıdır.");
+    }
+
+    /**
+     * Sipariş numarası oluştur
+     */
+    private function generateOrderNumber(): string
+    {
+        return 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6));
     }
 }

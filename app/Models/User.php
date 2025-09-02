@@ -306,8 +306,8 @@ class User extends Authenticatable implements FilamentUser
         return $this->addresses()
             ->where('is_default_shipping', true)
             ->where(function ($query) {
-                $query->where('type', 'shipping')
-                      ->orWhere('type', 'both');
+                $query->where('category', 'shipping')
+                      ->orWhere('category', 'both');
             })
             ->first();
     }
@@ -320,8 +320,8 @@ class User extends Authenticatable implements FilamentUser
         return $this->addresses()
             ->where('is_default_billing', true)
             ->where(function ($query) {
-                $query->where('type', 'billing')
-                      ->orWhere('type', 'both');
+                $query->where('category', 'billing')
+                      ->orWhere('category', 'both');
             })
             ->first();
     }

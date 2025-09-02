@@ -54,6 +54,7 @@ class AddressResource extends JsonResource
             'is_default_shipping' => $this->is_default_shipping,
             'is_default_billing' => $this->is_default_billing,
             'type' => $this->type,
+            'category' => $this->category,
             'notes' => $this->notes,
             'formatted_address' => $this->formatted_address,
             'created_at' => $this->created_at->toISOString(),

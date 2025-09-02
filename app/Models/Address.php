@@ -27,7 +27,8 @@ class Address extends Model
         'country',
         'is_default_shipping',
         'is_default_billing',
-        'type',
+        'type', // home, work, billing, other
+        'category', // shipping, billing, both
         'notes',
     ];
 
@@ -37,18 +38,36 @@ class Address extends Model
     ];
 
     /**
-     * Address types
+     * Address types - Daha detaylı türler
      */
-    public const TYPE_SHIPPING = 'shipping';
+    public const TYPE_HOME = 'home';
+    public const TYPE_WORK = 'work';
     public const TYPE_BILLING = 'billing';
-    public const TYPE_BOTH = 'both';
+    public const TYPE_OTHER = 'other';
+
+    /**
+     * Address categories - Shipping, billing ya da her ikisi
+     */
+    public const CATEGORY_SHIPPING = 'shipping';
+    public const CATEGORY_BILLING = 'billing';
+    public const CATEGORY_BOTH = 'both';
 
     public static function getTypes(): array
     {
         return [
-            self::TYPE_SHIPPING => 'Shipping Only',
-            self::TYPE_BILLING => 'Billing Only',
-            self::TYPE_BOTH => 'Shipping & Billing',
+            self::TYPE_HOME => 'Ev',
+            self::TYPE_WORK => 'İş',
+            self::TYPE_BILLING => 'Fatura',
+            self::TYPE_OTHER => 'Diğer',
+        ];
+    }
+
+    public static function getCategories(): array
+    {
+        return [
+            self::CATEGORY_SHIPPING => 'Sadece Kargo',
+            self::CATEGORY_BILLING => 'Sadece Fatura',
+            self::CATEGORY_BOTH => 'Kargo ve Fatura',
         ];
     }
 
@@ -122,7 +141,7 @@ class Address extends Model
      */
     public function scopeShipping($query)
     {
-        return $query->whereIn('type', [self::TYPE_SHIPPING, self::TYPE_BOTH]);
+        return $query->whereIn('category', [self::CATEGORY_SHIPPING, self::CATEGORY_BOTH]);
     }
 
     /**
@@ -130,7 +149,15 @@ class Address extends Model
      */
     public function scopeBilling($query)
     {
-        return $query->whereIn('type', [self::TYPE_BILLING, self::TYPE_BOTH]);
+        return $query->whereIn('category', [self::CATEGORY_BILLING, self::CATEGORY_BOTH]);
+    }
+
+    /**
+     * Scope by address type
+     */
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 
     /**

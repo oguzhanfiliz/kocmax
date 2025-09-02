@@ -130,6 +130,11 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
     Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
     Route::post('/{order}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
     
+    // Checkout payment processing - Frontend sepet ödeme işlemi
+    Route::post('/checkout-payment', [OrderController::class, 'processCheckoutPayment'])
+         ->name('api.orders.checkout-payment')
+         ->middleware('throttle:checkout');
+    
     // Order summary and analytics
     Route::get('/user/summary', [OrderController::class, 'summary'])->name('api.orders.summary');
 });

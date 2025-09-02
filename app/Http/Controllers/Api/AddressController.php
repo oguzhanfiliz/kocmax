@@ -47,16 +47,22 @@ class AddressController extends Controller
     {
         $query = $request->user()->addresses();
 
-        // Filter by type if provided
+        // Filter by category if provided (shipping, billing, both)
+        if ($request->filled('category')) {
+            $category = $request->string('category');
+            if ($category === 'shipping') {
+                $query->shipping();
+            } elseif ($category === 'billing') {
+                $query->billing();
+            } elseif ($category === 'both') {
+                $query->where('category', 'both');
+            }
+        }
+        
+        // Filter by type if provided (home, work, billing, other)
         if ($request->filled('type')) {
             $type = $request->string('type');
-            if ($type === 'shipping') {
-                $query->shipping();
-            } elseif ($type === 'billing') {
-                $query->billing();
-            } elseif ($type === 'both') {
-                $query->where('type', 'both');
-            }
+            $query->byType($type);
         }
 
         $addresses = $query->orderBy('is_default_shipping', 'desc')
@@ -128,7 +134,8 @@ class AddressController extends Controller
             'state' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['required', 'string', 'max:20'],
             'country' => ['required', 'string', 'size:2'],
-            'type' => ['required', Rule::in(['shipping', 'billing', 'both'])],
+            'type' => ['required', Rule::in(['home', 'work', 'billing', 'other'])],
+            'category' => ['required', Rule::in(['shipping', 'billing', 'both'])],
             'is_default_shipping' => ['boolean'],
             'is_default_billing' => ['boolean'],
             'notes' => ['nullable', 'string'],
@@ -271,7 +278,8 @@ class AddressController extends Controller
             'state' => ['sometimes', 'nullable', 'string', 'max:255'],
             'postal_code' => ['sometimes', 'required', 'string', 'max:20'],
             'country' => ['sometimes', 'required', 'string', 'size:2'],
-            'type' => ['sometimes', 'required', Rule::in(['shipping', 'billing', 'both'])],
+            'type' => ['sometimes', 'required', Rule::in(['home', 'work', 'billing', 'other'])],
+            'category' => ['sometimes', 'required', Rule::in(['shipping', 'billing', 'both'])],
             'is_default_shipping' => ['boolean'],
             'is_default_billing' => ['boolean'],
             'notes' => ['sometimes', 'nullable', 'string'],
@@ -391,7 +399,7 @@ class AddressController extends Controller
         }
 
         // Check if address can be used for shipping
-        if (!in_array($address->type, ['shipping', 'both'])) {
+        if (!in_array($address->category, ['shipping', 'both'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bu adres teslimat için kullanılamaz'
@@ -454,7 +462,7 @@ class AddressController extends Controller
         }
 
         // Check if address can be used for billing
-        if (!in_array($address->type, ['billing', 'both'])) {
+        if (!in_array($address->category, ['billing', 'both'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bu adres fatura için kullanılamaz'
