@@ -38,6 +38,26 @@ class Address extends Model
     ];
 
     /**
+     * Boot method for validation
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::saving(function ($address) {
+            // Validate type values
+            if (!in_array($address->type, ['home', 'work', 'billing', 'other'])) {
+                $address->type = 'other';
+            }
+            
+            // Validate category values
+            if (!in_array($address->category, ['shipping', 'billing', 'both'])) {
+                $address->category = 'both';
+            }
+        });
+    }
+
+    /**
      * Address types - Daha detaylı türler
      */
     public const TYPE_HOME = 'home';

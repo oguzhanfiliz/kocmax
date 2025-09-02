@@ -12,39 +12,44 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Step 1: Add category as string first
         Schema::table('addresses', function (Blueprint $table) {
-            // Yeni category alanı ekle
-            $table->enum('category', ['shipping', 'billing', 'both'])->default('both')->after('type');
-            
-            // Mevcut type enum değerlerini güncelle
-            // Önce yeni column ekleyip sonra eski type'ı güncelleyeceğiz
+            $table->string('category', 20)->default('both')->after('type');
         });
 
-        // Mevcut verileri yeni formata dönüştür
-        DB::statement("UPDATE addresses SET category = type");
+        // Step 2: Migrate existing data
+        DB::statement("UPDATE addresses SET category = type WHERE type IS NOT NULL");
         
-        // Type alanını yeni değerlerle güncelle
+        // Step 3: Add temporary type column as string
         Schema::table('addresses', function (Blueprint $table) {
-            // Önce default değer ver
-            $table->string('type_temp')->default('other')->after('type');
+            $table->string('type_new', 20)->default('other')->after('category');
         });
         
-        // Veriyi dönüştür
-        DB::statement("UPDATE addresses SET type_temp = 'other' WHERE type IS NOT NULL");
+        // Step 4: Convert existing type data to new values
+        DB::statement("UPDATE addresses SET type_new = 'other' WHERE type IS NOT NULL");
         
-        // Eski type sütununu sil ve yenisini yeniden adlandır
+        // Step 5: Drop old type column
         Schema::table('addresses', function (Blueprint $table) {
             $table->dropColumn('type');
         });
         
+        // Step 6: Rename new column to type
         Schema::table('addresses', function (Blueprint $table) {
-            $table->renameColumn('type_temp', 'type');
+            $table->renameColumn('type_new', 'type');
         });
         
-        // Type'ı enum yap
-        Schema::table('addresses', function (Blueprint $table) {
-            $table->enum('type', ['home', 'work', 'billing', 'other'])->default('other')->change();
-        });
+        // Step 7: Convert strings to enums using raw SQL
+        if (Schema::hasTable('addresses')) {
+            // For MySQL
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE addresses MODIFY COLUMN category ENUM('shipping', 'billing', 'both') DEFAULT 'both'");
+                DB::statement("ALTER TABLE addresses MODIFY COLUMN type ENUM('home', 'work', 'billing', 'other') DEFAULT 'other'");
+            } else {
+                // For other databases, keep as string with constraints
+                DB::statement("ALTER TABLE addresses ADD CONSTRAINT addresses_category_check CHECK (category IN ('shipping', 'billing', 'both'))");
+                DB::statement("ALTER TABLE addresses ADD CONSTRAINT addresses_type_check CHECK (type IN ('home', 'work', 'billing', 'other'))");
+            }
+        }
     }
 
     /**
@@ -52,12 +57,31 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Step 1: Add temporary column for old type values
         Schema::table('addresses', function (Blueprint $table) {
-            // Category alanını sil
-            $table->dropColumn('category');
-            
-            // Type'ı eski haline getir
-            $table->enum('type', ['shipping', 'billing', 'both'])->default('both')->change();
+            $table->string('type_old', 20)->default('both')->after('type');
         });
+        
+        // Step 2: Convert data back to old format
+        DB::statement("UPDATE addresses SET type_old = category WHERE category IS NOT NULL");
+        
+        // Step 3: Drop current columns
+        Schema::table('addresses', function (Blueprint $table) {
+            $table->dropColumn(['category', 'type']);
+        });
+        
+        // Step 4: Rename column back
+        Schema::table('addresses', function (Blueprint $table) {
+            $table->renameColumn('type_old', 'type');
+        });
+        
+        // Step 5: Convert back to enum
+        if (Schema::hasTable('addresses')) {
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement("ALTER TABLE addresses MODIFY COLUMN type ENUM('shipping', 'billing', 'both') DEFAULT 'both'");
+            } else {
+                DB::statement("ALTER TABLE addresses ADD CONSTRAINT addresses_type_old_check CHECK (type IN ('shipping', 'billing', 'both'))");
+            }
+        }
     }
 };
