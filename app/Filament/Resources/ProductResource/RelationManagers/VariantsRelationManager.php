@@ -663,7 +663,7 @@ class VariantsRelationManager extends RelationManager
                     ->action(function (array $data, $record) {
                         $this->cloneVariantWithSizes($record, $data);
                     })
-                    ->visible(fn ($record) => !empty($record->color)), // Sadece rengi olan varyantlarda göster
+                    ->visible(fn ($record) => true), // Tüm varyantlarda göster
                 Tables\Actions\EditAction::make()
                     ->modalHeading('Varyantı Düzenle')
                     ->modalDescription('Varyantı düzenleyiniz.')
@@ -991,7 +991,9 @@ class VariantsRelationManager extends RelationManager
 
             // Yeni varyant verilerini hazırla
             $newVariantData = [
-                'name' => ($sourceVariant->color ?? 'Standart') . ' - ' . $newSize,
+                'name' => $sourceVariant->color 
+                    ? $sourceVariant->color . ' - ' . $newSize 
+                    : $newSize . ' Numara',
                 'sku' => $this->generateVariantSku(['color' => $sourceVariant->color, 'size' => $newSize]),
                 'color' => $sourceVariant->color,
                 'size' => $newSize,
