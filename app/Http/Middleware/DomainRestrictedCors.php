@@ -31,7 +31,11 @@ class DomainRestrictedCors
             return $this->addCorsHeaders($next($request), '*');
         }
 
-        $allowedDomains = config('cors.allowed_domains', []);
+        // Allowed domains listesini genişlet
+        $allowedDomains = array_merge(
+            config('cors.allowed_domains', []),
+            config('cors.production_domains', [])
+        );
         $domain = parse_url($origin, PHP_URL_HOST);
 
         // Domain kontrolü
@@ -51,6 +55,11 @@ class DomainRestrictedCors
      */
     private function isDomainAllowed(string $domain, array $allowedDomains): bool
     {
+        // Kocmax.tr domains için özel kontrol
+        if (in_array($domain, ['kocmax.tr', 'www.kocmax.tr'])) {
+            return true;
+        }
+        
         foreach ($allowedDomains as $allowedDomain) {
             // URL'den sadece domain kısmını çıkar (http:// https:// prefix'lerini temizle)
             $cleanDomain = parse_url($allowedDomain, PHP_URL_HOST) ?: $allowedDomain;
@@ -71,6 +80,11 @@ class DomainRestrictedCors
                 if (str_ends_with($domain, $baseDomain)) {
                     return true;
                 }
+            }
+            
+            // Kocmax.tr wildcard kontrolü
+            if ($cleanDomain === '*.kocmax.tr' && str_ends_with($domain, '.kocmax.tr')) {
+                return true;
             }
         }
 

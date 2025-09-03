@@ -27,12 +27,20 @@ return [
             'https://kocmax.mutfakyapim.net',
             'https://b2bb2c.mutfakyapim.net',
             'https://kocmax.netlify.app',
-            'https://b2bb2c-frontend.vercel.app'
+            'https://b2bb2c-frontend.vercel.app',
+            // Kocmax.tr domains
+            'https://kocmax.tr',
+            'https://www.kocmax.tr',
+            'http://kocmax.tr',
+            'http://www.kocmax.tr'
         ],
 
     'allowed_origins_patterns' => [
         // Allow subdomains in production
         '/^https:\/\/.*\.yourdomain\.com$/',
+        // Allow kocmax.tr domains
+        '/^https:\/\/(www\.)?kocmax\.tr$/',
+        '/^http:\/\/(www\.)?kocmax\.tr$/',
     ],
 
     'allowed_headers' => [
@@ -89,6 +97,10 @@ return [
             'kocmax.netlify.app',
             'b2bb2c-frontend.vercel.app',
             '*.mutfakyapim.net',
+            // Kocmax.tr domains
+            'kocmax.tr',
+            'www.kocmax.tr',
+            '*.kocmax.tr',
         ],
 
 ];
