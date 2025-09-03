@@ -433,6 +433,14 @@ class ProductResource extends Resource
                     ->icon('heroicon-m-x-mark')
                     ->action(fn ($records) => $records->each->update(['is_active' => false]))
                     ->requiresConfirmation(),
+                Tables\Actions\BulkAction::make('export_excel')
+                    ->label('Excel\'e Çıkar')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(function ($records) {
+                        return static::exportToExcel($records);
+                    })
+                    ->deselectRecordsAfterCompletion(),
             ])
             ->defaultSort('sort_order', 'asc')
             ->reorderable('sort_order')
@@ -524,6 +532,77 @@ class ProductResource extends Resource
             $size /= 1024;
         }
         return round($size, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Ürünleri Excel formatında dışa aktarır
+     */
+    public static function exportToExcel($records)
+    {
+        try {
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Başlık satırı
+            $headers = [
+                'ID', 'Ürün Adı', 'SKU', 'Temel Fiyat', 'Para Birimi', 
+                'Durum', 'Öne Çıkan', 'Kategoriler', 'Varyant Sayısı', 'Oluşturulma Tarihi'
+            ];
+            
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+            
+            // Veri satırları
+            $row = 2;
+            foreach ($records as $record) {
+                $sheet->setCellValue('A' . $row, $record->id);
+                $sheet->setCellValue('B' . $row, $record->name);
+                $sheet->setCellValue('C' . $row, $record->sku);
+                $sheet->setCellValue('D' . $row, $record->base_price);
+                $sheet->setCellValue('E' . $row, $record->base_currency ?? 'TRY');
+                $sheet->setCellValue('F' . $row, $record->is_active ? 'Aktif' : 'Pasif');
+                $sheet->setCellValue('G' . $row, $record->is_featured ? 'Evet' : 'Hayır');
+                $sheet->setCellValue('H' . $row, $record->categories->pluck('name')->implode(', '));
+                $sheet->setCellValue('I' . $row, $record->variants_count ?? 0);
+                $sheet->setCellValue('J' . $row, $record->created_at->format('d.m.Y H:i'));
+                $row++;
+            }
+            
+            // Sütun genişliklerini otomatik ayarla
+            foreach (range('A', 'J') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Başlık satırını kalın yap
+            $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+            
+            $filename = 'urunler_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            
+            // Export klasörünü oluştur
+            $exportPath = storage_path('app/public/exports');
+            if (!file_exists($exportPath)) {
+                mkdir($exportPath, 0755, true);
+            }
+            
+            $filePath = $exportPath . '/' . $filename;
+            $writer->save($filePath);
+            
+            return response()->download($filePath)->deleteFileAfterSend();
+            
+        } catch (\Exception $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('Export Hatası')
+                ->body('Excel dosyası oluşturulurken bir hata oluştu: ' . $e->getMessage())
+                ->danger()
+                ->send();
+                
+            return back();
+        }
     }
 
 
