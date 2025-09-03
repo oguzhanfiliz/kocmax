@@ -398,7 +398,7 @@ class CategoryController extends Controller
 
         $products = $category->products()
             ->where('is_active', true)
-            ->with(['images', 'variants'])
+            ->with(['images', 'variants.variantOptions.variantType'])
             ->orderBy($sortBy, $sortOrder)
             ->paginate($perPage);
 

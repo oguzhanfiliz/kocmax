@@ -175,6 +175,7 @@ Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public
     // These routes remain fully public (no auth needed) - MUST come before {product} route
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
+    Route::get('/variant-types', [ProductController::class, 'getVariantTypes'])->name('api.products.variant-types');
     
     // Product pricing endpoint - supports both ID and slug
     Route::get('/{product}/pricing', [ProductController::class, 'pricing'])

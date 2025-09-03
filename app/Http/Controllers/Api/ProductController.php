@@ -553,6 +553,94 @@ class ProductController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/products/variant-types",
+     *     operationId="getVariantTypes",
+     *     tags={"Products", "Public API"},
+     *     summary="Varyant türlerini ve seçeneklerini al (Public)",
+     *     description="Sistemde tanımlı tüm varyant türlerini (Renk, Beden, Malzeme vb.) ve bunların seçeneklerini döndürür. Frontend'de dinamik filtreleme ve varyant seçimi için kullanılır.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="İstek başarıyla tamamlandı",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Varyant türleri başarıyla getirildi"),
+     *             @OA\Property(property="data", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Color"),
+     *                 @OA\Property(property="display_name", type="string", example="Renk"),
+     *                 @OA\Property(property="slug", type="string", example="color"),
+     *                 @OA\Property(property="input_type", type="string", example="color"),
+     *                 @OA\Property(property="is_required", type="boolean", example=true),
+     *                 @OA\Property(property="sort_order", type="integer", example=1),
+     *                 @OA\Property(property="options", type="array", @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Red"),
+     *                     @OA\Property(property="value", type="string", example="Kırmızı"),
+     *                     @OA\Property(property="display_value", type="string", example="Kırmızı"),
+     *                     @OA\Property(property="slug", type="string", example="red"),
+     *                     @OA\Property(property="hex_color", type="string", example="#FF0000"),
+     *                     @OA\Property(property="image_url", type="string", nullable=true),
+     *                     @OA\Property(property="sort_order", type="integer", example=0),
+     *                     @OA\Property(property="is_active", type="boolean", example=true)
+     *                 ))
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Domain not allowed (production only)",
+     *         @OA\JsonContent(ref="#/components/schemas/Error")
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Rate limit exceeded",
+     *         @OA\JsonContent(ref="#/components/sponses/RateLimitExceeded")
+     *     )
+     * )
+     */
+    public function getVariantTypes(): JsonResponse
+    {
+        $variantTypes = \App\Models\VariantType::with(['options' => function ($query) {
+            $query->active()->ordered();
+        }])
+        ->active()
+        ->ordered()
+        ->get()
+        ->map(function ($type) {
+            return [
+                'id' => $type->id,
+                'name' => $type->name,
+                'display_name' => $type->display_name,
+                'slug' => $type->slug,
+                'input_type' => $type->input_type,
+                'is_required' => (bool) $type->is_required,
+                'sort_order' => $type->sort_order,
+                'options' => $type->options->map(function ($option) {
+                    return [
+                        'id' => $option->id,
+                        'name' => $option->name,
+                        'value' => $option->value,
+                        'display_value' => $option->display_value,
+                        'slug' => $option->slug,
+                        'hex_color' => $option->hex_color,
+                        'image_url' => $option->image_url,
+                        'sort_order' => $option->sort_order,
+                        'is_active' => (bool) $option->is_active,
+                    ];
+                })
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Varyant türleri başarıyla getirildi',
+            'data' => $variantTypes,
+        ]);
+    }
+
+    /**
      * Calculate product pricing based on customer type
      */
     private function calculateProductPricing(Product $product, array $customerInfo, string $currency = 'TRY'): array

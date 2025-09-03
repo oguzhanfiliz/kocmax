@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Filament\Filters\CategoryFilter;
+use App\Filament\Filters\ProductSortFilter;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductAttribute;
@@ -327,11 +329,15 @@ class ProductResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable(),
-                // Categories column disabled to prevent memory issues
-                // Tables\Columns\BadgeColumn::make('categories.name')
-                //     ->label('Kategoriler')
-                //     ->separator(', ')
-                //     ->limit(2),
+                Tables\Columns\TextColumn::make('categories.name')
+                    ->label('Kategoriler')
+                    ->badge()
+                    ->separator(', ')
+                    ->limit(2)
+                    ->toggleable()
+                    ->getStateUsing(function ($record) {
+                        return $record->categories->pluck('name')->take(2)->toArray();
+                    }),
                 // Brand column kaldırıldı
                 Tables\Columns\TextColumn::make('base_price')
                     ->label('Temel Fiyat')
@@ -383,6 +389,13 @@ class ProductResource extends Resource
                 //     ->label('Marka')
                 //     ->relationship('brand', 'name')
                 //     ->preload(),
+                Tables\Filters\SelectFilter::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('categories', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple()
+                    ->columnSpanFull(),
                 Tables\Filters\SelectFilter::make('gender')
                     ->label('Cinsiyet')
                     ->options([
@@ -390,17 +403,20 @@ class ProductResource extends Resource
                         'male' => 'Erkek',
                         'female' => 'Kadın',
                         'kids' => 'Çocuk',
-                    ]),
+                    ])
+                    ->columnSpan(1),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Aktif')
-                    ->default(true),
+                    ->default(true)
+                    ->columnSpan(1),
                 Tables\Filters\TernaryFilter::make('is_featured')
-                    ->label('Öne Çıkan'),
+                    ->label('Öne Çıkan')
+                    ->columnSpan(1),
                 // Temporarily disabled - causing memory issues
                 // Tables\Filters\Filter::make('in_stock')
                 //     ->label('Stokta Var')
                 //     ->query(fn (Builder $query) => $query->inStock()),
-            ])
+            ], layout: Tables\Enums\FiltersLayout::Dropdown)
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -419,6 +435,18 @@ class ProductResource extends Resource
                     ->requiresConfirmation(),
             ])
             ->defaultSort('sort_order', 'asc')
+            ->reorderable('sort_order')
+            ->reorderRecordsTriggerAction(
+                fn (Tables\Actions\Action $action, bool $isReordering) => $action
+                    ->button()
+                    ->label($isReordering ? 'Sıralamayı Bitir' : '⋮⋮ Sırala')
+                    ->icon($isReordering ? 'heroicon-o-check' : 'heroicon-o-bars-3')
+                    ->color($isReordering ? 'success' : 'gray')
+            )
+            ->persistFiltersInSession()
+            ->persistSearchInSession()
+            ->persistSortInSession()
+            ->paginatedWhileReordering()
             ->paginated([10, 25, 50, 100]);
     }
 
@@ -477,6 +505,9 @@ class ProductResource extends Resource
                     'products.created_at',
                     'products.sort_order'
                 ])
+                ->with(['categories' => function ($query) {
+                    $query->select(['categories.id', 'categories.name', 'categories.slug']);
+                }])
                 ->withCount(['variants'])
                 ->orderBy('sort_order', 'asc');
         }
@@ -494,4 +525,6 @@ class ProductResource extends Resource
         }
         return round($size, 2) . ' ' . $units[$i];
     }
+
+
 }

@@ -54,6 +54,16 @@ class Category extends Model
             if ($category->isDirty('name') && empty($category->slug)) {
                 $category->slug = Str::slug($category->name);
             }
+            
+            // Cache'i temizle
+            if ($category->isDirty(['name', 'is_active', 'parent_id', 'sort_order'])) {
+                app(\App\Services\CategoryFilterService::class)->clearCache();
+            }
+        });
+
+        static::deleted(function ($category) {
+            // Cache'i temizle
+            app(\App\Services\CategoryFilterService::class)->clearCache();
         });
     }
 

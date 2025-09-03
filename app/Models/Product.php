@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 
-class Product extends Model
+class Product extends Model implements Sortable
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, SortableTrait;
 
     protected $fillable = [
         'name',
@@ -60,6 +62,23 @@ class Product extends Model
         'sort_order' => 'integer',
     ];
 
+    /**
+     * Sıralama konfigürasyonu
+     */
+    public $sortable = [
+        'order_column_name' => 'sort_order',
+        'sort_when_creating' => true,
+    ];
+
+    /**
+     * Sıralama değiştiğinde cache'i temizle
+     */
+    public function afterDrop(): void
+    {
+        // Sıralama değiştiğinde cache'i temizle
+        cache()->forget('products_ordered');
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -70,6 +89,9 @@ class Product extends Model
             }
             if (empty($product->sku)) {
                 $product->sku = static::generateSku($product);
+            }
+            if (empty($product->sort_order)) {
+                $product->sort_order = static::max('sort_order') + 1;
             }
         });
 

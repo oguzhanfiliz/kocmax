@@ -122,6 +122,9 @@ class ProductDetailResource extends JsonResource
                     'pricing' => $this->calculateVariantPricing($variant),
                     // 📦 Varyant paket boyutları (inheritance ile)
                     'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
+                    // 🎨 Varyant türleri ve seçenekleri (Frontend için optimize edilmiş)
+                    'variant_types' => $variant->relationLoaded('variantOptions') ? 
+                        $this->getVariantTypesForFrontend($variant) : [],
                 ])
             ),
             'reviews' => $this->whenLoaded('reviews', function () {
@@ -259,6 +262,59 @@ class ProductDetailResource extends JsonResource
             'pricing_tier' => $user?->pricingTier?->name,
             'quantity' => $quantity,
         ];
+    }
+
+    /**
+     * 🎨 Frontend için varyant türlerini optimize edilmiş formatta döndür
+     */
+    private function getVariantTypesForFrontend($variant): array
+    {
+        if (!$variant->relationLoaded('variantOptions')) {
+            return [];
+        }
+
+        $variantTypes = [];
+        
+        foreach ($variant->variantOptions as $option) {
+            if (!$option->relationLoaded('variantType')) {
+                continue;
+            }
+            
+            $type = $option->variantType;
+            
+            if (!isset($variantTypes[$type->slug])) {
+                $variantTypes[$type->slug] = [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'display_name' => $type->display_name,
+                    'slug' => $type->slug,
+                    'input_type' => $type->input_type,
+                    'is_required' => (bool) $type->is_required,
+                    'options' => []
+                ];
+            }
+            
+            $variantTypes[$type->slug]['options'][] = [
+                'id' => $option->id,
+                'name' => $option->name,
+                'value' => $option->value,
+                'display_value' => $option->display_value,
+                'slug' => $option->slug,
+                'hex_color' => $option->hex_color,
+                'image_url' => $option->image_url,
+                'sort_order' => $option->sort_order,
+                'is_selected' => true, // Bu varyant için seçili
+            ];
+        }
+        
+        // Sort by sort_order
+        foreach ($variantTypes as &$type) {
+            usort($type['options'], function ($a, $b) {
+                return $a['sort_order'] <=> $b['sort_order'];
+            });
+        }
+        
+        return array_values($variantTypes);
     }
 
     private function formatPrice(float $price, string $currency): string
