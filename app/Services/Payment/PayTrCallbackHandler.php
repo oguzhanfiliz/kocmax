@@ -184,7 +184,7 @@ class PayTrCallbackHandler
 
             return PaymentCallbackResult::success(
                 orderNumber: $merchantOid,
-                transactionId: $this->generateTransactionId($merchantOid),
+                transactionId: $merchantOid, // PayTr'de transaction ID yok, merchant_oid kullan
                 amount: $totalAmount,
                 currency: $this->mapPayTrCurrency($callbackData['currency']),
                 status: 'completed',
@@ -227,7 +227,8 @@ class PayTrCallbackHandler
     {
         DB::transaction(function () use ($order, $callbackData) {
             // Sipariş durumunu güncelle (Order model method kullan)
-            $order->markAsPaid($this->generateTransactionId($order->order_number));
+            // PayTr'de transaction ID yok, sadece merchant_oid var
+            $order->markAsPaid($order->order_number); // merchant_oid'i transaction ID olarak kullan
             $order->update([
                 'payment_method' => 'paytr',
                 'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme başarılı: " . now()->format('d.m.Y H:i')
@@ -304,13 +305,6 @@ class PayTrCallbackHandler
     }
 
 
-    /**
-     * Transaction ID oluşturur
-     */
-    private function generateTransactionId(string $orderNumber): string
-    {
-        return 'PAYTR_' . $orderNumber . '_' . time();
-    }
 
     /**
      * PayTR para birimini sistem formatına çevirir
