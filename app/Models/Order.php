@@ -54,6 +54,8 @@ class Order extends Model
         'shipping_carrier',
         'shipped_at',
         'delivered_at',
+        'paid_at',
+        'cancelled_at',
     ];
 
     protected $casts = [
@@ -64,6 +66,8 @@ class Order extends Model
         'total_amount' => 'decimal:2',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -202,7 +206,10 @@ class Order extends Model
     public function cancel()
     {
         if ($this->canBeCancelled()) {
-            $this->update(['status' => 'cancelled']);
+            $this->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now()
+            ]);
             
             // Restore product stock
             foreach ($this->items as $item) {
@@ -213,5 +220,29 @@ class Order extends Model
                 }
             }
         }
+    }
+
+    /**
+     * Siparişi ödendi olarak işaretle
+     */
+    public function markAsPaid(string $transactionId = null): void
+    {
+        $this->update([
+            'payment_status' => 'paid',
+            'payment_transaction_id' => $transactionId,
+            'paid_at' => now(),
+            'status' => 'processing' // Ödeme sonrası işleme al
+        ]);
+    }
+
+    /**
+     * Ödeme başarısız olarak işaretle
+     */
+    public function markAsPaymentFailed(): void
+    {
+        $this->update([
+            'payment_status' => 'failed',
+            'status' => 'pending'
+        ]);
     }
 }

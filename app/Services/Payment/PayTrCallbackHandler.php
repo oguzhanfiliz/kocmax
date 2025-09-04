@@ -7,7 +7,10 @@ namespace App\Services\Payment;
 use App\Models\Order;
 use App\ValueObjects\Payment\PaymentCallbackResult;
 use App\Exceptions\Payment\PaymentException;
+use App\Services\Order\OrderStockService;
+use App\Services\Order\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -18,8 +21,10 @@ class PayTrCallbackHandler
 {
     private array $config;
 
-    public function __construct()
-    {
+    public function __construct(
+        private OrderStockService $stockService,
+        private OrderService $orderService
+    ) {
         $this->config = config('payments.providers.paytr', []);
     }
 
@@ -216,60 +221,88 @@ class PayTrCallbackHandler
 
     /**
      * Başarılı ödeme için sipariş durumunu günceller
+     * Transaction güvenliği ile sipariş durumunu günceller ve stokları düşürür
      */
     private function updateOrderForSuccessfulPayment(Order $order, array $callbackData): void
     {
-        $order->update([
-            'payment_status' => 'paid',
-            'payment_transaction_id' => $this->generateTransactionId($order->order_number),
-            'status' => 'processing', // Ödeme başarılı, sipariş işleme alındı
-            'payment_method' => 'paytr',
-        ]);
+        DB::transaction(function () use ($order, $callbackData) {
+            // Sipariş durumunu güncelle (Order model method kullan)
+            $order->markAsPaid($this->generateTransactionId($order->order_number));
+            $order->update([
+                'payment_method' => 'paytr',
+                'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme başarılı: " . now()->format('d.m.Y H:i')
+            ]);
 
-        // Stok düşüm işlemi (eğer henüz yapılmamışsa)
-        $this->reduceProductStock($order);
-        
-        // Başarılı ödeme bildirimi (email, SMS vb.)
-        // event(new OrderPaymentSuccessful($order));
+            // Stok düşüm işlemi (güvenli ve atomik)
+            try {
+                $this->stockService->reduceOrderStock($order);
+                
+                Log::info('PayTR ödeme sonrası stok işlemleri tamamlandı', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number
+                ]);
+            } catch (\Exception $e) {
+                Log::error('PayTR ödeme sonrası stok düşürme hatası', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage()
+                ]);
+                
+                // Stok hatası durumunda siparişi beklemeye al
+                $order->update([
+                    'status' => 'pending',
+                    'notes' => ($order->notes ?? '') . "\n[SYS] Stok hatası - Manuel kontrol gerekli"
+                ]);
+                
+                throw $e; // Transaction rollback tetikler
+            }
+
+            // Başarılı ödeme bildirimi (email, SMS vb.)
+            // event(new OrderPaymentSuccessful($order));
+        });
     }
 
     /**
      * Başarısız ödeme için sipariş durumunu günceller
+     * Transaction güvenliği ile sipariş iptal edilir ve stoklar geri yüklenir
      */
     private function updateOrderForFailedPayment(Order $order, array $callbackData): void
     {
-        $order->update([
-            'payment_status' => 'failed',
-            'status' => 'cancelled', // Ödeme başarısız, sipariş iptal
-            'notes' => ($order->notes ?? '') . "\nPayTR Ödeme Hatası: " . ($callbackData['failed_reason_msg'] ?? 'Bilinmeyen hata')
-        ]);
+        DB::transaction(function () use ($order, $callbackData) {
+            // Sipariş durumunu güncelle (Order model method kullan)
+            $order->markAsPaymentFailed();
+            $order->update([
+                'status' => 'cancelled', // Ödeme başarısız, sipariş iptal
+                'cancelled_at' => now(),
+                'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme hatası: " . ($callbackData['failed_reason_msg'] ?? 'Bilinmeyen hata') . ' - ' . now()->format('d.m.Y H:i')
+            ]);
 
-        // Başarısız ödeme bildirimi
-        // event(new OrderPaymentFailed($order));
+            // Eğer daha önce stok düşürüldüyse geri yükle
+            if ($order->payment_status === 'paid' || str_contains($order->notes ?? '', 'Stoklar düşürüldü')) {
+                try {
+                    $this->stockService->restoreOrderStock($order);
+                    
+                    Log::info('PayTR ödeme hatası sonrası stoklar geri yüklendi', [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('PayTR ödeme hatası sonrası stok geri yükleme hatası', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    
+                    // Stok geri yükleme hatası kritik değil, işleme devam et
+                    $order->update([
+                        'notes' => ($order->notes ?? '') . "\n[SYS] Stok geri yükleme hatası - Manuel kontrol gerekli"
+                    ]);
+                }
+            }
+
+            // Başarısız ödeme bildirimi
+            // event(new OrderPaymentFailed($order));
+        });
     }
 
-    /**
-     * Ürün stoklarını düşürür
-     */
-    private function reduceProductStock(Order $order): void
-    {
-        foreach ($order->items as $item) {
-            // Ana ürün stoğu
-            if ($item->product) {
-                $item->product->decrement('stock', $item->quantity);
-            }
-            
-            // Varyant stoğu
-            if ($item->productVariant) {
-                $item->productVariant->decrement('stock', $item->quantity);
-            }
-        }
-
-        Log::info('Ürün stokları düşürüldü', [
-            'order_id' => $order->id,
-            'items_count' => $order->items->count()
-        ]);
-    }
 
     /**
      * Transaction ID oluşturur
