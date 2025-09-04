@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DealerApplicationController;
+
+// Import new PayTR checkout routes
+require __DIR__ . '/api_v1_checkout.php';
 use App\Http\Controllers\Api\PricingSystemController;
 use App\Http\Controllers\Api\ContactController;
 

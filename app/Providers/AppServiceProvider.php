@@ -25,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
         
         // Register Cart System Services
         $this->registerCartServices();
+        
+        // Register Payment System Services
+        $this->registerPaymentServices();
 
         // Laravel Ignition Livewire Context Provider hatası için geçici çözüm
         if (class_exists(Ignition::class)) {
@@ -100,6 +103,22 @@ class AppServiceProvider extends ServiceProvider
         
         // Register CartService as singleton
         $this->app->singleton(\App\Services\Cart\CartService::class);
+    }
+
+    /**
+     * Register payment system services
+     */
+    private function registerPaymentServices(): void
+    {
+        // Register PaymentManager as singleton
+        $this->app->singleton(\App\Services\Payment\PaymentManager::class, function ($app) {
+            $paymentManager = new \App\Services\Payment\PaymentManager();
+            
+            // Register payment strategies
+            $paymentManager->register('paytr', new \App\Services\Payment\Strategies\PayTrPaymentStrategy($app->environment() !== 'production'));
+            
+            return $paymentManager;
+        });
     }
 
     /**
