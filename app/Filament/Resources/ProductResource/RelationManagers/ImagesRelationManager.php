@@ -22,11 +22,11 @@ class ImagesRelationManager extends RelationManager
                     ->label('Ürün Görseli')
                     ->image()
                     ->directory('products')
-                    ->maxSize(2048)
+                    ->maxSize(5120) // 5MB - WebP dönüşümü için daha fazla alan
                     ->required()
                     ->imageEditor()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                    ->helperText('Maksimum dosya boyutu: 2MB. Desteklenen formatlar: JPEG, PNG, WebP'),
+                    ->helperText('Maksimum dosya boyutu: 5MB. Desteklenen formatlar: JPEG, PNG, WebP. Resimler otomatik olarak WebP formatına dönüştürülür ve optimize edilir.'),
                 Forms\Components\Toggle::make('is_primary')
                     ->label('Ana Görsel')
                     ->default(false)
@@ -88,12 +88,12 @@ class ImagesRelationManager extends RelationManager
                             ->image()
                             ->multiple()
                             ->directory('products')
-                            ->maxSize(2048)
+                            ->maxSize(5120) // 5MB - WebP dönüşümü için
                             ->maxFiles(10)
                             ->imageEditor()
                             ->reorderable()
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText('Tek veya birden fazla görsel yükleyebilirsiniz. Maksimum 10 görsel, her dosya en fazla 2MB olmalıdır.')
+                            ->helperText('Tek veya birden fazla görsel yükleyebilirsiniz. Maksimum 10 görsel, her dosya en fazla 5MB olmalıdır. Resimler otomatik olarak WebP formatına dönüştürülür ve optimize edilir.')
                             ->required(),
                         Forms\Components\Toggle::make('auto_sort')
                             ->label('Otomatik Sıralama')

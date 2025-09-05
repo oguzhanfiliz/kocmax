@@ -28,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
         
         // Register Payment System Services
         $this->registerPaymentServices();
+        
+        // Register Image Optimization Service
+        $this->app->singleton(\App\Services\ImageOptimizationService::class);
 
         // Laravel Ignition Livewire Context Provider hatası için geçici çözüm
         if (class_exists(Ignition::class)) {
@@ -137,5 +140,8 @@ class AppServiceProvider extends ServiceProvider
         
         // ProductCertificate Observer
         \App\Models\ProductCertificate::observe(\App\Observers\ProductCertificateObserver::class);
+        
+        // ProductImage Observer (Resim optimizasyonu için)
+        \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
     }
 }
