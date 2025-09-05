@@ -160,6 +160,7 @@ class ProductResource extends JsonResource
             'safety_standard' => $this->safety_standard,
             'is_featured' => (bool) $this->is_featured,
             'is_bestseller' => (bool) $this->is_bestseller,
+            'is_active' => (bool) $this->is_active,
             'sort_order' => $this->sort_order,
             
             // 🔥 Enhanced pricing information
