@@ -1139,7 +1139,7 @@ class VariantsRelationManager extends RelationManager
         if (empty($selectedGlassOptions)) {
             // Sadece beden varyantları oluştur (gözlük özelliği yok)
             foreach ($newSizes as $newSize) {
-                $this->createSingleVariant($product, $sourceVariant, $newSize, $basePriceToUse, $priceCurrency, null, null, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+                $this->createSingleVariant($product, $sourceVariant, $newSize, $basePriceToUse, $priceCurrency, $createdCount, $skippedCount, null, null, $skipExisting, $stockOverride, $copyImages);
             }
         } else {
             // Gözlük özellikleri var
@@ -1150,7 +1150,7 @@ class VariantsRelationManager extends RelationManager
                     $optionPrice = $glassOption['price'];
                     $optionCurrency = $glassOption['currency'];
                     
-                    $this->createSingleVariant($product, $sourceVariant, null, $optionPrice, $optionCurrency, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+                    $this->createSingleVariant($product, $sourceVariant, null, $optionPrice, $optionCurrency, $createdCount, $skippedCount, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages);
                 }
             } else {
                 // Hem gözlük özellikleri hem bedenler var - her kombinasyonu oluştur
@@ -1160,7 +1160,7 @@ class VariantsRelationManager extends RelationManager
                     $optionCurrency = $glassOption['currency'];
                     
                     foreach ($newSizes as $newSize) {
-                        $this->createSingleVariant($product, $sourceVariant, $newSize, $optionPrice, $optionCurrency, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages, $createdCount, $skippedCount);
+                        $this->createSingleVariant($product, $sourceVariant, $newSize, $optionPrice, $optionCurrency, $createdCount, $skippedCount, $optionId, $glassOption, $skipExisting, $stockOverride, $copyImages);
                     }
                 }
             }
@@ -1187,7 +1187,7 @@ class VariantsRelationManager extends RelationManager
         }
     }
 
-    protected function createSingleVariant($product, $sourceVariant, $newSize, $price, $priceCurrency, $glassOptionId = null, $glassOption = null, $skipExisting = true, $stockOverride = null, $copyImages = true, &$createdCount, &$skippedCount): void
+    protected function createSingleVariant($product, $sourceVariant, $newSize, $price, $priceCurrency, &$createdCount, &$skippedCount, $glassOptionId = null, $glassOption = null, $skipExisting = true, $stockOverride = null, $copyImages = true): void
     {
         try {
             // Mevcut kombinasyonu kontrol et

@@ -248,7 +248,7 @@ class ProductVariant extends Model
     /**
      * Get formatted price with currency symbol
      */
-    public function getFormattedPrice(string $currency = null): string
+    public function getFormattedPrice(?string $currency = null): string
     {
         $currency = $currency ?? $this->currency_code;
         $price = $this->getPriceInCurrency($currency);
