@@ -31,16 +31,18 @@ return [
             // Kocmax.tr domains
             'https://kocmax.tr',
             'https://www.kocmax.tr',
+            'https://admin.kocmax.tr',
             'http://kocmax.tr',
-            'http://www.kocmax.tr'
+            'http://www.kocmax.tr',
+            'http://admin.kocmax.tr'
         ],
 
     'allowed_origins_patterns' => [
         // Allow subdomains in production
         '/^https:\/\/.*\.yourdomain\.com$/',
         // Allow kocmax.tr domains
-        '/^https:\/\/(www\.)?kocmax\.tr$/',
-        '/^http:\/\/(www\.)?kocmax\.tr$/',
+        '/^https:\/\/(www\.|admin\.)?kocmax\.tr$/',
+        '/^http:\/\/(www\.|admin\.)?kocmax\.tr$/',
     ],
 
     'allowed_headers' => [
@@ -100,6 +102,7 @@ return [
             // Kocmax.tr domains
             'kocmax.tr',
             'www.kocmax.tr',
+            'admin.kocmax.tr',
             '*.kocmax.tr',
         ],
 

@@ -14,8 +14,8 @@ use App\Http\Controllers\Api\V1\PayTrCallbackController;
 |
 */
 
-// Güvenli Checkout Routes (Authentication Required)
-Route::middleware(['auth:sanctum', 'throttle:checkout'])->group(function () {
+// Güvenli Checkout Routes (Authentication Required) - v1 API
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:checkout'])->group(function () {
     
     // Checkout Process
     Route::prefix('checkout')->group(function () {

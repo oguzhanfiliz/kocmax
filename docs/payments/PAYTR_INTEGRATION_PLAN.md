@@ -2,6 +2,18 @@
 
 ## Mevcut Durum Analizi
 
+### 🚨 **ÖNEMLİ: Endpoint Durumu Güncellendi**
+
+**Mevcut Durum:**
+- ✅ **Backend düzeltildi:** OrderController validation kuralları frontend payload'ına uygun hale getirildi
+- ✅ **Frontend endpoint:** `/api/v1/orders/checkout-payment` (OrderController::processCheckoutPayment)
+- ✅ **Alternatif endpoint:** `/api/v1/checkout/initialize` (CheckoutController::initialize)
+
+**Çözüm Uygulandı:**
+- OrderController'da `product_variant_id` validation kuralı `required|integer|exists:product_variants,id` olarak düzeltildi
+- Frontend payload'ında `product_variant_id` alanı zorunlu hale getirildi
+- Production güvenliği sağlandı
+
 ### ✅ Mevcut Güçlü Yanlar
 - **Gelişmiş Fiyat Sistemi**: PricingService, PriceEngine ve Strategy Pattern ile çok katmanlı fiyat hesaplama
 - **Müşteri Segmentasyonu**: CustomerPricingTier ile B2B/B2C tier sistemi
@@ -289,16 +301,32 @@ class PricingService implements PricingServiceInterface
 
 ## API Endpoint Tasarımı
 
-### 1. Checkout Initialization (İndirimler Dahil)
+### 1. Mevcut Checkout Endpoint (OrderController)
 ```php
-POST /api/v1/checkout/initialize
+POST /api/v1/orders/checkout-payment
 {
     "cart_items": [
-        {"product_variant_id": 123, "quantity": 2},
-        {"product_variant_id": 456, "quantity": 100}  // Bulk discount için
+        {"product_variant_id": 123, "quantity": 2},  // product_variant_id ZORUNLU
+        {"product_variant_id": 456, "quantity": 1}   // Her item için gerekli
     ],
-    "shipping_address_id": 789,
-    "billing_address_id": 790
+    "shipping_address": {
+        "name": "Test User",
+        "phone": "+90 555 123 4567",
+        "address": "Test Address, Test Street No:1",
+        "city": "Istanbul",
+        "state": "Istanbul", 
+        "zip": "34000",
+        "country": "TR"
+    },
+    "billing_address": {
+        "name": "Test User",
+        "phone": "+90 555 123 4567", 
+        "address": "Test Address, Test Street No:1",
+        "city": "Istanbul",
+        "state": "Istanbul",
+        "zip": "34000",
+        "country": "TR"
+    }
 }
 
 Response:
@@ -392,13 +420,64 @@ POST /api/webhooks/paytr/callback
 
 ## Frontend-Backend Integration
 
+### ⚠️ **ÖNEMLİ: Frontend Payload Formatı**
+
+**Doğru Payload Formatı:**
+```javascript
+{
+  "cart_items": [
+    {
+      "product_variant_id": 39,  // ZORUNLU - ProductVariant ID
+      "quantity": 1
+    },
+    {
+      "product_variant_id": 37,  // ZORUNLU - ProductVariant ID  
+      "quantity": 1
+    }
+  ],
+  "shipping_address": {
+    "name": "Test User",
+    "phone": "+90 555 123 4567",
+    "address": "Test Address, Test Street No:1",
+    "city": "Istanbul",
+    "state": "Istanbul",
+    "zip": "34000",
+    "country": "TR"
+  },
+  "billing_address": {
+    "name": "Test User",
+    "phone": "+90 555 123 4567",
+    "address": "Test Address, Test Street No:1", 
+    "city": "Istanbul",
+    "state": "Istanbul",
+    "zip": "34000",
+    "country": "TR"
+  }
+}
+```
+
 ### Frontend Flow:
 ```javascript
-// 1. Checkout başlatma (indirimler otomatik hesaplanıyor)
-const checkout = await api.post('/api/v1/checkout/initialize', {
-    cart_items: cartStore.items,
-    shipping_address_id: selectedShippingAddress.id,
-    billing_address_id: selectedBillingAddress.id
+// 1. Mevcut checkout endpoint kullanımı
+const checkout = await api.post('/api/v1/orders/checkout-payment', {
+    cart_items: cartStore.items.map(item => ({
+        product_variant_id: item.product_variant_id,  // ZORUNLU
+        quantity: item.quantity
+    })),
+    shipping_address: {
+        name: "Test User",
+        phone: "+90 555 123 4567",
+        address: "Test Address",
+        city: "Istanbul",
+        country: "TR"
+    },
+    billing_address: {
+        name: "Test User", 
+        phone: "+90 555 123 4567",
+        address: "Test Address",
+        city: "Istanbul",
+        country: "TR"
+    }
 })
 
 // İndirimli fiyat bilgilerini göster

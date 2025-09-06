@@ -13,6 +13,7 @@ use App\Models\Cart;
 use App\Models\ProductVariant;
 use App\Services\Order\OrderService;
 use App\Services\Checkout\CheckoutCoordinator;
+use App\Services\Payment\PaymentManager;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +31,8 @@ class OrderController extends Controller
 {
     public function __construct(
         private OrderService $orderService,
-        private CheckoutCoordinator $checkoutCoordinator
+        private CheckoutCoordinator $checkoutCoordinator,
+        private PaymentManager $paymentManager
     ) {}
 
     /**
@@ -582,10 +584,10 @@ class OrderController extends Controller
     public function processCheckoutPayment(Request $request): JsonResponse
     {
         try {
-            // Validation - artık hem address_id hem de manual address destekler
+            // Validation - production için product_variant_id zorunlu
             $validated = $request->validate([
                 'cart_items' => 'required|array|min:1',
-                'cart_items.*.product_variant_id' => 'required|integer',
+                'cart_items.*.product_variant_id' => 'required|integer|exists:product_variants,id',
                 'cart_items.*.quantity' => 'required|integer|min:1',
                 
                 // Address seçim yöntemi - address_id veya manual address
@@ -629,7 +631,7 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            // 3. Ödeme başarılı - Sipariş oluştur
+            // 3. Sipariş oluştur (henüz ödeme yapılmadı)
             $order = $this->createOrderFromCart($validated, $user, $cartTotal);
 
             Log::info('Order created successfully from checkout payment', [
@@ -639,21 +641,62 @@ class OrderController extends Controller
                 'total_amount' => $order->total_amount
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Ödeme başarılı! Siparişiniz oluşturuldu.',
-                'data' => [
-                    'payment_status' => 'success',
-                    'order' => [
-                        'id' => $order->id,
-                        'order_number' => $order->order_number,
-                        'total_amount' => number_format($order->total_amount, 2),
-                        'status' => $order->status,
-                        'payment_status' => $order->payment_status,
-                        'created_at' => $order->created_at->format('Y-m-d H:i:s')
+            // 4. PayTR ödeme sürecini başlat
+            $paymentResult = $this->paymentManager->initializePayment('paytr', $order, [
+                'max_installment' => 0, // Taksit yok
+                'non_3d' => false, // 3D Secure aktif
+                'test_mode' => config('payments.providers.paytr.test_mode', true)
+            ]);
+
+            if ($paymentResult->isSuccess()) {
+                Log::info('PayTR payment initialized successfully', [
+                    'order_number' => $order->order_number,
+                    'iframe_url' => $paymentResult->getIframeUrl(),
+                    'expires_at' => $paymentResult->getExpiresAt()?->format('Y-m-d H:i:s')
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sipariş oluşturuldu. Ödeme sayfasına yönlendiriliyorsunuz.',
+                    'data' => [
+                        'order' => [
+                            'id' => $order->id,
+                            'order_number' => $order->order_number,
+                            'total_amount' => number_format((float) $order->total_amount, 2),
+                            'status' => $order->status,
+                            'payment_status' => $order->payment_status,
+                            'created_at' => $order->created_at->format('Y-m-d H:i:s')
+                        ],
+                        'payment' => [
+                            'provider' => 'paytr',
+                            'iframe_url' => $paymentResult->getIframeUrl(),
+                            'expires_at' => $paymentResult->getExpiresAt()?->format('Y-m-d H:i:s'),
+                            'time_to_expiry_seconds' => $paymentResult->getMetadata()['time_to_expiry_seconds'] ?? null,
+                            'requires_iframe' => true
+                        ]
                     ]
-                ]
-            ], 201);
+                ], 201);
+            } else {
+                Log::error('PayTR payment initialization failed', [
+                    'order_number' => $order->order_number,
+                    'error' => $paymentResult->getErrorMessage()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ödeme sistemi başlatılamadı. Lütfen tekrar deneyiniz.',
+                    'error_code' => 'PAYMENT_INITIALIZATION_FAILED',
+                    'data' => [
+                        'order' => [
+                            'id' => $order->id,
+                            'order_number' => $order->order_number,
+                            'total_amount' => number_format((float) $order->total_amount, 2),
+                            'status' => $order->status,
+                            'payment_status' => 'pending'
+                        ]
+                    ]
+                ], 500);
+            }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -730,10 +773,12 @@ class OrderController extends Controller
             'currency_code' => 'TRY',
             'status' => 'pending',
             'payment_method' => 'online',
-            'payment_status' => 'paid',
+            'payment_status' => 'pending', // Henüz ödeme yapılmadı
+            'customer_type' => $user->customer_type ?? 'B2C', // Customer type ekle
             
             // Shipping address
             'shipping_name' => $shippingAddressData['name'],
+            'shipping_email' => $user->email, // User email'i kullan
             'shipping_phone' => $shippingAddressData['phone'],
             'shipping_address' => $shippingAddressData['address'],
             'shipping_city' => $shippingAddressData['city'],
@@ -743,6 +788,7 @@ class OrderController extends Controller
             
             // Billing address  
             'billing_name' => $billingAddressData['name'],
+            'billing_email' => $user->email, // User email'i kullan
             'billing_phone' => $billingAddressData['phone'],
             'billing_address' => $billingAddressData['address'],
             'billing_city' => $billingAddressData['city'],
@@ -760,7 +806,7 @@ class OrderController extends Controller
         foreach ($validated['cart_items'] as $item) {
             $variant = ProductVariant::with('product')->find($item['product_variant_id']);
             
-            if ($variant) {
+            if ($variant && $variant->product) {
                 $order->items()->create([
                     'product_id' => $variant->product_id,
                     'product_variant_id' => $variant->id,
@@ -773,6 +819,19 @@ class OrderController extends Controller
                         'color' => $variant->color,
                         'size' => $variant->size
                     ]
+                ]);
+                
+                Log::info('Order item created', [
+                    'product_variant_id' => $variant->id,
+                    'product_name' => $variant->product->name,
+                    'price' => $variant->price,
+                    'quantity' => $item['quantity']
+                ]);
+            } else {
+                Log::warning('ProductVariant or Product not found', [
+                    'product_variant_id' => $item['product_variant_id'],
+                    'variant_exists' => $variant ? true : false,
+                    'product_exists' => $variant && $variant->product ? true : false
                 ]);
             }
         }
@@ -829,10 +888,10 @@ class OrderController extends Controller
     }
 
     /**
-     * Sipariş numarası oluştur
+     * Sipariş numarası oluştur (PayTR uyumlu - sadece alfanumerik)
      */
     private function generateOrderNumber(): string
     {
-        return 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6));
+        return 'ORD' . date('Ymd') . strtoupper(substr(md5(uniqid()), 0, 6));
     }
 }

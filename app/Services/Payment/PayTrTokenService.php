@@ -97,7 +97,7 @@ class PayTrTokenService
             // PayTR formatı: [ürün_adı, fiyat_kuruş, adet]
             $basketItems[] = [
                 $this->sanitizeProductName($item->product_name),
-                number_format($item->price, 2, '.', ''), // TL cinsinden 
+                number_format((float) $item->price, 2, '.', ''), // TL cinsinden 
                 $item->quantity
             ];
         }
@@ -127,27 +127,33 @@ class PayTrTokenService
         $noInstallment = $options['no_installment'] ?? 0;
         $maxInstallment = $options['max_installment'] ?? $this->config['max_installment'] ?? 0;
 
-        // Hash string oluştur
+        // Hash string oluştur - PayTR dokümantasyonuna göre
         $hashString = $this->config['merchant_id'] . 
                      $userIp . 
                      $order->order_number . 
                      $order->billing_email . 
                      $paymentAmount . 
                      $basketData . 
-                     $non3d . 
                      $noInstallment . 
                      $maxInstallment . 
-                     $this->config['merchant_key'] . 
-                     $this->config['merchant_salt'];
+                     $this->config['currency'] . 
+                     ($this->config['test_mode'] ? 1 : 0);
+
+        // PayTR dokümantasyonuna göre: hash_str + merchant_salt
+        $hashStringWithSalt = $hashString . $this->config['merchant_salt'];
 
         // HMAC-SHA256 ile hash oluştur ve base64 encode et
-        $hash = base64_encode(hash_hmac('sha256', $hashString, $this->config['merchant_key'], true));
+        $hash = base64_encode(hash_hmac('sha256', $hashStringWithSalt, $this->config['merchant_key'], true));
 
         Log::debug('PayTR hash oluşturuldu', [
             'hash_string_length' => strlen($hashString),
             'hash_length' => strlen($hash),
             'user_ip' => $userIp,
-            'payment_amount_kurus' => $paymentAmount
+            'payment_amount_kurus' => $paymentAmount,
+            'merchant_id' => $this->config['merchant_id'],
+            'merchant_oid' => $order->order_number,
+            'email' => $order->billing_email,
+            'basket_data_length' => strlen($basketData)
         ]);
 
         return $hash;
@@ -193,7 +199,9 @@ class PayTrTokenService
         Log::info('PayTR API\'sine token request gönderiliyor', [
             'endpoint' => $endpoint,
             'merchant_oid' => $requestData['merchant_oid'],
-            'test_mode' => $requestData['test_mode']
+            'test_mode' => $requestData['test_mode'],
+            'success_url' => $requestData['merchant_ok_url'],
+            'failure_url' => $requestData['merchant_fail_url']
         ]);
 
         $response = Http::timeout(30)

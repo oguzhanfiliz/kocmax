@@ -98,27 +98,37 @@ class CheckoutController extends Controller
     public function initialize(Request $request): JsonResponse
     {
         try {
-            // Input doğrulama (sadece ID'ler ve quantity, fiyat yok!)
+            // Request logging - debug için
+            Log::info('Checkout initialize request received', [
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
+                'headers' => $request->headers->all()
+            ]);
+
+            // Input doğrulama (frontend payload'ına uygun)
             $validated = $request->validate([
                 'cart_items' => 'required|array|min:1',
-                'cart_items.*.product_variant_id' => 'required|integer',
-                'cart_items.*.quantity' => 'required|integer|min:1',
+                'cart_items.*.product_variant_id' => 'required|integer|exists:product_variants,id',
+                'cart_items.*.quantity' => 'required|integer|min:1|max:999',
                 
+                // Frontend direkt address gönderiyor, manual wrapper yok
                 'shipping_address' => 'required|array',
-                'shipping_address.address_id' => 'sometimes|integer',
-                'shipping_address.manual' => 'sometimes|array',
-                'shipping_address.manual.name' => 'required_with:shipping_address.manual|string|max:255',
-                'shipping_address.manual.phone' => 'required_with:shipping_address.manual|string|max:20',
-                'shipping_address.manual.address' => 'required_with:shipping_address.manual|string|max:500',
-                'shipping_address.manual.city' => 'required_with:shipping_address.manual|string|max:100',
+                'shipping_address.name' => 'required|string|max:255',
+                'shipping_address.phone' => 'required|string|max:20',
+                'shipping_address.address' => 'required|string|max:500',
+                'shipping_address.city' => 'required|string|max:100',
+                'shipping_address.state' => 'sometimes|string|max:100',
+                'shipping_address.zip' => 'sometimes|string|max:20',
+                'shipping_address.country' => 'required|string|max:2',
                 
                 'billing_address' => 'required|array',
-                'billing_address.address_id' => 'sometimes|integer',
-                'billing_address.manual' => 'sometimes|array',
-                'billing_address.manual.name' => 'required_with:billing_address.manual|string|max:255',
-                'billing_address.manual.phone' => 'required_with:billing_address.manual|string|max:20',
-                'billing_address.manual.address' => 'required_with:billing_address.manual|string|max:500',
-                'billing_address.manual.city' => 'required_with:billing_address.manual|string|max:100',
+                'billing_address.name' => 'required|string|max:255',
+                'billing_address.phone' => 'required|string|max:20',
+                'billing_address.address' => 'required|string|max:500',
+                'billing_address.city' => 'required|string|max:100',
+                'billing_address.state' => 'sometimes|string|max:100',
+                'billing_address.zip' => 'sometimes|string|max:20',
+                'billing_address.country' => 'required|string|max:2',
             ]);
 
             $user = Auth::user();

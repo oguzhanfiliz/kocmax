@@ -228,8 +228,11 @@ class PayTrCallbackHandler
         DB::transaction(function () use ($order, $callbackData) {
             // Sipariş durumunu güncelle (Order model method kullan)
             // PayTr'de transaction ID yok, sadece merchant_oid var
-            $order->markAsPaid($order->order_number); // merchant_oid'i transaction ID olarak kullan
             $order->update([
+                'status' => 'processing',
+                'payment_status' => 'paid',
+                'payment_transaction_id' => $order->order_number, // merchant_oid'i transaction ID olarak kullan
+                'paid_at' => now(),
                 'payment_method' => 'paytr',
                 'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme başarılı: " . now()->format('d.m.Y H:i')
             ]);
