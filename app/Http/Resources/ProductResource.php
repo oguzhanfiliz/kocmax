@@ -201,14 +201,14 @@ class ProductResource extends JsonResource
                     'id' => $variant->id,
                     'name' => $variant->name,
                     'sku' => $variant->sku,
+                    'color' => $variant->color,
+                    'size' => $variant->size,
                     'price' => app(\App\Services\CurrencyConversionService::class)->convertPrice(
                         (float) ($variant->source_price ?? $variant->price),
                         $variant->source_currency ?? ($variant->currency_code ?? 'TRY'),
                         'TRY'
                     ),
                     'stock' => (int) $variant->stock,
-                    'color' => $variant->color,
-                    'size' => $variant->size,
                     'is_active' => (bool) $variant->is_active,
                     'images' => $variant->relationLoaded('images') ? 
                         $variant->images->map(fn($image) => [
@@ -216,15 +216,21 @@ class ProductResource extends JsonResource
                             'image_url' => $image->image_url,
                             'alt_text' => $image->alt_text,
                             'is_primary' => (bool) $image->is_primary,
+                            'sort_order' => $image->sort_order ?? 0,
                         ]) : [],
                     // 🔥 Varyant için de pricing rules uygula
                     'pricing' => $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled),
                     // 📦 Varyant paket boyutları (inheritance ile)
                     'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
-                    // 🎨 Varyant türleri ve seçenekleri (Frontend için optimize edilmiş)
+                    // 🎨 Bu varyant için seçili olan option'lar
                     'variant_types' => $variant->relationLoaded('variantOptions') ? 
-                        $this->getVariantTypesForFrontend($variant) : [],
+                        $this->getSelectedVariantOptions($variant) : [],
                 ])
+            ),
+            
+            // 🎨 Ana ürün düzeyinde tüm varyant tiplerini göster
+            'variant_types' => $this->whenLoaded('variants', fn() => 
+                $this->getProductVariantTypes()
             ),
             'variants_count' => $this->whenCounted('variants'),
             'in_stock' => $this->whenLoaded('variants', fn() => 
@@ -374,25 +380,39 @@ class ProductResource extends JsonResource
     }
 
     /**
-     * 🎨 Frontend için varyant türlerini optimize edilmiş formatta döndür
+     * 🎯 Ana ürün düzeyinde tüm varyant tiplerini getir 
+     * Frontend'in seçenekleri gösterebilmesi için tüm variant tiplerini ve option'larını döndürür
      */
-    private function getVariantTypesForFrontend($variant): array
+    private function getProductVariantTypes(): array
     {
-        if (!$variant->relationLoaded('variantOptions')) {
+        if (!$this->relationLoaded('variants') || $this->variants->isEmpty()) {
             return [];
         }
 
-        $variantTypes = [];
-        
-        foreach ($variant->variantOptions as $option) {
+        // Tüm varyantların option'larını topla
+        $allVariantOptions = collect();
+        foreach ($this->variants as $variant) {
+            if ($variant->relationLoaded('variantOptions')) {
+                $allVariantOptions = $allVariantOptions->merge($variant->variantOptions);
+            }
+        }
+
+        if ($allVariantOptions->isEmpty()) {
+            return [];
+        }
+
+        // Varyant tiplerini group'la
+        $variantTypesData = [];
+        foreach ($allVariantOptions->unique('id') as $option) {
             if (!$option->relationLoaded('variantType')) {
                 continue;
             }
             
             $type = $option->variantType;
+            $typeSlug = $type->slug;
             
-            if (!isset($variantTypes[$type->slug])) {
-                $variantTypes[$type->slug] = [
+            if (!isset($variantTypesData[$typeSlug])) {
+                $variantTypesData[$typeSlug] = [
                     'id' => $type->id,
                     'name' => $type->name,
                     'display_name' => $type->display_name,
@@ -403,7 +423,8 @@ class ProductResource extends JsonResource
                 ];
             }
             
-            $variantTypes[$type->slug]['options'][] = [
+            // Bu option'ı ekle
+            $variantTypesData[$typeSlug]['options'][$option->id] = [
                 'id' => $option->id,
                 'name' => $option->name,
                 'value' => $option->value,
@@ -411,18 +432,136 @@ class ProductResource extends JsonResource
                 'slug' => $option->slug,
                 'hex_color' => $option->hex_color,
                 'image_url' => $option->image_url,
-                'sort_order' => $option->sort_order,
-                'is_selected' => true, // Bu varyant için seçili
+                'sort_order' => $option->sort_order ?? 0,
             ];
         }
         
-        // Sort by sort_order
-        foreach ($variantTypes as &$type) {
-            usort($type['options'], function ($a, $b) {
-                return $a['sort_order'] <=> $b['sort_order'];
-            });
+        // Option'ları sort_order'a göre sırala ve array_values ile index'leri sıfırla
+        foreach ($variantTypesData as &$typeData) {
+            $options = array_values($typeData['options']);
+            usort($options, fn($a, $b) => ($a['sort_order'] ?? 0) <=> ($b['sort_order'] ?? 0));
+            $typeData['options'] = $options;
         }
         
-        return array_values($variantTypes);
+        // Variant type'ları sort_order'a göre sırala  
+        $sortedTypes = array_values($variantTypesData);
+        usort($sortedTypes, fn($a, $b) => ($a['id'] ?? 0) <=> ($b['id'] ?? 0));
+        
+        return $sortedTypes;
+    }
+
+    /**
+     * 🎯 Varyant için sadece seçili olan option'ları döndür
+     * Her varyant tipine göre bu varyantın hangi option'ını seçtiğini gösterir
+     */
+    private function getSelectedVariantOptions($variant): array
+    {
+        if (!$variant->relationLoaded('variantOptions') || $variant->variantOptions->isEmpty()) {
+            return [];
+        }
+
+        $selectedOptions = [];
+        
+        foreach ($variant->variantOptions as $option) {
+            if (!$option->relationLoaded('variantType')) {
+                continue;
+            }
+            
+            $type = $option->variantType;
+            
+            $selectedOptions[] = [
+                'id' => $type->id,
+                'name' => $type->name,
+                'display_name' => $type->display_name,
+                'slug' => $type->slug,
+                'input_type' => $type->input_type,
+                'is_required' => (bool) $type->is_required,
+                'selected_option' => [
+                    'id' => $option->id,
+                    'name' => $option->name,
+                    'value' => $option->value,
+                    'display_value' => $option->display_value,
+                    'slug' => $option->slug,
+                    'hex_color' => $option->hex_color,
+                    'image_url' => $option->image_url,
+                    'sort_order' => $option->sort_order ?? 0,
+                ]
+            ];
+        }
+        
+        // Type ID'ye göre sırala
+        usort($selectedOptions, fn($a, $b) => ($a['id'] ?? 0) <=> ($b['id'] ?? 0));
+        
+        return $selectedOptions;
+    }
+
+    /**
+     * 🎨 Frontend için varyant türlerini optimize edilmiş formatta döndür
+     * Tüm variant tiplerini ve seçeneklerini döndürür, seçili olanları işaretler
+     * @deprecated Bu metod artık kullanılmıyor, getProductVariantTypes ve getSelectedVariantOptions kullan
+     */
+    private function getVariantTypesForFrontend($variant): array
+    {
+        if (!$variant->relationLoaded('variantOptions')) {
+            return [];
+        }
+
+        // Bu variantın seçili option'larının ID'lerini topla
+        $selectedOptionIds = $variant->variantOptions->pluck('id')->toArray();
+        
+        $variantTypes = [];
+        
+        // Bu variantın sahip olduğu variant tiplerini bul
+        foreach ($variant->variantOptions as $option) {
+            if (!$option->relationLoaded('variantType')) {
+                continue;
+            }
+            
+            $type = $option->variantType;
+            
+            if (!isset($variantTypes[$type->slug])) {
+                // Variant type'ı ekle
+                $variantTypes[$type->slug] = [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'display_name' => $type->display_name,
+                    'slug' => $type->slug,
+                    'input_type' => $type->input_type,
+                    'is_required' => (bool) $type->is_required,
+                    'sort_order' => $type->sort_order ?? 0,
+                    'options' => []
+                ];
+                
+                // Bu variant type'ın tüm aktif seçeneklerini getir
+                $allOptions = \App\Models\VariantOption::where('variant_type_id', $type->id)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get();
+                
+                // Tüm seçenekleri ekle ve hangilerinin seçili olduğunu işaretle
+                foreach ($allOptions as $allOption) {
+                    $variantTypes[$type->slug]['options'][] = [
+                        'id' => $allOption->id,
+                        'name' => $allOption->name,
+                        'value' => $allOption->value,
+                        'display_value' => $allOption->display_value,
+                        'slug' => $allOption->slug,
+                        'hex_color' => $allOption->hex_color,
+                        'image_url' => $allOption->image_url,
+                        'sort_order' => $allOption->sort_order,
+                        'is_selected' => in_array($allOption->id, $selectedOptionIds), // Bu varyant için seçili mi?
+                    ];
+                }
+            }
+        }
+        
+        // Sort variant types by sort_order
+        $sortedTypes = array_values($variantTypes);
+        usort($sortedTypes, function ($a, $b) {
+            return ($a['sort_order'] ?? 0) <=> ($b['sort_order'] ?? 0);
+        });
+        
+        return $sortedTypes;
     }
 }

@@ -87,9 +87,14 @@ class ProductDetailResource extends JsonResource
                 'meta_description' => $this->meta_description,
                 'meta_keywords' => $this->meta_keywords,
             ],
+            // 🎨 Ürün seviyesinde variant types - frontend filtreleme için
+            'variant_types' => $this->whenLoaded('variants', function () {
+                return $this->getProductVariantTypes();
+            }),
             'variants' => $this->whenLoaded('variants', fn() => 
                 $this->variants->map(fn($variant) => [
                     'id' => $variant->id,
+                    'sku' => $variant->sku,
                     'color' => $variant->color,
                     'size' => $variant->size,
                     'stock' => $variant->stock,
@@ -305,6 +310,67 @@ class ProductDetailResource extends JsonResource
                 'sort_order' => $option->sort_order,
                 'is_selected' => true, // Bu varyant için seçili
             ];
+        }
+        
+        // Sort by sort_order
+        foreach ($variantTypes as &$type) {
+            usort($type['options'], function ($a, $b) {
+                return $a['sort_order'] <=> $b['sort_order'];
+            });
+        }
+        
+        return array_values($variantTypes);
+    }
+
+    /**
+     * 🎨 Ürün seviyesinde variant types - frontend filtreleme için
+     */
+    private function getProductVariantTypes(): array
+    {
+        if (!$this->variants->first() || !$this->variants->first()->relationLoaded('variantOptions')) {
+            return [];
+        }
+
+        $variantTypes = [];
+        
+        // Tüm varyantlardan unique variant types'ları topla
+        foreach ($this->variants as $variant) {
+            foreach ($variant->variantOptions as $option) {
+                if (!$option->relationLoaded('variantType')) {
+                    continue;
+                }
+                
+                $type = $option->variantType;
+                
+                if (!isset($variantTypes[$type->slug])) {
+                    $variantTypes[$type->slug] = [
+                        'id' => $type->id,
+                        'name' => $type->name,
+                        'display_name' => $type->display_name,
+                        'slug' => $type->slug,
+                        'input_type' => $type->input_type,
+                        'is_required' => (bool) $type->is_required,
+                        'options' => []
+                    ];
+                }
+                
+                // Option'ı ekle (duplicate kontrolü)
+                $optionExists = collect($variantTypes[$type->slug]['options'])
+                    ->contains('id', $option->id);
+                    
+                if (!$optionExists) {
+                    $variantTypes[$type->slug]['options'][] = [
+                        'id' => $option->id,
+                        'name' => $option->name,
+                        'value' => $option->value,
+                        'display_value' => $option->display_value,
+                        'slug' => $option->slug,
+                        'hex_color' => $option->hex_color,
+                        'image_url' => $option->image_url,
+                        'sort_order' => $option->sort_order,
+                    ];
+                }
+            }
         }
         
         // Sort by sort_order

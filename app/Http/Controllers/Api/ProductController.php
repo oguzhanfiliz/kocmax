@@ -135,6 +135,13 @@ class ProductController extends Controller
      *         @OA\Schema(type="integer", minimum=1, maximum=100, example=20)
      *     ),
      *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Sayfa numarası",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, example=1)
+     *     ),
+     *     @OA\Parameter(
      *         name="currency",
      *         in="query",
      *         description="Fiyat gösterimi için para birimi",
@@ -193,6 +200,7 @@ class ProductController extends Controller
             'sort' => 'nullable|in:name,price,created_at,popularity',
             'order' => 'nullable|in:asc,desc',
             'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
             'currency' => 'nullable|in:TRY,USD,EUR',
         ]);
 
@@ -202,7 +210,8 @@ class ProductController extends Controller
         // Set context for resource transformation
         $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
 
-        $query = Product::with(['variants.images', 'categories', 'images', 'activeCertificates'])
+        // Liste endpoint'i için daha hafif eager loading
+        $query = Product::with(['variants', 'categories', 'images'])
             ->where('is_active', true);
 
         // Search functionality

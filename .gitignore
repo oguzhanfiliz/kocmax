@@ -35,3 +35,6 @@ Thumbs.db
 .phpunit.result.cache
 *.cov
 composer.lock
+
+# Scripts directory
+/scripts/

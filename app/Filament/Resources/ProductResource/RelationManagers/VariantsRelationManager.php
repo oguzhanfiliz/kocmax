@@ -287,7 +287,7 @@ class VariantsRelationManager extends RelationManager
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('Görsel ve Boyutlar')
+                Forms\Components\Section::make('Varyant Görselleri')
                     ->schema([
                         Forms\Components\FileUpload::make('variant_images')
                             ->label('Varyant Görselleri')
@@ -301,50 +301,7 @@ class VariantsRelationManager extends RelationManager
                             ->reorderable()
                             ->helperText('İlk görsel ana görsel olarak kullanılır. Maksimum 8 görsel yükleyebilirsiniz. Görselleri sürükleyerek sıralayabilirsiniz.')
                             ->hint('Önerilen boyutlar: 800x800px veya 1200x1200px'),
-                        Forms\Components\Section::make('Ürün Boyutları')
-                            ->description('Ürünün fiziksel boyutlarını santimetre cinsinden giriniz')
-                            ->schema([
-                                Forms\Components\Actions::make([
-                                    Forms\Components\Actions\Action::make('dimension_help')
-                                        ->label('Boyut Nasıl Ölçülür?')
-                                        ->icon('heroicon-o-information-circle')
-                                        ->color('info')
-                                        ->modalHeading('Ürün Boyutları Nasıl Ölçülür?')
-                                        ->modalDescription('Ürün boyutlarını doğru şekilde ölçmek için aşağıdaki rehberi takip edin.')
-                                        ->modalContent(view('filament.modals.dimension-help'))
-                                        ->modalSubmitAction(false)
-                                        ->modalCancelActionLabel('Tamam')
-                                        ->slideOver(),
-                                ])
-                                ->alignEnd(),
-                                Forms\Components\Grid::make(3)
-                                    ->schema([
-                                        Forms\Components\TextInput::make('length')
-                                            ->label('Uzunluk (cm)')
-                                            ->helperText('En uzun kenar')
-                                            ->numeric()
-                                            ->step(0.1)
-                                            ->suffix('cm')
-                                            ->placeholder('30.5'),
-                                        Forms\Components\TextInput::make('width')
-                                            ->label('Genişlik (cm)')
-                                            ->helperText('Orta kenar')
-                                            ->numeric()
-                                            ->step(0.1)
-                                            ->suffix('cm')
-                                            ->placeholder('20.0'),
-                                        Forms\Components\TextInput::make('height')
-                                            ->label('Yükseklik (cm)')
-                                            ->helperText('En kısa kenar')
-                                            ->numeric()
-                                            ->step(0.1)
-                                            ->suffix('cm')
-                                            ->placeholder('10.2'),
-                                    ]),
-                            ])
-                            ->columnSpan(2),
                     ])
-                    ->columns(3)
                     ->collapsible(),
             ]);
     }
@@ -827,6 +784,9 @@ class VariantsRelationManager extends RelationManager
                         // Set source currency fields for editing
                         $data['source_currency'] = $record->source_currency ?? ($record->currency_code ?? 'TRY');
                         
+                        // Set price field from source_price for editing
+                        $data['price'] = $record->source_price ?? $record->price;
+                        
                         return $data;
                     })
                     ->mutateFormDataUsing(function (array $data): array {
@@ -867,6 +827,10 @@ class VariantsRelationManager extends RelationManager
                         if (!empty($data['color']) || !empty($data['size'])) {
                             $data['name'] = $this->generateVariantNameFromVariantOptions($data);
                         }
+                        
+                        // Persist price as source currency value (edit için)
+                        $data['source_price'] = $data['price'] ?? $data['source_price'] ?? null;
+                        $data['currency_code'] = $data['source_currency'] ?? 'TRY';
                         
                         // Remove variant_options and variant_images from data as they're not direct fields
                         unset($data['variant_options'], $data['variant_images']);
