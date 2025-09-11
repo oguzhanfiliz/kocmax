@@ -19,31 +19,40 @@ class SendDealerApplicationApprovedEmail implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        public DealerApplication $dealerApplication
+        public int $dealerApplicationId
     ) {}
 
     public function handle(): void
     {
         try {
-            $user = $this->dealerApplication->user;
+            $application = DealerApplication::find($this->dealerApplicationId);
 
-            if (!$user) {
-                Log::warning('Onay e-postası gönderilemedi: kullanıcı bulunamadı', [
-                    'application_id' => $this->dealerApplication->id,
+            if (!$application) {
+                Log::warning('Onay e-postası gönderilemedi: başvuru bulunamadı', [
+                    'application_id' => $this->dealerApplicationId,
                 ]);
                 return;
             }
 
-            Mail::to($user->email)->send(new DealerApplicationApprovedMailable($this->dealerApplication));
+            $user = $application->user;
+
+            if (!$user) {
+                Log::warning('Onay e-postası gönderilemedi: kullanıcı bulunamadı', [
+                    'application_id' => $application->id,
+                ]);
+                return;
+            }
+
+            Mail::to($user->email)->send(new DealerApplicationApprovedMailable($application));
 
             Log::info('Bayi başvurusu onay e-postası gönderildi', [
                 'user_email' => $user->email,
-                'application_id' => $this->dealerApplication->id,
-                'company_name' => $this->dealerApplication->company_name,
+                'application_id' => $application->id,
+                'company_name' => $application->company_name,
             ]);
         } catch (\Exception $e) {
             Log::error('Bayi başvurusu onay e-postası gönderilirken hata oluştu', [
-                'application_id' => $this->dealerApplication->id,
+                'application_id' => $this->dealerApplicationId,
                 'error' => $e->getMessage(),
             ]);
         }

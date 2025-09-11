@@ -20,7 +20,7 @@ class DealerApplicationObserver
     {
         try {
             // Admin'lere yeni başvuru bildirim e-postası gönder (queue ile)
-            SendDealerApplicationCreatedEmail::dispatch($dealerApplication);
+            SendDealerApplicationCreatedEmail::dispatch($dealerApplication->id);
             
             // Başvuru oluşturma logunu kaydet
             Log::info('Yeni bayi başvurusu oluşturuldu', [
@@ -57,14 +57,24 @@ class DealerApplicationObserver
                     'company_name' => $dealerApplication->company_name,
                 ]);
                 
-                // Sadece e-posta gönderimi yap, service çağrısı yapma
+                // Onaylandığında, kullanıcıya bayi kodu atanmış olsun
                 if ($newStatus === DealerApplicationStatus::APPROVED) {
+                    // Bayi kodu ve kullanıcı durumunu garanti altına al
+                    try {
+                        app(DealerApplicationService::class)->approveApplication($dealerApplication);
+                    } catch (\Throwable $e) {
+                        Log::error('approveApplication sırasında hata', [
+                            'application_id' => $dealerApplication->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+
                     // Onay e-postasını queue ile gönder
-                    SendDealerApplicationApprovedEmail::dispatch($dealerApplication);
-                    
+                    SendDealerApplicationApprovedEmail::dispatch($dealerApplication->id);
+
                 } elseif ($newStatus === DealerApplicationStatus::REJECTED) {
                     // Red e-postasını queue ile gönder
-                    SendDealerApplicationRejectedEmail::dispatch($dealerApplication);
+                    SendDealerApplicationRejectedEmail::dispatch($dealerApplication->id);
                 }
             }
             

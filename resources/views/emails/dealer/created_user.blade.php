@@ -12,7 +12,7 @@
           <td style="padding:24px 24px 8px 24px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
             <p style="margin:0 0 12px 0;font-size:16px;">Merhaba <strong>{{ $user?->name ?? 'Kullanıcı' }}</strong>,</p>
             <p style="margin:0 0 8px 0;font-size:15px;line-height:1.6;">
-              <strong>{{ $application->company_name }}</strong> için yaptığınız bayi başvurusu <span style="color:#059669;">onaylandı</span>.
+              <strong>{{ $application->company_name }}</strong> için bayi başvurunuz <strong>başarıyla alındı</strong> ve incelemeye alınmıştır.
             </p>
           </td>
         </tr>
@@ -20,8 +20,12 @@
           <td style="padding:0 24px 8px 24px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
             <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
               <tr>
-                <td style="padding:14px 16px;font-size:14px;color:#374151;">Bayi Kodunuz</td>
-                <td align="right" style="padding:14px 16px;font-size:15px;color:#111827;font-weight:700;">{{ $user?->dealer_code }}</td>
+                <td style="padding:14px 16px;font-size:14px;color:#374151;width:50%;">Başvuru Numarası</td>
+                <td align="right" style="padding:14px 16px;font-size:15px;color:#111827;font-weight:700;">#{{ $application->id }}</td>
+              </tr>
+              <tr>
+                <td style="padding:14px 16px;font-size:14px;color:#374151;">Durum</td>
+                <td align="right" style="padding:14px 16px;font-size:15px;color:#111827;font-weight:700;text-transform:capitalize;">{{ $application->status->value }}</td>
               </tr>
             </table>
           </td>
@@ -29,7 +33,7 @@
         <tr>
           <td style="padding:8px 24px 24px 24px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
-              Artık bayi fiyatları ve sipariş ayrıcalıklarından yararlanabilirsiniz.
+              Değerlendirme sonucunu e‑posta ile bildireceğiz. Gerekli görülürse ek bilgi veya belge talep edebiliriz.
             </p>
           </td>
         </tr>
@@ -43,3 +47,4 @@
     </td>
   </tr>
 </table>
+
