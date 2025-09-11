@@ -121,7 +121,7 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
     // Order CRUD operations
     Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
     Route::post('/', [OrderController::class, 'store'])->name('api.orders.store');
-    Route::get('/{order}', [OrderController::class, 'show'])->name('api.orders.show');
+    Route::get('/{order:order_number}', [OrderController::class, 'show'])->name('api.orders.show');
     Route::get('/{order:order_number}/tracking', [OrderController::class, 'tracking'])->name('api.orders.tracking');
     
     // Checkout operations (now require authentication with strict rate limiting)
@@ -131,9 +131,9 @@ Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
           ->middleware('throttle:checkout');
     
     // Order actions
-    Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])->name('api.orders.update-status');
-    Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
-    Route::post('/{order}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
+    Route::patch('/{order:order_number}/status', [OrderController::class, 'updateStatus'])->name('api.orders.update-status');
+    Route::post('/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
+    Route::post('/{order:order_number}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
     
     // Checkout payment processing - Frontend sepet ödeme işlemi
     Route::post('/checkout-payment', [OrderController::class, 'processCheckoutPayment'])

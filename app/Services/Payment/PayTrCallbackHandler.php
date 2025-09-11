@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Payment;
 
 use App\Models\Order;
+use App\Enums\OrderStatus;
 use App\ValueObjects\Payment\PaymentCallbackResult;
 use App\Exceptions\Payment\PaymentException;
 use App\Services\Order\OrderStockService;
@@ -229,13 +230,15 @@ class PayTrCallbackHandler
             // Sipariş durumunu güncelle (Order model method kullan)
             // PayTr'de transaction ID yok, sadece merchant_oid var
             $order->update([
-                'status' => 'processing',
                 'payment_status' => 'paid',
                 'payment_transaction_id' => $order->order_number, // merchant_oid'i transaction ID olarak kullan
                 'paid_at' => now(),
                 'payment_method' => 'paytr',
                 'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme başarılı: " . now()->format('d.m.Y H:i')
             ]);
+
+            // Durumu servis üzerinden güncelle (geçmiş + event)
+            $this->orderService->updateStatus($order, OrderStatus::Processing, null, 'PayTR payment confirmed');
 
             // Stok düşüm işlemi (güvenli ve atomik)
             try {
@@ -272,13 +275,15 @@ class PayTrCallbackHandler
     private function updateOrderForFailedPayment(Order $order, array $callbackData): void
     {
         DB::transaction(function () use ($order, $callbackData) {
-            // Sipariş durumunu güncelle (Order model method kullan)
-            $order->markAsPaymentFailed();
+            // Ödeme durumunu güncelle (status hariç)
             $order->update([
-                'status' => 'cancelled', // Ödeme başarısız, sipariş iptal
+                'payment_status' => 'failed',
                 'cancelled_at' => now(),
                 'notes' => ($order->notes ?? '') . "\n[PayTR] Ödeme hatası: " . ($callbackData['failed_reason_msg'] ?? 'Bilinmeyen hata') . ' - ' . now()->format('d.m.Y H:i')
             ]);
+
+            // Durumu servis üzerinden iptal et
+            $this->orderService->updateStatus($order, OrderStatus::Cancelled, null, 'PayTR payment failed');
 
             // Eğer daha önce stok düşürüldüyse geri yükle
             if ($order->payment_status === 'paid' || str_contains($order->notes ?? '', 'Stoklar düşürüldü')) {

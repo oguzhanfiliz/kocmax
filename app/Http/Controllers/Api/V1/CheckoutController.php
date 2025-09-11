@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\Checkout\SecureCheckoutService;
 use App\Services\Payment\PaymentManager;
+use App\Services\Order\OrderService;
+use App\Enums\OrderStatus;
 use App\Exceptions\Checkout\CheckoutException;
 use App\Exceptions\Checkout\CheckoutValidationException;
 use Illuminate\Http\Request;
@@ -22,7 +24,8 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private SecureCheckoutService $checkoutService,
-        private PaymentManager $paymentManager
+        private PaymentManager $paymentManager,
+        private OrderService $orderService
     ) {}
 
     /**
@@ -370,9 +373,9 @@ class CheckoutController extends Controller
             // Session'ın varlığını ve sahipliğini kontrol et
             $checkoutSession = $this->checkoutService->getCheckoutSession($sessionId, $user);
             
-            // Pending order'ı iptal et
+            // Pending order'ı iptal et (geçmiş ile)
             $pendingOrder = $checkoutSession->getPendingOrder();
-            $pendingOrder->update(['status' => 'cancelled']);
+            $this->orderService->updateStatus($pendingOrder, OrderStatus::Cancelled, $user, 'Checkout oturumu iptal edildi');
             
             // Session'ı temizle
             $this->checkoutService->clearCheckoutSession($sessionId);

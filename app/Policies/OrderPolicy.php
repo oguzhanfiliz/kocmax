@@ -23,7 +23,14 @@ class OrderPolicy
      */
     public function view(User $user, Order $order): bool
     {
-        return $user->can('view_order');
+        // Müşteri kendi siparişini görebilsin
+        if ($user->id === $order->user_id) {
+            return true;
+        }
+        // Yetkili personel (admin/manager) veya ilgili izin
+        return method_exists($user, 'hasRole')
+            ? ($user->hasRole(['admin', 'manager']) || $user->can('view_order'))
+            : $user->can('view_order');
     }
 
     /**

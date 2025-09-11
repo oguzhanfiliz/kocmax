@@ -7,6 +7,7 @@ namespace App\Services\Order;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\OrderStatusHistory;
 use App\Contracts\Order\OrderStateInterface;
 use App\Services\Order\States\PendingOrderState;
 use App\Services\Order\States\ProcessingOrderState;
@@ -16,6 +17,7 @@ use App\Services\Order\States\CancelledOrderState;
 use App\Exceptions\Order\InvalidOrderStateException;
 use App\Events\Order\OrderStatusChanged;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class OrderStatusService
 {
@@ -41,46 +43,52 @@ class OrderStatusService
     public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): void
     {
         $previousStatus = $order->status;
-        $currentState = $this->getOrderState($order);
         
-        // Handle state exit
-        $currentState->exit($order);
-        
-        // Update order status
-        $order->update(['status' => $newStatus->value]);
-        
-        // Record status history
-        $this->recordStatusHistory($order, $previousStatus, $newStatus->value, $updatedBy, $reason);
-        
-        // Handle state entry
-        $newState = $this->getOrderState($order);
-        $newState->enter($order);
-        
-        // Emit domain event
-        event(new OrderStatusChanged($order, $previousStatus, $newStatus->value, $updatedBy));
-        
-        Log::info('Order status updated in service', [
-            'order_id' => $order->id,
-            'previous_status' => $previousStatus,
-            'new_status' => $newStatus->value,
-            'updated_by' => $updatedBy?->id,
-            'reason' => $reason
-        ]);
+        DB::transaction(function () use ($order, $newStatus, $updatedBy, $reason, $previousStatus) {
+            $currentState = $this->getOrderState($order);
+            
+            // Handle state exit
+            $currentState->exit($order);
+            
+            // Update order status
+            $order->update(['status' => $newStatus->value]);
+            
+            // Record status history (DB)
+            $this->recordStatusHistoryDb($order, $previousStatus, $newStatus->value, $updatedBy, $reason);
+            
+            // Handle state entry
+            $newState = $this->getOrderState($order);
+            $newState->enter($order);
+        });
+
+        // Emit domain event and log after commit
+        DB::afterCommit(function () use ($order, $previousStatus, $newStatus, $updatedBy, $reason) {
+            event(new OrderStatusChanged($order, $previousStatus, $newStatus->value, $updatedBy));
+            Log::info('Order status updated in service', [
+                'order_id' => $order->id,
+                'previous_status' => $previousStatus,
+                'new_status' => $newStatus->value,
+                'updated_by' => $updatedBy?->id,
+                'reason' => $reason
+            ]);
+        });
     }
 
     public function setInitialStatus(Order $order): void
     {
         $initialStatus = $this->determineInitialStatus($order);
-        
-        // Don't use updateStatus for initial status to avoid unnecessary state transitions
-        $order->update(['status' => $initialStatus->value]);
-        
-        // Record the initial status
-        $this->recordStatusHistory($order, null, $initialStatus->value, null, 'Order created');
-        
-        // Handle initial state entry
-        $state = $this->getOrderState($order);
-        $state->enter($order);
+
+        DB::transaction(function () use ($order, $initialStatus) {
+            // Don't use updateStatus for initial status to avoid unnecessary state transitions
+            $order->update(['status' => $initialStatus->value]);
+            
+            // Record the initial status (DB)
+            $this->recordStatusHistoryDb($order, null, $initialStatus->value, null, 'Order created');
+            
+            // Handle initial state entry
+            $state = $this->getOrderState($order);
+            $state->enter($order);
+        });
     }
 
     public function getAvailableTransitions(Order $order): array
@@ -162,6 +170,24 @@ class OrderStatusService
             
         } catch (\Exception $e) {
             Log::error('Failed to record status history', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    private function recordStatusHistoryDb(Order $order, ?string $previousStatus, string $newStatus, ?User $updatedBy, ?string $reason): void
+    {
+        try {
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'previous_status' => $previousStatus,
+                'status' => $newStatus,
+                'user_id' => $updatedBy?->id,
+                'notes' => $reason,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to record status history (db)', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage()
             ]);

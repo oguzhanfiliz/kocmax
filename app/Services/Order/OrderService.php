@@ -83,7 +83,7 @@ class OrderService implements OrderServiceInterface
     {
         try {
             $currentState = $this->statusService->getOrderState($order);
-            
+
             if (!$currentState->canTransitionTo($newStatus)) {
                 Log::warning('Invalid status transition attempted', [
                     'order_id' => $order->id,
@@ -95,11 +95,12 @@ class OrderService implements OrderServiceInterface
                 );
             }
 
-            $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);
-            
-            // Handle status-specific actions
-            $this->handleStatusChange($order, $newStatus);
-            
+            DB::transaction(function () use ($order, $newStatus, $updatedBy, $reason) {
+                $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);
+                // Status-specific DB changes
+                $this->handleStatusChange($order, $newStatus);
+            });
+
             Log::info('Order status updated', [
                 'order_id' => $order->id,
                 'old_status' => $order->getOriginal('status'),
@@ -204,25 +205,29 @@ class OrderService implements OrderServiceInterface
 
     public function markAsShipped(Order $order, ?string $trackingNumber = null, ?string $carrier = null, ?User $shippedBy = null): void
     {
-        $this->updateStatus($order, OrderStatus::Shipped, $shippedBy, 'Order shipped');
-        
-        $order->update([
-            'tracking_number' => $trackingNumber,
-            'shipping_carrier' => $carrier,
-            'shipped_at' => now()
-        ]);
+        DB::transaction(function () use ($order, $trackingNumber, $carrier, $shippedBy) {
+            $this->updateStatus($order, OrderStatus::Shipped, $shippedBy, 'Order shipped');
+            $order->update([
+                'tracking_number' => $trackingNumber,
+                'shipping_carrier' => $carrier,
+                'shipped_at' => now()
+            ]);
+        });
 
+        // Notify after commit
         $this->notificationService->sendOrderShipped($order);
     }
 
     public function markAsDelivered(Order $order, ?User $deliveredBy = null): void
     {
-        $this->updateStatus($order, OrderStatus::Delivered, $deliveredBy, 'Order delivered');
-        
-        $order->update([
-            'delivered_at' => now()
-        ]);
+        DB::transaction(function () use ($order, $deliveredBy) {
+            $this->updateStatus($order, OrderStatus::Delivered, $deliveredBy, 'Order delivered');
+            $order->update([
+                'delivered_at' => now()
+            ]);
+        });
 
+        // Notify after commit
         $this->notificationService->sendOrderDelivered($order);
     }
 
