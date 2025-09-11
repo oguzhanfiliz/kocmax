@@ -195,6 +195,17 @@ Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public
 
 /*
 |--------------------------------------------------------------------------
+| New Products API Routes (Optimized - Public with Domain Protection)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1/newproducts')->middleware(['api', 'domain.cors', 'throttle:public', 'pricing.headers'])->group(function () {
+    // 🚀 Optimize edilmiş ürün listesi endpoint'i (dev test için)
+    Route::get('/', [ProductController::class, 'newProducts'])
+         ->middleware('auth.optional')->name('api.newproducts.index');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Category API Routes (Public with Domain Protection)
 |--------------------------------------------------------------------------
 */

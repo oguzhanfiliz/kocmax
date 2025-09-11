@@ -42,6 +42,20 @@ class CategoryController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", minimum=0, maximum=3, example=0)
      *     ),
+     *     @OA\Parameter(
+     *         name="with_products",
+     *         in="query",
+     *         description="Ürün sayısını dahil et (products_count alanı için)",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Sayfa başına kategori sayısı",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, maximum=100, example=20)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Kategoriler başarıyla getirildi",
@@ -75,6 +89,13 @@ class CategoryController extends Controller
             } else {
                 $query->whereNotNull('parent_id');
             }
+        }
+
+        // 🚀 with_products=true parametresi geldiğinde products_count hesapla
+        if ($request->boolean('with_products')) {
+            $query->withCount(['products' => function($q) {
+                $q->where('is_active', true);
+            }]);
         }
 
         $categories = $query->get();

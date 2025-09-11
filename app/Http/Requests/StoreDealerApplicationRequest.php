@@ -43,13 +43,13 @@ class StoreDealerApplicationRequest extends FormRequest
             
             // Belgeler
             'trade_registry_document' => [
-                'required', 
+                'nullable', 
                 'file', 
                 'mimes:pdf,jpeg,jpg,png', 
                 'max:5120'
             ],
             'tax_plate_document' => [
-                'required', 
+                'nullable', 
                 'file', 
                 'mimes:pdf,jpeg,jpg,png', 
                 'max:5120'

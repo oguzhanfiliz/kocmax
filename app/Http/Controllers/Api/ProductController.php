@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\ProductDetailResource;
+use App\Http\Resources\ProductListResource;
 use App\Models\Product;
 use App\Models\Category;
 use App\Services\MultiCurrencyPricingService;
@@ -332,6 +333,300 @@ class ProductController extends Controller
 
         return ProductResource::collection($products)->additional([
             'message' => 'Ürünler başarıyla getirildi',
+            'filters' => [
+                'applied' => array_filter($validated),
+                'available' => $this->getAvailableFilters(),
+            ],
+            'pricing_info' => $this->getPricingInfo($customerInfo),
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/newproducts",
+     *     operationId="getNewProducts",
+     *     tags={"Products", "Public API"},
+     *     summary="Optimize edilmiş ürün listesi (Public)",
+     *     description="Ürün listesi için optimize edilmiş endpoint. Sadece ilk varyantı döndürür, performans odaklı. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
+     *     security={{"domain_protection": {}}},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Arama terimi",
+     *         required=false,
+     *         @OA\Schema(type="string", example="güvenlik ayakkabısı")
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="Kategori ID'si",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_slug",
+     *         in="query",
+     *         description="Kategori slug",
+     *         required=false,
+     *         @OA\Schema(type="string", example="guvenlik-ekipmanlari")
+     *     ),
+     *     @OA\Parameter(
+     *         name="min_price",
+     *         in="query",
+     *         description="Minimum fiyat",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="max_price",
+     *         in="query",
+     *         description="Maksimum fiyat",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=500.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand",
+     *         in="query",
+     *         description="Marka filtresi",
+     *         required=false,
+     *         @OA\Schema(type="string", example="3M")
+     *     ),
+     *     @OA\Parameter(
+     *         name="gender",
+     *         in="query",
+     *         description="Cinsiyet filtresi",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"male", "female", "unisex"}, example="unisex")
+     *     ),
+     *     @OA\Parameter(
+     *         name="in_stock",
+     *         in="query",
+     *         description="Stokta olan ürünler",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="featured",
+     *         in="query",
+     *         description="Öne çıkan ürünler",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Sıralama kriteri",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"name", "price", "created_at", "popularity"}, example="name")
+     *     ),
+     *     @OA\Parameter(
+     *         name="order",
+     *         in="query",
+     *         description="Sıralama yönü",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="asc")
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Sayfa başına ürün sayısı (max 100)",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, maximum=100, example=20)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Sayfa numarası",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="currency",
+     *         in="query",
+     *         description="Para birimi",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"TRY", "USD", "EUR"}, example="TRY")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Optimize edilmiş ürün listesi başarıyla getirildi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/ProductList")),
+     *             @OA\Property(property="links", type="object"),
+     *             @OA\Property(property="meta", type="object"),
+     *             @OA\Property(property="message", type="string", example="Ürünler başarıyla getirildi"),
+     *             @OA\Property(property="filters", type="object"),
+     *             @OA\Property(property="pricing_info", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Domain not allowed (production only)",
+     *         @OA\JsonContent(ref="#/components/responses/DomainNotAllowed")
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Rate limit exceeded (100 req/min for public endpoints)",
+     *         @OA\JsonContent(ref="#/components/responses/RateLimitExceeded")
+     *     )
+     * )
+     */
+    public function newProducts(Request $request): AnonymousResourceCollection
+    {
+        $validated = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'category_slug' => 'nullable|string|exists:categories,slug',
+            'categories' => 'nullable|string',
+            'min_price' => 'nullable|numeric|min:0',
+            'max_price' => 'nullable|numeric|min:0',
+            'brand' => 'nullable|string|max:255',
+            'gender' => 'nullable|in:male,female,unisex',
+            'in_stock' => 'nullable|boolean',
+            'featured' => 'nullable|boolean',
+            'sort' => 'nullable|in:name,price,created_at,popularity',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
+            'currency' => 'nullable|in:TRY,USD,EUR',
+        ]);
+
+        // 🎯 Smart Pricing: Detect customer type (optional auth)
+        $customerInfo = $this->customerTypeDetector->detectFromRequest($request);
+        
+        // Set context for resource transformation
+        $this->setResourceContext($validated['currency'] ?? 'TRY', $customerInfo);
+
+        // 🚀 Optimize edilmiş eager loading - ürün başına tek varyant (highest stock)
+        $query = Product::with([
+            'firstActiveVariant.images',
+            'firstActiveVariant.variantOptions.variantType',
+            'categories', 
+            'images'
+        ])
+        // Products API'deki stok tespitine eşitle: herhangi bir varyantta stok var mı?
+        ->withCount(['variants as variants_in_stock_count' => function ($q) {
+            $q->where('stock', '>', 0);
+        }])
+        ->where('is_active', true);
+
+        // Search functionality
+        if (!empty($validated['search'])) {
+            $searchTerm = $validated['search'];
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('sku', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('brand', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('safety_standard', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Category filter
+        if (!empty($validated['category_id'])) {
+            $query->whereHas('categories', fn($q) => $q->where('categories.id', $validated['category_id']));
+        }
+
+        if (!empty($validated['category_slug'])) {
+            $query->whereHas('categories', fn($q) => $q->where('categories.slug', $validated['category_slug']));
+        }
+
+        if (!empty($validated['categories'])) {
+            $categoryIds = explode(',', $validated['categories']);
+            $query->whereHas('categories', fn($q) => $q->whereIn('categories.id', $categoryIds));
+        }
+
+        // Price filters
+        if (!empty($validated['min_price']) || !empty($validated['max_price'])) {
+            $query->where(function ($q) use ($validated) {
+                if (!empty($validated['min_price'])) {
+                    $q->where('base_price', '>=', $validated['min_price']);
+                }
+                if (!empty($validated['max_price'])) {
+                    $q->where('base_price', '<=', $validated['max_price']);
+                }
+            });
+        }
+
+        // Brand filter
+        if (!empty($validated['brand'])) {
+            $query->where('brand', 'LIKE', "%{$validated['brand']}%");
+        }
+
+        // Gender filter
+        if (!empty($validated['gender'])) {
+            $query->where('gender', $validated['gender']);
+        }
+
+        // Stock filter
+        if (isset($validated['in_stock']) && $validated['in_stock']) {
+            $query->whereHas('variants', fn($q) => $q->where('stock', '>', 0));
+        }
+
+        // Featured filter
+        if (isset($validated['featured']) && $validated['featured']) {
+            $query->where('is_featured', true);
+        }
+
+        // Sorting
+        $sort = $validated['sort'] ?? 'sort_order';
+        $order = $validated['order'] ?? 'asc';
+
+        switch ($sort) {
+            case 'name':
+                $query->orderBy('name', $order);
+                break;
+            case 'price':
+                $query->orderBy('base_price', $order);
+                break;
+            case 'created_at':
+                $query->orderBy('created_at', $order);
+                break;
+            case 'popularity':
+                // Order by sales count or bestseller status
+                $query->orderBy('is_bestseller', 'desc')
+                      ->orderBy('created_at', $order);
+                break;
+            default:
+                $query->orderBy('sort_order', 'asc')
+                      ->orderBy('created_at', 'desc');
+        }
+
+        $perPage = min($validated['per_page'] ?? 20, 100);
+        
+        // 🚀 Smart caching based on customer type
+        $cacheKey = $this->customerTypeDetector->getCacheKey(
+            'newproducts.list.' . md5(serialize($validated)),
+            $customerInfo['type'],
+            $customerInfo['user']?->id
+        );
+        
+        // 🚀 Smart caching with cache tagging support check
+        $shouldUseCache = $this->customerTypeDetector->isSmartPricingEnabled() 
+            && config('features.smart_pricing_cache_enabled');
+        
+        if ($shouldUseCache) {
+            $cacheTtl = config('features.smart_pricing_cache_ttl', 300);
+            
+            if (Cache::supportsTags()) {
+                // Use cache tags if available (Redis/Memcached)
+                $products = Cache::tags(['products', $customerInfo['type']])
+                    ->remember($cacheKey, $cacheTtl, function() use ($query, $perPage) {
+                        return $query->paginate($perPage);
+                    });
+            } else {
+                // Fallback to simple caching without tags (File/Database cache)
+                $products = Cache::remember($cacheKey, $cacheTtl, function() use ($query, $perPage) {
+                    return $query->paginate($perPage);
+                });
+            }
+        } else {
+            $products = $query->paginate($perPage);
+        }
+
+        // 🚀 Optimize edilmiş resource kullan
+        return ProductListResource::collection($products)->additional([
+            'message' => 'Optimize edilmiş ürün listesi başarıyla getirildi',
             'filters' => [
                 'applied' => array_filter($validated),
                 'available' => $this->getAvailableFilters(),

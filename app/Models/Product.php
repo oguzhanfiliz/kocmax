@@ -156,6 +156,21 @@ class Product extends Model implements Sortable
     }
 
     /**
+     * First active variant per product with highest stock (tie-breaker: lowest id)
+     * Optimized for listing endpoints to avoid loading all variants.
+     */
+    public function firstActiveVariant(): HasOne
+    {
+        return $this->hasOne(ProductVariant::class)
+            ->ofMany([
+                'stock' => 'max',
+                'id' => 'min',
+            ], function ($query) {
+                $query->where('is_active', true);
+            });
+    }
+
+    /**
      * Product has many images
      */
     public function images(): HasMany

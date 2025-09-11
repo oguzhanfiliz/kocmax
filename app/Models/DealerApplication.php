@@ -70,8 +70,8 @@ class DealerApplication extends Model
             'email' => ['required', 'email', 'max:255'],
             'business_field' => ['required', 'string', 'max:255', 'min:2'],
             'reference_companies' => ['nullable', 'string', 'max:2000'],
-            'trade_registry_document_path' => ['required', 'string', 'max:255'],
-            'tax_plate_document_path' => ['required', 'string', 'max:255'],
+            'trade_registry_document_path' => ['nullable', 'string', 'max:255'],
+            'tax_plate_document_path' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:pending,approved,rejected'],
         ];
     }
