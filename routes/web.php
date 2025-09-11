@@ -125,7 +125,8 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     }
 
     $redirectUrl = config('app.frontend_url', 'https://kocmax.tr') . '/email-verified';
-    return response()->view('auth.email-verified', ['redirectUrl' => $redirectUrl]);
+    return response()->view('auth.email-verified', ['redirectUrl' => $redirectUrl], 200)
+        ->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware(['web', 'signed', 'throttle:6,1'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
