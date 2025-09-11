@@ -2080,6 +2080,108 @@
                 ]
             }
         },
+        "/api/v1/campaigns/available": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kullanıcıya uygun kampanyaları listele",
+                "description": "Kullanıcının sepetine uygulanabilir kampanyaları getirir (ücretsiz kargo kampanyaları dahil)",
+                "operationId": "f655422b468c3c8e18d3f506777ab219",
+                "responses": {
+                    "200": {
+                        "description": "Available campaigns successfully retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Available campaigns retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "available_campaigns": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "500₺ Üzeri Ücretsiz Kargo"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "free_shipping"
+                                                            },
+                                                            "threshold": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "minimum_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "500 TL ve üzeri alışverişlerinizde kargo bedava!"
+                                                            },
+                                                            "customer_types": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Kimlik doğrulama gerekli",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/cart": {
             "get": {
                 "tags": [
@@ -2478,6 +2580,28 @@
                             "maximum": 3,
                             "minimum": 0,
                             "example": 0
+                        }
+                    },
+                    {
+                        "name": "with_products",
+                        "in": "query",
+                        "description": "Ürün sayısını dahil et (products_count alanı için)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Sayfa başına kategori sayısı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "example": 20
                         }
                     }
                 ],
@@ -5300,6 +5424,17 @@
                         }
                     },
                     {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Sayfa numarası",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 1
+                        }
+                    },
+                    {
                         "name": "currency",
                         "in": "query",
                         "description": "Fiyat gösterimi için para birimi",
@@ -5377,6 +5512,245 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Domain not allowed (production only)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded (100 req/min for public endpoints)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/newproducts": {
+            "get": {
+                "tags": [
+                    "Products",
+                    "Public API"
+                ],
+                "summary": "Optimize edilmiş ürün listesi (Public)",
+                "description": "Ürün listesi için optimize edilmiş endpoint. Sadece ilk varyantı döndürür, performans odaklı. Authentication opsiyonel - giriş yapmış kullanıcılar için kişiselleştirilmiş fiyatlar.",
+                "operationId": "getNewProducts",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Arama terimi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "güvenlik ayakkabısı"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Kategori ID'si",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "category_slug",
+                        "in": "query",
+                        "description": "Kategori slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "guvenlik-ekipmanlari"
+                        }
+                    },
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "description": "Minimum fiyat",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "description": "Maksimum fiyat",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 500
+                        }
+                    },
+                    {
+                        "name": "brand",
+                        "in": "query",
+                        "description": "Marka filtresi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "3M"
+                        }
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "description": "Cinsiyet filtresi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female",
+                                "unisex"
+                            ],
+                            "example": "unisex"
+                        }
+                    },
+                    {
+                        "name": "in_stock",
+                        "in": "query",
+                        "description": "Stokta olan ürünler",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "featured",
+                        "in": "query",
+                        "description": "Öne çıkan ürünler",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sıralama kriteri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name",
+                                "price",
+                                "created_at",
+                                "popularity"
+                            ],
+                            "example": "name"
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "description": "Sıralama yönü",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "asc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Sayfa başına ürün sayısı (max 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Sayfa numarası",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "description": "Para birimi",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "TRY",
+                                "USD",
+                                "EUR"
+                            ],
+                            "example": "TRY"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Optimize edilmiş ürün listesi başarıyla getirildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProductList"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ürünler başarıyla getirildi"
+                                        },
+                                        "filters": {
+                                            "type": "object"
+                                        },
+                                        "pricing_info": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -5716,6 +6090,144 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/responses/DomainNotAllowed"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/responses/RateLimitExceeded"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "domain_protection": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/products/variant-types": {
+            "get": {
+                "tags": [
+                    "Products",
+                    "Public API"
+                ],
+                "summary": "Varyant türlerini ve seçeneklerini al (Public)",
+                "description": "Sistemde tanımlı tüm varyant türlerini (Renk, Beden, Malzeme vb.) ve bunların seçeneklerini döndürür. Frontend'de dinamik filtreleme ve varyant seçimi için kullanılır.",
+                "operationId": "getVariantTypes",
+                "responses": {
+                    "200": {
+                        "description": "İstek başarıyla tamamlandı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Varyant türleri başarıyla getirildi"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Color"
+                                                    },
+                                                    "display_name": {
+                                                        "type": "string",
+                                                        "example": "Renk"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "color"
+                                                    },
+                                                    "input_type": {
+                                                        "type": "string",
+                                                        "example": "color"
+                                                    },
+                                                    "is_required": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "options": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Red"
+                                                                },
+                                                                "value": {
+                                                                    "type": "string",
+                                                                    "example": "Kırmızı"
+                                                                },
+                                                                "display_value": {
+                                                                    "type": "string",
+                                                                    "example": "Kırmızı"
+                                                                },
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "example": "red"
+                                                                },
+                                                                "hex_color": {
+                                                                    "type": "string",
+                                                                    "example": "#FF0000"
+                                                                },
+                                                                "image_url": {
+                                                                    "type": "string",
+                                                                    "nullable": true
+                                                                },
+                                                                "sort_order": {
+                                                                    "type": "integer",
+                                                                    "example": 0
+                                                                },
+                                                                "is_active": {
+                                                                    "type": "boolean",
+                                                                    "example": true
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Domain not allowed (production only)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
                                 }
                             }
                         }
@@ -7247,6 +7759,265 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Zaten bir bayi başvurunuz bulunmaktadır"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/checkout/initialize": {
+            "post": {
+                "tags": [
+                    "Checkout"
+                ],
+                "summary": "Güvenli checkout oturumu başlat",
+                "description": "Sepet verilerini alır, backend'de güvenli fiyat hesaplayıp checkout oturumu oluşturur",
+                "operationId": "initializeCheckout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cart_items",
+                                    "shipping_address",
+                                    "billing_address"
+                                ],
+                                "properties": {
+                                    "cart_items": {
+                                        "description": "Sepet kalemleri (sadece ID ve miktar)",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_variant_id",
+                                                "quantity"
+                                            ],
+                                            "properties": {
+                                                "product_variant_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "shipping_address": {
+                                        "description": "Teslimat adresi (address_id veya manuel)",
+                                        "type": "object",
+                                        "oneOf": [
+                                            {
+                                                "properties": {
+                                                    "address_id": {
+                                                        "type": "integer",
+                                                        "example": 789
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            {
+                                                "properties": {
+                                                    "manual": {
+                                                        "properties": {
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Ahmet Yılmaz"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+90555123456"
+                                                            },
+                                                            "address": {
+                                                                "type": "string",
+                                                                "example": "Atatürk Cad. No:123"
+                                                            },
+                                                            "city": {
+                                                                "type": "string",
+                                                                "example": "İstanbul"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        ]
+                                    },
+                                    "billing_address": {
+                                        "description": "Fatura adresi (shipping ile aynı format)",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Checkout oturumu başarıyla oluşturuldu",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "checkout_session_id": {
+                                                    "type": "string",
+                                                    "example": "uuid-string"
+                                                },
+                                                "total_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 299.8999999999999772626324556767940521240234375
+                                                },
+                                                "subtotal": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 349.8999999999999772626324556767940521240234375
+                                                },
+                                                "total_discount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "TRY"
+                                                },
+                                                "applied_discounts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "format": "datetime"
+                                                },
+                                                "item_breakdown": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Doğrulama hatası"
+                    },
+                    "422": {
+                        "description": "Sepet kalemleri geçersiz"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/checkout/payment/initialize": {
+            "post": {
+                "tags": [
+                    "Checkout"
+                ],
+                "summary": "PayTR ödeme sürecini başlat",
+                "description": "Checkout oturumu için PayTR iframe ödeme sürecini başlatır",
+                "operationId": "initializePayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkout_session_id"
+                                ],
+                                "properties": {
+                                    "checkout_session_id": {
+                                        "type": "string",
+                                        "example": "uuid-string"
+                                    },
+                                    "payment_provider": {
+                                        "description": "Varsayılan: paytr",
+                                        "type": "string",
+                                        "example": "paytr"
+                                    },
+                                    "installment": {
+                                        "description": "Taksit sayısı (0=tek çekim)",
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "PayTR iframe ödeme başarıyla başlatıldı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "payment_token": {
+                                                    "type": "string"
+                                                },
+                                                "iframe_url": {
+                                                    "type": "string",
+                                                    "example": "https://www.paytr.com/odeme/guvenli/token"
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "format": "datetime"
+                                                },
+                                                "order_summary": {
+                                                    "properties": {
+                                                        "order_number": {
+                                                            "type": "string"
+                                                        },
+                                                        "total_amount": {
+                                                            "type": "number",
+                                                            "format": "float"
+                                                        },
+                                                        "currency": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -8922,6 +9693,307 @@
                     }
                 ]
             },
+            "ProductList": {
+                "title": "Product List Item",
+                "description": "Optimized product resource for listing pages with only first variant",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Güvenlik Ayakkabısı"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "guvenlik-ayakkabisi"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Yüksek kaliteli güvenlik ayakkabısı"
+                    },
+                    "short_description": {
+                        "type": "string",
+                        "example": "Kısa açıklama metni"
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "GA-001"
+                    },
+                    "brand": {
+                        "type": "string",
+                        "example": "3M"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": [
+                            "male",
+                            "female",
+                            "unisex"
+                        ],
+                        "example": "unisex"
+                    },
+                    "safety_standard": {
+                        "type": "string",
+                        "example": "EN ISO 20345:2011"
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_bestseller": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "pricing": {
+                        "properties": {
+                            "base_price": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 150
+                            },
+                            "your_price": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 127.5
+                            },
+                            "your_price_formatted": {
+                                "type": "string",
+                                "example": "127,50 ₺"
+                            },
+                            "base_price_formatted": {
+                                "type": "string",
+                                "example": "150,00 ₺"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "example": "TRY"
+                            },
+                            "price_type": {
+                                "type": "string",
+                                "example": "👤 Bireysel Fiyat"
+                            },
+                            "customer_type": {
+                                "type": "string",
+                                "enum": [
+                                    "B2C",
+                                    "B2B",
+                                    "WHOLESALE",
+                                    "RETAIL"
+                                ],
+                                "example": "B2C"
+                            },
+                            "discount_percentage": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 15
+                            },
+                            "discount_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.5
+                            },
+                            "savings_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.5
+                            },
+                            "smart_pricing_enabled": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "is_dealer_price": {
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "pricing_tier": {
+                                "type": "string",
+                                "example": "Premium",
+                                "nullable": true
+                            },
+                            "quantity": {
+                                "type": "integer",
+                                "example": 1
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "image_url": {
+                                    "type": "string",
+                                    "example": "https://example.com/image.jpg"
+                                },
+                                "alt_text": {
+                                    "type": "string",
+                                    "example": "Product image"
+                                },
+                                "is_primary": {
+                                    "type": "boolean",
+                                    "example": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "categories": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "example": "Güvenlik Ekipmanları"
+                                },
+                                "slug": {
+                                    "type": "string",
+                                    "example": "guvenlik-ekipmanlari"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "first_variant": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "42 Numara Siyah"
+                            },
+                            "sku": {
+                                "type": "string",
+                                "example": "GA-001-42-BLK"
+                            },
+                            "color": {
+                                "type": "string",
+                                "example": "Siyah"
+                            },
+                            "size": {
+                                "type": "string",
+                                "example": "42"
+                            },
+                            "stock": {
+                                "type": "integer",
+                                "example": 25
+                            },
+                            "is_active": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "pricing": {
+                                "properties": {
+                                    "base_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "your_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 127.5
+                                    },
+                                    "your_price_formatted": {
+                                        "type": "string",
+                                        "example": "127,50 ₺"
+                                    },
+                                    "base_price_formatted": {
+                                        "type": "string",
+                                        "example": "150,00 ₺"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "TRY"
+                                    },
+                                    "price_type": {
+                                        "type": "string",
+                                        "example": "👤 Bireysel Fiyat"
+                                    },
+                                    "customer_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "B2C",
+                                            "B2B",
+                                            "WHOLESALE",
+                                            "RETAIL"
+                                        ],
+                                        "example": "B2C"
+                                    },
+                                    "discount_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
+                                    "discount_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 22.5
+                                    },
+                                    "savings_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 22.5
+                                    },
+                                    "smart_pricing_enabled": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_dealer_price": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "pricing_tier": {
+                                        "type": "string",
+                                        "example": "Premium",
+                                        "nullable": true
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "variants_count": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "in_stock": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-08T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
             "Product": {
                 "title": "Product",
                 "description": "Product resource",
@@ -9769,6 +10841,10 @@
         {
             "name": "Dealer Applications",
             "description": "Dealer Applications"
+        },
+        {
+            "name": "Checkout",
+            "description": "Checkout"
         }
     ]
 }

@@ -13,6 +13,9 @@ use App\Enums\DealerApplicationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Mail\EmailVerificationMail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -197,6 +200,24 @@ class DealerApplicationController extends Controller
 
             // Yeni user oluştur
             $user = User::create($userData);
+
+            // Kullanıcı e-posta doğrulaması (en kolay yöntem): token üret ve doğrulama maili gönder
+            if (config('auth.email_verification_enabled')) {
+                try {
+                    $user->update(['email_verification_token' => Str::random(64)]);
+                    Mail::to($user->email)->send(new EmailVerificationMail($user));
+                    Log::info('Email verification mail queued/sent for dealer applicant', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('Email verification mail failed for dealer applicant', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             // Dosyaları yükle
             $tradeRegistryPath = null;

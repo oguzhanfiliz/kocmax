@@ -59,6 +59,8 @@ Route::prefix('v1/auth')->middleware(['api', 'domain.cors', 'throttle:auth'])->g
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('api.auth.reset-password');
     Route::post('/verify-email', [AuthController::class, 'verifyEmail'])->name('api.auth.verify-email');
+    // Doğrulama linkinden tıklama ile (GET) doğrulama desteği
+    Route::get('/verify-email', [AuthController::class, 'verifyEmail'])->name('api.auth.verify-email.get');
     Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('api.auth.resend-verification');
     Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.auth.refresh');
     

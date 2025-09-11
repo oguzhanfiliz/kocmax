@@ -900,7 +900,7 @@ class ProductController extends Controller
      *     @OA\Response(
      *         response=429,
      *         description="Rate limit exceeded",
-     *         @OA\JsonContent(ref="#/components/sponses/RateLimitExceeded")
+     *         @OA\JsonContent(ref="#/components/responses/RateLimitExceeded")
      *     )
      * )
      */
