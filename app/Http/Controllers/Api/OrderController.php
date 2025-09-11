@@ -660,7 +660,6 @@ class OrderController extends Controller
                     'message' => 'Sipariş oluşturuldu. Ödeme sayfasına yönlendiriliyorsunuz.',
                     'data' => [
                         'order' => [
-                            'id' => $order->id,
                             'order_number' => $order->order_number,
                             'total_amount' => number_format((float) $order->total_amount, 2),
                             'status' => $order->status,
@@ -688,7 +687,6 @@ class OrderController extends Controller
                     'error_code' => 'PAYMENT_INITIALIZATION_FAILED',
                     'data' => [
                         'order' => [
-                            'id' => $order->id,
                             'order_number' => $order->order_number,
                             'total_amount' => number_format((float) $order->total_amount, 2),
                             'status' => $order->status,

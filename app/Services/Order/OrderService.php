@@ -85,21 +85,35 @@ class OrderService implements OrderServiceInterface
             $currentState = $this->statusService->getOrderState($order);
 
             if (!$currentState->canTransitionTo($newStatus)) {
+                $currentStatusValue = $order->status instanceof OrderStatus ? $order->status->value : (string) $order->status;
                 Log::warning('Invalid status transition attempted', [
                     'order_id' => $order->id,
-                    'current_status' => $order->status->value,
+                    'current_status' => $currentStatusValue,
                     'attempted_status' => $newStatus->value
                 ]);
                 throw new \App\Exceptions\Order\InvalidStatusTransitionException(
-                    "Cannot transition from {$order->status->value} to {$newStatus->value}"
+                    "Cannot transition from {$currentStatusValue} to {$newStatus->value}"
                 );
             }
+
+            $oldStatusValue = $order->status instanceof OrderStatus ? $order->status->value : (string) $order->status;
 
             DB::transaction(function () use ($order, $newStatus, $updatedBy, $reason) {
                 $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);
                 // Status-specific DB changes
                 $this->handleStatusChange($order, $newStatus);
             });
+
+            // Notify after commit (especially for payment completed)
+            if ($newStatus === OrderStatus::Processing) {
+                \Illuminate\Support\Facades\DB::afterCommit(function () use ($order, $oldStatusValue, $newStatus) {
+                    $this->notificationService->sendOrderStatusChanged(
+                        $order,
+                        OrderStatus::from($oldStatusValue),
+                        $newStatus
+                    );
+                });
+            }
 
             Log::info('Order status updated', [
                 'order_id' => $order->id,
@@ -122,12 +136,13 @@ class OrderService implements OrderServiceInterface
     public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): void
     {
         if (!$order->canBeCancelled()) {
+            $currentStatusValue = $order->status instanceof OrderStatus ? $order->status->value : (string) $order->status;
             Log::warning('Order cancellation attempted but not allowed', [
                 'order_id' => $order->id,
-                'current_status' => $order->status->value
+                'current_status' => $currentStatusValue
             ]);
             throw new \App\Exceptions\Order\OrderCannotBeCancelledException(
-                "Order {$order->id} cannot be cancelled in status {$order->status->value}"
+                "Order {$order->id} cannot be cancelled in status {$currentStatusValue}"
             );
         }
 

@@ -14,6 +14,7 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
+use App\Services\Order\OrderService;
 
 class OrderResource extends Resource
 {
@@ -278,6 +279,28 @@ class OrderResource extends Resource
                     ->label('Görüntüle'),
                 Tables\Actions\EditAction::make()
                     ->label('Düzenle'),
+                Tables\Actions\Action::make('approve')
+                    ->label('Onayla')
+                    ->icon('heroicon-m-check-badge')
+                    ->color('success')
+                    ->visible(fn($record) => in_array($record->status, ['pending']) && (auth()->user()?->hasRole(['admin','manager']) ?? false))
+                    ->form([
+                        Forms\Components\Textarea::make('notes')->label('Not')->rows(2)->columnSpanFull(),
+                    ])
+                    ->action(function (Order $record, array $data) {
+                        app(OrderService::class)->updateStatus($record, OrderStatus::Processing, auth()->user(), $data['notes'] ?? null);
+                    }),
+                Tables\Actions\Action::make('reject')
+                    ->label('Reddet')
+                    ->icon('heroicon-m-x-circle')
+                    ->color('danger')
+                    ->visible(fn($record) => in_array($record->status, ['pending','processing']) && (auth()->user()?->hasRole(['admin','manager']) ?? false))
+                    ->form([
+                        Forms\Components\Textarea::make('reason')->label('Red Nedeni')->required()->rows(2)->columnSpanFull(),
+                    ])
+                    ->action(function (Order $record, array $data) {
+                        app(OrderService::class)->cancelOrder($record, auth()->user(), $data['reason']);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -30,11 +30,18 @@ class OrderNotificationService
                 'total_amount' => $order->total_amount
             ]);
 
-            // Send email notification
+            // Send email notification to customer
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderCreatedMail($order));
                 Log::info('Order created email sent', ['recipient' => $recipient]);
+            }
+
+            // Send email notification to admin
+            $adminEmail = $this->getAdminEmail();
+            if ($adminEmail && $adminEmail !== $recipient) {
+                Mail::to($adminEmail)->send(new OrderCreatedMail($order));
+                Log::info('Order created admin email sent', ['admin' => $adminEmail]);
             }
 
             // TODO: Implement SMS notification if phone provided
@@ -66,11 +73,23 @@ class OrderNotificationService
                 'message' => $message
             ]);
 
-            // Send email notification
+            // Send email notification to customer
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderStatusChangedMail($order, $message));
                 Log::info('Order status changed email sent', ['recipient' => $recipient]);
+            }
+
+            // If payment completed (Processing), notify admin as well
+            if ($newStatus === OrderStatus::Processing) {
+                $adminEmail = $this->getAdminEmail();
+                if ($adminEmail && $adminEmail !== $recipient) {
+                    Mail::to($adminEmail)->send(new OrderStatusChangedMail($order, $message));
+                    Log::info('Order status changed admin email sent', [
+                        'admin' => $adminEmail,
+                        'status' => $newStatus->value,
+                    ]);
+                }
             }
 
         } catch (\Exception $e) {
@@ -95,11 +114,18 @@ class OrderNotificationService
                 'tracking_number' => $order->tracking_number
             ]);
 
-            // Send email notification
+            // Send email notification to customer
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderShippedMail($order));
                 Log::info('Order shipped email sent', ['recipient' => $recipient]);
+            }
+
+            // Send email notification to admin
+            $adminEmail = $this->getAdminEmail();
+            if ($adminEmail && $adminEmail !== $recipient) {
+                Mail::to($adminEmail)->send(new OrderShippedMail($order));
+                Log::info('Order shipped admin email sent', ['admin' => $adminEmail]);
             }
 
         } catch (\Exception $e) {
@@ -121,11 +147,18 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // Send email notification
+            // Send email notification to customer
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderDeliveredMail($order));
                 Log::info('Order delivered email sent', ['recipient' => $recipient]);
+            }
+
+            // Send email notification to admin
+            $adminEmail = $this->getAdminEmail();
+            if ($adminEmail && $adminEmail !== $recipient) {
+                Mail::to($adminEmail)->send(new OrderDeliveredMail($order));
+                Log::info('Order delivered admin email sent', ['admin' => $adminEmail]);
             }
 
         } catch (\Exception $e) {
@@ -147,11 +180,18 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // Send email notification
+            // Send email notification to customer
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderCancelledMail($order));
                 Log::info('Order cancelled email sent', ['recipient' => $recipient]);
+            }
+
+            // Send email notification to admin
+            $adminEmail = $this->getAdminEmail();
+            if ($adminEmail && $adminEmail !== $recipient) {
+                Mail::to($adminEmail)->send(new OrderCancelledMail($order));
+                Log::info('Order cancelled admin email sent', ['admin' => $adminEmail]);
             }
 
         } catch (\Exception $e) {
@@ -175,5 +215,12 @@ class OrderNotificationService
             OrderStatus::Cancelled => "Siparişiniz iptal edildi.",
             default => "Sipariş durumu güncellendi."
         };
+    }
+
+    private function getAdminEmail(): ?string
+    {
+        // Öncelik sırası: env(ORDER_ADMIN_EMAIL) -> config('mail.admin_email') -> fallback
+        return env('ORDER_ADMIN_EMAIL')
+            ?: config('mail.admin_email', 'info@kocmax.tr');
     }
 }

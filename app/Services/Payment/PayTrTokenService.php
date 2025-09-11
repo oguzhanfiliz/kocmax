@@ -167,6 +167,10 @@ class PayTrTokenService
         $userIp = request()->ip() ?? '127.0.0.1';
         $paymentAmount = (int) ($order->total_amount * 100); // Kuruş cinsine çevir
 
+        // Success/Fail URL'lerine order_number parametresi ekle (frontend'in durumu eşlemesi için)
+        $successUrl = $this->appendQueryParam($this->config['success_url'], 'order_number', $order->order_number);
+        $failureUrl = $this->appendQueryParam($this->config['failure_url'], 'order_number', $order->order_number);
+
         return [
             'merchant_id' => $this->config['merchant_id'],
             'user_ip' => $userIp,
@@ -181,12 +185,23 @@ class PayTrTokenService
             'user_name' => $order->billing_name ?? $order->user?->name ?? 'Müşteri',
             'user_address' => $this->formatAddress($order),
             'user_phone' => $order->billing_phone ?? $order->user?->phone ?? '',
-            'merchant_ok_url' => $this->config['success_url'],
-            'merchant_fail_url' => $this->config['failure_url'],
+            'merchant_ok_url' => $successUrl,
+            'merchant_fail_url' => $failureUrl,
             'timeout_limit' => $this->config['timeout_limit'] ?? 30,
             'currency' => $this->config['currency'] ?? 'TL',
             'test_mode' => $this->config['test_mode'] ? 1 : 0,
         ];
+    }
+
+    /**
+     * URL'ye query param ekler (varsa ekler, yoksa oluşturur)
+     */
+    private function appendQueryParam(string $url, string $key, string $value): string
+    {
+        if (str_contains($url, '?')) {
+            return rtrim($url, '&') . '&' . urlencode($key) . '=' . urlencode($value);
+        }
+        return $url . '?' . urlencode($key) . '=' . urlencode($value);
     }
 
     /**
