@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config('app.name') }} - E-posta Doğrulama</title>
+    <title>{{ env('PROJECT_NAME', config('app.name')) }} - E-posta Doğrulama</title>
     <style>
         body {
             font-family: Arial, sans-serif;

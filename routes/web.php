@@ -9,6 +9,9 @@ Route::middleware(['web', 'auth'])
     ->name('admin.files.show');
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +104,37 @@ Route::get('storage/{path}', function (Request $request, $path) {
     
     return $response;
 })->where('path', '.*');
+
+// Email Verification Routes (guest-friendly, signed URL doğrulaması)
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    // İmza geçerliliğini kontrol et
+    if (!URL::hasValidSignature($request)) {
+        return response()->json(['message' => 'Invalid or expired verification link'], 403);
+    }
+
+    $user = User::findOrFail($id);
+
+    // Hash doğrulaması (Laravel default: sha1(email))
+    if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+        return response()->json(['message' => 'Invalid verification hash'], 403);
+    }
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
+    $redirectUrl = config('app.frontend_url', 'https://kocmax.tr') . '/email-verified';
+    return response()->view('auth.email-verified', ['redirectUrl' => $redirectUrl]);
+})->middleware(['web', 'signed', 'throttle:6,1'])->name('verification.verify');
+
+Route::post('/email/verification-notification', function (Request $request) {
+    // Doğrulama e-postasını tekrar gönder
+    if ($request->user()) {
+        $request->user()->sendEmailVerificationNotification();
+    }
+    return response()->json(['message' => 'verification-link-sent']);
+})->middleware(['web', 'auth', 'throttle:6,1'])->name('verification.send');
 
 /*
 |--------------------------------------------------------------------------

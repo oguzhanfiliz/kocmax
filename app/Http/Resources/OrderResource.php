@@ -39,14 +39,19 @@ class OrderResource extends JsonResource
 {
     public function toArray($request): array
     {
+        // Normalize status to enum for consistent access (handles string or enum)
+        $statusEnum = $this->status instanceof \App\Enums\OrderStatus
+            ? $this->status
+            : \App\Enums\OrderStatus::from((string) $this->status);
+
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
             'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->getLabel(),
-                'color' => $this->status->getColor(),
-                'icon' => $this->status->getIcon()
+                'value' => $statusEnum->value,
+                'label' => $statusEnum->getLabel(),
+                'color' => $statusEnum->getColor(),
+                'icon' => $statusEnum->getIcon()
             ],
             'customer_type' => $this->customer_type,
             

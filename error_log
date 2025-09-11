@@ -3,3 +3,8 @@
 [07-Sep-2025 15:56:52 UTC] PHP Parse error:  syntax error, unexpected fully qualified name "\Models", expecting "{" in /home/kocmax/admin.kocmax.tr/normalize_bx03_variants.php on line 3
 [07-Sep-2025 15:57:35 UTC] PHP Parse error:  syntax error, unexpected fully qualified name "\Models", expecting "{" in /home/kocmax/admin.kocmax.tr/normalize_bx03_variants.php on line 3
 [07-Sep-2025 18:19:44 UTC] PHP Parse error:  syntax error, unexpected token ";" in Command line code on line 7
+[11-Sep-2025 18:24:05 UTC] PHP Fatal error:  Uncaught Error: Class "URL" not found in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1
+[11-Sep-2025 18:25:00 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting ")" in Command line code on line 1
