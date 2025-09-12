@@ -12,15 +12,28 @@ use App\Services\Pricing\CustomerTypeDetector;
 
 class CartValidationService
 {
+    /**
+     * Servis kurucusu.
+     *
+     * @param CustomerTypeDetector $customerTypeDetector Müşteri tipi belirleyici
+     */
     public function __construct(
         private CustomerTypeDetector $customerTypeDetector
     ) {}
 
+    /**
+     * Sepete öğe ekleme için doğrulama yapar.
+     *
+     * @param Cart $cart Sepet
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Miktar
+     * @return CartValidationResult Doğrulama sonucu
+     */
     public function validateAddItem(Cart $cart, ProductVariant $variant, int $quantity): CartValidationResult
     {
         $errors = [];
 
-        // Basic quantity validation
+        // Temel miktar doğrulaması
         if ($quantity <= 0) {
             $errors[] = "Quantity must be greater than 0";
         }
@@ -29,17 +42,17 @@ class CartValidationService
             $errors[] = "Maximum quantity per item is 999";
         }
 
-        // Stock validation
+        // Stok doğrulaması
         if ($variant->stock < $quantity) {
             $errors[] = "Insufficient stock. Available: {$variant->stock}, Requested: {$quantity}";
         }
 
-        // Product availability validation
+        // Ürün uygunluk doğrulaması
         if (!$variant->product->is_active) {
             $errors[] = "Product is not available";
         }
 
-        // Check if item already exists in cart
+        // Öğenin sepette zaten bulunup bulunmadığını kontrol et
         $existingItem = $cart->items()
             ->where('product_variant_id', $variant->id)
             ->first();
@@ -51,7 +64,7 @@ class CartValidationService
             }
         }
 
-        // B2B specific validations
+        // B2B'ye özgü doğrulamalar
         if ($cart->user && $cart->user->isDealer()) {
             $b2bValidation = $this->validateB2BConstraints($cart, $variant, $quantity);
             $errors = array_merge($errors, $b2bValidation);
@@ -63,6 +76,13 @@ class CartValidationService
         );
     }
 
+    /**
+     * Miktar güncelleme işlemi için doğrulama yapar.
+     *
+     * @param CartItem $item Sepet öğesi
+     * @param int $newQuantity Yeni miktar
+     * @return CartValidationResult Doğrulama sonucu
+     */
     public function validateQuantityUpdate(CartItem $item, int $newQuantity): CartValidationResult
     {
         $errors = [];
@@ -89,16 +109,22 @@ class CartValidationService
         );
     }
 
+    /**
+     * Ödeme (checkout) için sepeti doğrular.
+     *
+     * @param Cart $cart Sepet
+     * @return CartValidationResult Doğrulama sonucu
+     */
     public function validateForCheckout(Cart $cart): CartValidationResult
     {
         $errors = [];
 
-        // Empty cart check
+        // Boş sepet kontrolü
         if ($cart->items->isEmpty()) {
             $errors[] = "Cart is empty";
         }
 
-        // Validate each item
+        // Her bir öğeyi doğrula
         foreach ($cart->items as $item) {
             $itemValidation = $this->validateCartItem($item);
             if (!$itemValidation->isValid()) {
@@ -106,13 +132,13 @@ class CartValidationService
             }
         }
 
-        // B2B specific checkout validations
+        // B2B'ye özgü ödeme doğrulamaları
         if ($cart->user && $cart->user->isDealer()) {
             $b2bCheckoutValidation = $this->validateB2BCheckout($cart);
             $errors = array_merge($errors, $b2bCheckoutValidation);
         }
 
-        // Minimum order amount validation
+        // Minimum sipariş tutarı doğrulaması
         if ($cart->user && $cart->user->pricingTier) {
             $minOrderAmount = $cart->user->pricingTier->min_order_amount ?? 0;
             if ($minOrderAmount > 0 && $cart->total_amount < $minOrderAmount) {
@@ -126,26 +152,32 @@ class CartValidationService
         );
     }
 
+    /**
+     * Tek bir sepet öğesi için doğrulama yapar.
+     *
+     * @param CartItem $item Sepet öğesi
+     * @return CartValidationResult Doğrulama sonucu
+     */
     private function validateCartItem(CartItem $item): CartValidationResult
     {
         $errors = [];
 
-        // Product availability
+        // Ürün uygunluğu
         if (!$item->product->is_active) {
             $errors[] = "Product '{$item->product->name}' is no longer available";
         }
 
-        // Variant availability
+        // Varyant uygunluğu
         if (!$item->productVariant->product->is_active) {
             $errors[] = "Product variant is no longer available";
         }
 
-        // Stock availability
+        // Stok uygunluğu
         if ($item->quantity > $item->productVariant->stock) {
             $errors[] = "Insufficient stock for '{$item->product->name}'. Available: {$item->productVariant->stock}";
         }
 
-        // Price validation (detect stale pricing)
+        // Fiyat doğrulaması (eski fiyat tespit etme)
         if ($item->price_calculated_at && $item->price_calculated_at->lt(now()->subHours(24))) {
             $errors[] = "Price information is outdated for '{$item->product->name}'";
         }
@@ -156,14 +188,22 @@ class CartValidationService
         );
     }
 
+    /**
+     * B2B kısıtlarını doğrular.
+     *
+     * @param Cart $cart Sepet
+     * @param ProductVariant $variant Varyant
+     * @param int $quantity Miktar
+     * @return array Hata mesajları
+     */
     private function validateB2BConstraints(Cart $cart, ProductVariant $variant, int $quantity): array
     {
         $errors = [];
 
-        // Credit limit validation would go here
-        // This requires integration with a credit management system
+        // Kredi limiti doğrulaması burada yapılabilir
+        // Bunun için bir kredi yönetim sistemi entegrasyonu gerekir
         
-        // Minimum quantity for B2B (if applicable)
+        // B2B için minimum adet (varsa)
         if ($variant->product->min_b2b_quantity && $quantity < $variant->product->min_b2b_quantity) {
             $errors[] = "Minimum B2B quantity for this product is {$variant->product->min_b2b_quantity}";
         }
@@ -171,16 +211,22 @@ class CartValidationService
         return $errors;
     }
 
+    /**
+     * B2B ödeme (checkout) doğrulamaları.
+     *
+     * @param Cart $cart Sepet
+     * @return array Hata mesajları
+     */
     private function validateB2BCheckout(Cart $cart): array
     {
         $errors = [];
 
-        // Dealer approval check
+        // Bayi onay kontrolü
         if (!$cart->user->is_approved_dealer) {
             $errors[] = "Dealer account is not approved for checkout";
         }
 
-        // Credit limit validation
+        // Kredi limiti doğrulaması
         $totalAmount = $cart->total_amount;
         $creditLimit = $cart->user->credit_limit ?? 0;
         $currentDebt = $cart->user->current_debt ?? 0;

@@ -13,15 +13,31 @@ use Illuminate\Support\Facades\Log;
 
 class GuestCartStrategy implements CartStrategyInterface
 {
+    /**
+     * Misafir sepetine ürün ekler: önce oturumda saklar, ardından veritabanıyla senkronize eder.
+     *
+     * @param Cart $cart Sepet
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Miktar
+     * @return void
+     */
     public function addItem(Cart $cart, ProductVariant $variant, int $quantity): void
     {
-        // First, handle session storage
+        // Önce oturumda saklamayı ele al
         $this->addItemToSession($cart, $variant, $quantity);
         
-        // Then sync with database
+        // Ardından veritabanı ile senkronize et
         $this->syncCartFromSession($cart);
     }
 
+    /**
+     * Misafir sepetindeki bir öğenin miktarını günceller. Gerekirse siler.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Sepet öğesi
+     * @param int $quantity Yeni miktar
+     * @return void
+     */
     public function updateQuantity(Cart $cart, CartItem $item, int $quantity): void
     {
         if ($quantity <= 0) {
@@ -29,28 +45,41 @@ class GuestCartStrategy implements CartStrategyInterface
             return;
         }
 
-        // Update session
+        // Oturumu güncelle
         $this->updateQuantityInSession($cart, $item, $quantity);
         
-        // Sync with database
+        // Veritabanı ile senkronize et
         $this->syncCartFromSession($cart);
     }
 
+    /**
+     * Misafir sepetinden öğe kaldırır: önce oturumdan, sonra veritabanıyla senkronize eder.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Kaldırılacak öğe
+     * @return void
+     */
     public function removeItem(Cart $cart, CartItem $item): void
     {
-        // Remove from session
+        // Oturumdan kaldır
         $this->removeItemFromSession($cart, $item);
         
-        // Sync with database
+        // Veritabanı ile senkronize et
         $this->syncCartFromSession($cart);
     }
 
+    /**
+     * Misafir sepetini tamamen temizler ve özet alanlarını sıfırlar.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     */
     public function clear(Cart $cart): void
     {
         $sessionKey = $this->getSessionKey($cart);
         Session::forget($sessionKey);
         
-        // Clear database
+        // Veritabanını temizle
         $cart->items()->delete();
         $cart->update([
             'total_amount' => 0,
@@ -70,9 +99,17 @@ class GuestCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Misafir sepeti için verilen işlemin geçerli olup olmadığını kontrol eder.
+     *
+     * @param Cart $cart Sepet
+     * @param string $operation İşlem adı (add_item, update_quantity, remove_item, clear)
+     * @param array $context İşlem bağlamı
+     * @return bool
+     */
     public function validateOperation(Cart $cart, string $operation, array $context = []): bool
     {
-        // Guest carts must have session_id and no user_id
+        // Misafir sepetlerinde session_id olmalı ve user_id olmamalı
         if (!$cart->session_id || $cart->user_id) {
             return false;
         }
@@ -85,12 +122,20 @@ class GuestCartStrategy implements CartStrategyInterface
             case 'remove_item':
                 return $this->validateRemoveItem($cart, $context);
             case 'clear':
-                return true; // Guest carts can always be cleared
+                return true; // Misafir sepetleri her zaman temizlenebilir
             default:
                 return false;
         }
     }
 
+    /**
+     * Öğeyi oturumdaki sepet verisine ekler.
+     *
+     * @param Cart $cart Sepet
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Miktar
+     * @return void
+     */
     private function addItemToSession(Cart $cart, ProductVariant $variant, int $quantity): void
     {
         $sessionKey = $this->getSessionKey($cart);
@@ -123,6 +168,14 @@ class GuestCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Oturumdaki sepet verisinde belirtilen öğenin miktarını günceller.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Sepet öğesi
+     * @param int $quantity Yeni miktar
+     * @return void
+     */
     private function updateQuantityInSession(Cart $cart, CartItem $item, int $quantity): void
     {
         $sessionKey = $this->getSessionKey($cart);
@@ -139,6 +192,13 @@ class GuestCartStrategy implements CartStrategyInterface
         }
     }
 
+    /**
+     * Oturumdaki sepet verisinden ilgili öğeyi kaldırır.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Kaldırılacak öğe
+     * @return void
+     */
     private function removeItemFromSession(Cart $cart, CartItem $item): void
     {
         $sessionKey = $this->getSessionKey($cart);
@@ -152,15 +212,21 @@ class GuestCartStrategy implements CartStrategyInterface
         Session::put($sessionKey, $cartData);
     }
 
+    /**
+     * Oturumdaki sepet verisini veritabanıyla senkronize eder.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     */
     private function syncCartFromSession(Cart $cart): void
     {
         $sessionKey = $this->getSessionKey($cart);
         $cartData = Session::get($sessionKey, ['items' => []]);
 
-        // Clear existing cart items
+        // Mevcut sepet öğelerini temizle
         $cart->items()->delete();
 
-        // Recreate from session
+        // Oturumdan yeniden oluştur
         foreach ($cartData['items'] as $sessionItem) {
             $cart->items()->create([
                 'product_id' => $sessionItem['product_id'],
@@ -179,6 +245,13 @@ class GuestCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Oturum verisinde aynı varyantı arar ve bulunduğunda indeksini döndürür.
+     *
+     * @param array $items Oturumdaki öğeler
+     * @param int $variantId Varyant kimliği
+     * @return int|null Bulunursa indeks, yoksa null
+     */
     private function findExistingItemInSession(array $items, int $variantId): ?int
     {
         foreach ($items as $index => $item) {
@@ -190,21 +263,48 @@ class GuestCartStrategy implements CartStrategyInterface
         return null;
     }
 
+    /**
+     * Bu misafir sepeti için oturum anahtarını döndürür.
+     *
+     * @param Cart $cart Sepet
+     * @return string Oturum anahtarı
+     */
     private function getSessionKey(Cart $cart): string
     {
         return "guest_cart_{$cart->session_id}";
     }
 
+    /**
+     * Ekleme işlemi için temel doğrulama.
+     *
+     * @param Cart $cart Sepet
+     * @param array $context Bağlam (variant, quantity)
+     * @return bool
+     */
     private function validateAddItem(Cart $cart, array $context): bool
     {
         return isset($context['variant']) && isset($context['quantity']) && $context['quantity'] > 0;
     }
 
+    /**
+     * Miktar güncelleme işlemi için temel doğrulama.
+     *
+     * @param Cart $cart Sepet
+     * @param array $context Bağlam (item, quantity)
+     * @return bool
+     */
     private function validateUpdateQuantity(Cart $cart, array $context): bool
     {
         return isset($context['item']) && isset($context['quantity']) && $context['quantity'] >= 0;
     }
 
+    /**
+     * Öğeyi kaldırma işlemi için temel doğrulama.
+     *
+     * @param Cart $cart Sepet
+     * @param array $context Bağlam (item)
+     * @return bool
+     */
     private function validateRemoveItem(Cart $cart, array $context): bool
     {
         return isset($context['item']) && $context['item']->cart_id === $cart->id;

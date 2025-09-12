@@ -10,22 +10,33 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Kampanya modeli.
+ *
+ * Kampanyaların kuralları (rules), ödülleri (rewards), koşulları (conditions),
+ * hedeflediği müşteri tipleri ve kullanım limitleri gibi bilgiler bu modelde tutulur.
+ */
 class Campaign extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Toplu atamaya izin verilen alanlar.
+     *
+     * Not: JSON alanlar (rules, rewards, conditions) kampanya kuralları ve ödülleri içerir.
+     */
     protected $fillable = [
         'name',
         'slug',
         'description',
-        'type', // 'buy_x_get_y_free', 'bundle_discount', 'cross_sell', etc.
+        'type', // 'buy_x_get_y_free', 'bundle_discount', 'cross_sell' vb.
         'status',
-        'rules', // JSON: Campaign kuralları
+        'rules', // JSON: Kampanya kuralları
         'rewards', // JSON: Hediye/indirim detayları
-        'conditions', // JSON: Koşullar (min sepet tutarı vs)
+        'conditions', // JSON: Koşullar (min sepet tutarı vb.)
         'priority',
         'is_active',
-        'is_stackable', // Diğer kampanyalarla birleştirilebilir mi
+        'is_stackable', // Diğer kampanyalarla birleştirilebilir mi?
         'starts_at',
         'ends_at',
         'usage_limit', // Toplam kullanım sınırı
@@ -45,6 +56,11 @@ class Campaign extends Model
         'flash_discount_value'
     ];
 
+    /**
+     * Alan dönüşümleri.
+     *
+     * Bazı alanlar JSON ve tarih tipine, sayısal alanlar ise uygun sayısal tiplere çevrilir.
+     */
     protected $casts = [
         'rules' => 'array',
         'rewards' => 'array',
@@ -67,19 +83,31 @@ class Campaign extends Model
         'flash_discount_value' => 'decimal:2'
     ];
 
-    // Relations
+    /**
+     * İlişkiler
+     */
+
+    /**
+     * Kampanyanın dahil olduğu ürünler.
+     */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'campaign_products')
             ->withTimestamps();
     }
 
+    /**
+     * Kampanyayı tetikleyen ürünler.
+     */
     public function triggerProducts(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'campaign_trigger_products')
             ->withTimestamps();
     }
 
+    /**
+     * Kampanya kapsamında ödül/indirim uygulanacak ürünler.
+     */
     public function rewardProducts(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'campaign_reward_products')
@@ -87,18 +115,30 @@ class Campaign extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Kampanyanın hedeflediği kategoriler.
+     */
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'campaign_categories')
             ->withTimestamps();
     }
 
+    /**
+     * Kampanya kullanım kayıtları.
+     */
     public function usages(): HasMany
     {
         return $this->hasMany(CampaignUsage::class);
     }
 
-    // Scopes
+    /**
+     * Sorgu kapsamları (Scopes)
+     */
+
+    /**
+     * Aktif kampanyalar (tarih aralığı ve is_active bayrağına göre).
+     */
     public function scopeActive($query)
     {
         return $query->where('is_active', true)
@@ -109,18 +149,30 @@ class Campaign extends Model
             });
     }
 
+    /**
+     * Müşteri tipine uygun kampanyalar.
+     */
     public function scopeForCustomerType($query, string $customerType)
     {
         return $query->whereJsonContains('customer_types', $customerType)
             ->orWhereJsonLength('customer_types', 0);
     }
 
+    /**
+     * Kampanya türüne göre filtreleme.
+     */
     public function scopeByType($query, string $type)
     {
         return $query->where('type', $type);
     }
 
-    // Methods
+    /**
+     * Yardımcı metodlar
+     */
+
+    /**
+     * Kampanya aktif mi?
+     */
     public function isActive(): bool
     {
         if (!$this->is_active) {
@@ -140,6 +192,9 @@ class Campaign extends Model
         return true;
     }
 
+    /**
+     * Toplam kullanım limiti aşıldı mı?
+     */
     public function hasReachedUsageLimit(): bool
     {
         if (!$this->usage_limit) {
@@ -149,6 +204,9 @@ class Campaign extends Model
         return $this->usage_count >= $this->usage_limit;
     }
 
+    /**
+     * Belirli bir kullanıcı kampanyayı kullanabilir mi?
+     */
     public function canBeUsedBy(User $user): bool
     {
         if (!$this->usage_limit_per_customer) {
@@ -162,6 +220,9 @@ class Campaign extends Model
         return $userUsageCount < $this->usage_limit_per_customer;
     }
 
+    /**
+     * Müşteri tipi bazında uygulanabilirlik kontrolü.
+     */
     public function isApplicableForCustomerType(string $customerType): bool
     {
         $allowedTypes = $this->customer_types ?? [];
@@ -174,11 +235,17 @@ class Campaign extends Model
         return in_array($customerType, $allowedTypes);
     }
 
+    /**
+     * Kullanım sayısını bir artır.
+     */
     public function incrementUsage(): void
     {
         $this->increment('usage_count');
     }
 
+    /**
+     * Kullanım ilerleme yüzdesi (0-100 arası).
+     */
     public function getProgressPercentage(): float
     {
         if (!$this->usage_limit) {
@@ -188,6 +255,9 @@ class Campaign extends Model
         return min(($this->usage_count / $this->usage_limit) * 100, 100);
     }
 
+    /**
+     * Kampanya ileri tarihli (başlamadı) ve aktif mi?
+     */
     public function isUpcoming(): bool
     {
         if (!$this->is_active) {
@@ -197,11 +267,17 @@ class Campaign extends Model
         return $this->starts_at && $this->starts_at->gt(now());
     }
 
+    /**
+     * Kampanya süresi dolmuş mu?
+     */
     public function isExpired(): bool
     {
         return $this->ends_at && $this->ends_at->lt(now());
     }
 
+    /**
+     * Kalan gün sayısını hesaplayan erişimci (accessor).
+     */
     public function getDaysRemainingAttribute(): ?int
     {
         if (!$this->ends_at) {
@@ -215,7 +291,9 @@ class Campaign extends Model
         return now()->diffInDays($this->ends_at);
     }
 
-    // Boot method
+    /**
+     * Model olaylarını (creating/updating) dinleyen boot metodu.
+     */
     protected static function boot()
     {
         parent::boot();
@@ -225,7 +303,7 @@ class Campaign extends Model
                 $model->slug = \Str::slug($model->name);
             }
             
-            // Set created_by and updated_by if user is authenticated
+            // Kullanıcı doğrulanmışsa created_by ve updated_by alanlarını ayarla
             if (auth()->check()) {
                 if (empty($model->created_by)) {
                     $model->created_by = auth()->id();
@@ -241,7 +319,7 @@ class Campaign extends Model
                 $model->slug = \Str::slug($model->name);
             }
             
-            // Set updated_by if user is authenticated
+            // Kullanıcı doğrulanmışsa updated_by alanını güncelle
             if (auth()->check()) {
                 $model->updated_by = auth()->id();
             }

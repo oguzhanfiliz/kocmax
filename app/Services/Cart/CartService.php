@@ -25,30 +25,47 @@ use Illuminate\Support\Facades\Log;
 
 class CartService implements CartServiceInterface
 {
+    /**
+     * Servis kurucusu.
+     *
+     * @param CartStrategyInterface $strategy Sepet işlemleri için strateji
+     * @param CartValidationService $validator İş kuralı doğrulayıcısı
+     * @param CartPriceCoordinator $priceCoordinator Fiyatlandırma koordinatörü
+     */
     public function __construct(
         private CartStrategyInterface $strategy,
         private CartValidationService $validator,
         private CartPriceCoordinator $priceCoordinator
     ) {}
 
+    /**
+     * Sepete ürün ekler. İş kurallarını doğrular, strateji uygular ve fiyatları günceller.
+     *
+     * @param Cart $cart Sepet
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Miktar (varsayılan 1)
+     * @return void
+     * @throws CartValidationException Geçersiz durumlarda
+     * @throws \Exception Başka hatalarda aynen fırlatılır
+     */
     public function addItem(Cart $cart, ProductVariant $variant, int $quantity = 1): void
     {
         try {
             DB::beginTransaction();
 
-            // Validate business rules
+            // İş kurallarını doğrula
             $validation = $this->validator->validateAddItem($cart, $variant, $quantity);
             if (!$validation->isValid()) {
                 throw new CartValidationException($validation->getErrors());
             }
 
-            // Execute via strategy
+            // Strateji üzerinden uygula
             $this->strategy->addItem($cart, $variant, $quantity);
 
-            // Recalculate prices
+            // Fiyatları yeniden hesapla
             $this->priceCoordinator->updateCartPricing($cart);
 
-            // Emit domain event
+            // Alan (domain) olayını yayınla
             event(new CartItemAdded($cart, $variant, $quantity));
 
             DB::commit();
@@ -70,6 +87,16 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Sepet öğesinin miktarını günceller. Doğrulama yapar, stratejiyi çalıştırır ve fiyatları günceller.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Sepet öğesi
+     * @param int $quantity Yeni miktar
+     * @return void
+     * @throws CartValidationException Geçersiz durumlarda
+     * @throws \Exception Diğer hatalarda
+     */
     public function updateQuantity(Cart $cart, CartItem $item, int $quantity): void
     {
         try {
@@ -106,6 +133,14 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Sepetten öğe kaldırır. Strateji uygular ve fiyatları günceller.
+     *
+     * @param Cart $cart Sepet
+     * @param CartItem $item Kaldırılacak öğe
+     * @return void
+     * @throws \Exception Hata durumunda
+     */
     public function removeItem(Cart $cart, CartItem $item): void
     {
         try {
@@ -134,6 +169,13 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Sepeti temizler. Stratejiyi çalıştırır ve olay yayınlar.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     * @throws \Exception Hata durumunda
+     */
     public function clearCart(Cart $cart): void
     {
         try {
@@ -161,16 +203,35 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Sepet özetini hesaplar.
+     *
+     * @param Cart $cart Sepet
+     * @return CartSummary Sepet özeti
+     */
     public function calculateSummary(Cart $cart): CartSummary
     {
         return $this->priceCoordinator->calculateCartSummary($cart);
     }
 
+    /**
+     * Sepetin tüm fiyatlarını tazeler.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     */
     public function refreshPricing(Cart $cart): void
     {
         $this->priceCoordinator->refreshAllPrices($cart);
     }
 
+    /**
+     * Ödeme öncesi bağlamı hazırlar. Doğrulama başarısızsa hata fırlatır.
+     *
+     * @param Cart $cart Sepet
+     * @return CheckoutContext Ödeme bağlamı
+     * @throws CheckoutValidationException Geçersiz durumlarda
+     */
     public function prepareCheckout(Cart $cart): CheckoutContext
     {
         $validation = $this->validator->validateForCheckout($cart);
@@ -189,6 +250,13 @@ class CartService implements CartServiceInterface
         );
     }
 
+    /**
+     * Misafir sepetini kullanıcı sepetine taşır ya da birleştirir.
+     *
+     * @param string $sessionId Oturum kimliği
+     * @param User $user Kullanıcı
+     * @return Cart|null Taşınan ya da birleştirilen sepet, yoksa null
+     */
     public function migrateGuestCart(string $sessionId, User $user): ?Cart
     {
         $guestCart = Cart::where('session_id', $sessionId)
@@ -202,10 +270,10 @@ class CartService implements CartServiceInterface
         $userCart = Cart::where('user_id', $user->id)->first();
 
         if ($userCart) {
-            // Merge guest cart into user cart
+            // Misafir sepetini kullanıcı sepetiyle birleştir
             return $this->mergeGuestCartIntoUserCart($guestCart, $userCart);
         } else {
-            // Convert guest cart to user cart
+            // Misafir sepetini kullanıcı sepetine dönüştür
             $guestCart->update([
                 'user_id' => $user->id,
                 'session_id' => null
@@ -216,6 +284,14 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Misafir sepetini var olan kullanıcı sepetiyle birleştirir.
+     *
+     * @param Cart $guestCart Misafir sepeti
+     * @param Cart $userCart Kullanıcı sepeti
+     * @return Cart Birleştirilmiş kullanıcı sepeti
+     * @throws \Exception Hata durumunda
+     */
     private function mergeGuestCartIntoUserCart(Cart $guestCart, Cart $userCart): Cart
     {
         try {
@@ -241,10 +317,10 @@ class CartService implements CartServiceInterface
                 }
             }
 
-            // Update pricing for merged cart
+            // Birleştirilen sepet için fiyatlandırmayı güncelle
             $this->priceCoordinator->updateCartPricing($userCart);
 
-            // Delete guest cart
+            // Misafir sepetini sil
             $guestCart->delete();
 
             DB::commit();
@@ -268,6 +344,12 @@ class CartService implements CartServiceInterface
         }
     }
 
+    /**
+     * Ödeme işlemi için ek metadata hazırlar.
+     *
+     * @param Cart $cart Sepet
+     * @return array Metadata bilgileri
+     */
     private function prepareCheckoutMetadata(Cart $cart): array
     {
         return [

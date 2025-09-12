@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Log;
 
 class AuthenticatedCartStrategy implements CartStrategyInterface
 {
+    /**
+     * Sepete ürün ekler. Eğer aynı varyanttan mevcutsa miktarı artırır.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Eklenecek miktar
+     * @return void
+     */
     public function addItem(Cart $cart, ProductVariant $variant, int $quantity): void
     {
         $existingItem = $cart->items()
@@ -34,7 +42,7 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
                 'product_id' => $variant->product_id,
                 'product_variant_id' => $variant->id,
                 'quantity' => $quantity,
-                'price' => $variant->price, // Will be recalculated by PricingService
+                'price' => $variant->price, // FiyatlandırmaServisi tarafından tekrar hesaplanacaktır
                 'discounted_price' => $variant->price
             ]);
             
@@ -46,9 +54,17 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
             ]);
         }
 
-        $cart->touch(); // Update cart timestamp
+        $cart->touch(); // Sepet zaman damgasını güncelle
     }
 
+    /**
+     * Sepet öğesinin miktarını günceller. Miktar 0 veya altına inerse öğeyi kaldırır.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param CartItem $item Sepet öğesi
+     * @param int $quantity Yeni miktar
+     * @return void
+     */
     public function updateQuantity(Cart $cart, CartItem $item, int $quantity): void
     {
         if ($quantity <= 0) {
@@ -68,6 +84,13 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Sepetten belirli bir öğeyi kaldırır.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param CartItem $item Kaldırılacak öğe
+     * @return void
+     */
     public function removeItem(Cart $cart, CartItem $item): void
     {
         $itemId = $item->id;
@@ -80,6 +103,12 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Sepeti tamamen temizler ve özet alanlarını sıfırlar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @return void
+     */
     public function clear(Cart $cart): void
     {
         $itemCount = $cart->items()->count();
@@ -103,9 +132,17 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         ]);
     }
 
+    /**
+     * Belirli bir işlem için sepet üzerinde doğrulama yapar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param string $operation İşlem adı (add_item, update_quantity, remove_item, clear)
+     * @param array $context İşleme özgü bağlam verileri
+     * @return bool Geçerlilik sonucu
+     */
     public function validateOperation(Cart $cart, string $operation, array $context = []): bool
     {
-        // Authenticated carts have standard validation
+        // Kimliği doğrulanmış sepetlerde standart doğrulama uygulanır
         switch ($operation) {
             case 'add_item':
                 return $this->validateAddItem($cart, $context);
@@ -120,17 +157,31 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         }
     }
 
+    /**
+     * Öğre ekleme işlemi için temel doğrulamaları yapar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param array $context Bağlam verileri (variant, quantity)
+     * @return bool
+     */
     private function validateAddItem(Cart $cart, array $context): bool
     {
-        // User must be authenticated
+        // Kullanıcının kimliği doğrulanmış olmalıdır
         if (!$cart->user_id) {
             return false;
         }
 
-        // Basic validation - more comprehensive validation happens in CartValidationService
+        // Temel doğrulama — daha kapsamlı doğrulama CartValidationService içinde yapılır
         return isset($context['variant']) && isset($context['quantity']) && $context['quantity'] > 0;
     }
 
+    /**
+     * Miktar güncelleme işlemi için doğrulama yapar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param array $context Bağlam verileri (item, quantity)
+     * @return bool
+     */
     private function validateUpdateQuantity(Cart $cart, array $context): bool
     {
         if (!$cart->user_id) {
@@ -140,6 +191,13 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         return isset($context['item']) && isset($context['quantity']) && $context['quantity'] >= 0;
     }
 
+    /**
+     * Öğeyi kaldırma işlemi için doğrulama yapar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param array $context Bağlam verileri (item)
+     * @return bool
+     */
     private function validateRemoveItem(Cart $cart, array $context): bool
     {
         if (!$cart->user_id) {
@@ -149,6 +207,13 @@ class AuthenticatedCartStrategy implements CartStrategyInterface
         return isset($context['item']) && $context['item']->cart_id === $cart->id;
     }
 
+    /**
+     * Sepeti temizleme işlemi için doğrulama yapar.
+     *
+     * @param Cart $cart Sepet modeli
+     * @param array $context Bağlam verileri
+     * @return bool
+     */
     private function validateClear(Cart $cart, array $context): bool
     {
         return $cart->user_id !== null;

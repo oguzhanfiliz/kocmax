@@ -16,24 +16,37 @@ use Illuminate\Support\Facades\Log;
 
 class CartPriceCoordinator
 {
+    /**
+     * Fiyatlandırma servislerini koordine eden sınıfın kurucusu.
+     *
+     * @param PricingService $pricingService Fiyat hesaplama servisi
+     * @param CustomerTypeDetector $customerTypeDetector Müşteri tipi belirleyici
+     */
     public function __construct(
         private PricingService $pricingService,
         private CustomerTypeDetector $customerTypeDetector
     ) {}
 
+    /**
+     * Verilen sepetin fiyatlandırmasını günceller ve özet bilgiyi döner.
+     *
+     * @param Cart $cart Sepet
+     * @return CartSummary Sepet özeti
+     * @throws \Exception Hesaplama sırasında hata oluşursa aynen fırlatılır
+     */
     public function updateCartPricing(Cart $cart): CartSummary
     {
         try {
-            // Update customer type detection
+            // Müşteri tipi tespitini güncelle
             $customerType = $this->customerTypeDetector->detect($cart->user);
             
-            // Update individual item pricing
+            // Tek tek ürün kalemlerinin fiyatlarını güncelle
             $this->updateAllItemPrices($cart);
             
-            // Calculate cart summary
+            // Sepet özetini hesapla
             $summary = $this->calculateCartSummary($cart);
             
-            // Update cart with calculated values
+            // Hesaplanan değerlerle sepeti güncelle
             $cart->update([
                 'customer_type' => $customerType->value,
                 'subtotal_amount' => $summary->getSubtotal(),
@@ -61,6 +74,12 @@ class CartPriceCoordinator
         }
     }
 
+    /**
+     * Sepet özetini hesaplar ve önbelleğe alır.
+     *
+     * @param Cart $cart Sepet
+     * @return CartSummary Hesaplanan özet
+     */
     public function calculateCartSummary(Cart $cart): CartSummary
     {
         $cacheKey = "cart_summary_{$cart->id}_{$cart->updated_at->timestamp}";
@@ -70,16 +89,29 @@ class CartPriceCoordinator
         });
     }
 
+    /**
+     * Sepetteki tüm fiyatları tazeler, özet ve önbelleği günceller.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     */
     public function refreshAllPrices(Cart $cart): void
     {
         $this->updateAllItemPrices($cart);
         $this->updateCartPricing($cart);
         
-        // Clear cache for this cart
+        // Bu sepete ait önbelleği temizle
         $cacheKey = "cart_summary_{$cart->id}_*";
-        Cache::flush(); // In production, use more specific cache invalidation
+        Cache::flush(); // Üretimde daha hedefli bir önbellek geçersizleştirme kullanılmalıdır
     }
 
+    /**
+     * Tek bir sepet öğesinin fiyatını hesaplar.
+     *
+     * @param CartItem $item Sepet öğesi
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return PriceResult Fiyatlandırma sonucu
+     */
     public function calculateItemPrice(CartItem $item, ?User $user = null): PriceResult
     {
         return $this->pricingService->calculatePrice(
@@ -89,6 +121,12 @@ class CartPriceCoordinator
         );
     }
 
+    /**
+     * Sepetteki tüm kalemlerin fiyatlarını günceller.
+     *
+     * @param Cart $cart Sepet
+     * @return void
+     */
     private function updateAllItemPrices(Cart $cart): void
     {
         $cart->load(['items.productVariant', 'user']);
@@ -98,6 +136,13 @@ class CartPriceCoordinator
         }
     }
 
+    /**
+     * Tek bir sepet öğesinin fiyatını günceller.
+     *
+     * @param CartItem $item Sepet öğesi
+     * @param User|null $user Kullanıcı
+     * @return void
+     */
     private function updateItemPrice(CartItem $item, ?User $user): void
     {
         try {
@@ -119,7 +164,7 @@ class CartPriceCoordinator
             $item->update([
                 'base_price' => $priceResult->getBasePrice()->getAmount(),
                 'calculated_price' => $priceResult->getFinalPrice()->getAmount(),
-                'price' => $priceResult->getFinalPrice()->getAmount(), // For backward compatibility
+                'price' => $priceResult->getFinalPrice()->getAmount(), // Geriye dönük uyumluluk için
                 'discounted_price' => $priceResult->getFinalPrice()->getAmount(),
                 'unit_discount' => $priceResult->getDiscount()?->getAmount() ?? 0,
                 'total_discount' => ($priceResult->getDiscount()?->getAmount() ?? 0) * $item->quantity,
@@ -134,7 +179,7 @@ class CartPriceCoordinator
                 'error' => $e->getMessage()
             ]);
             
-            // Keep existing price if calculation fails
+            // Hesaplama başarısız olursa mevcut fiyatı koru
             if (!$item->price_calculated_at) {
                 $item->update([
                     'calculated_price' => $item->productVariant->price,
@@ -145,13 +190,19 @@ class CartPriceCoordinator
         }
     }
 
+    /**
+     * Sepet özetini hesaplamanın gerçek işini yapar.
+     *
+     * @param Cart $cart Sepet
+     * @return CartSummary Sepet özeti
+     */
     private function performCartSummaryCalculation(Cart $cart): CartSummary
     {
         $subtotal = 0;
         $totalDiscount = 0;
         $itemDetails = [];
         
-        // Calculate totals from items
+        // Kalemlerden toplamları hesapla
         foreach ($cart->items as $item) {
             $itemSubtotal = ($item->calculated_price ?? $item->price ?? 0) * $item->quantity;
             $itemDiscount = $item->total_discount ?? 0;
@@ -173,21 +224,21 @@ class CartPriceCoordinator
             ];
         }
 
-        // Apply cart-level discounts (coupons, etc.)
+        // Sepet seviyesindeki indirimleri uygula (kupon vb.)
         $cartLevelDiscount = $cart->coupon_discount ?? 0;
         $totalDiscount += $cartLevelDiscount;
 
-        // Collect all applied discounts
+        // Uygulanan tüm indirimleri topla
         $appliedDiscounts = [];
         
-        // Add item-level discounts
+        // Kalem seviyesindeki indirimleri ekle
         foreach ($cart->items as $item) {
             if ($item->applied_discounts) {
                 $appliedDiscounts = array_merge($appliedDiscounts, $item->applied_discounts);
             }
         }
         
-        // Add cart-level discounts
+        // Sepet seviyesindeki indirimleri ekle
         if ($cartLevelDiscount > 0) {
             $appliedDiscounts[] = [
                 'type' => 'coupon',
