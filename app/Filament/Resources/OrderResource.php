@@ -170,7 +170,11 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['user', 'items']))
+            ->modifyQueryUsing(fn ($query) => $query->with([
+                'user', 
+                'items.productVariant.variantOptions.variantType',
+                'items.product'
+            ]))
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')
                     ->label('Sipariş No')
@@ -429,59 +433,155 @@ class OrderResource extends Resource
                         Infolists\Components\RepeatableEntry::make('items')
                             ->label('Ürünler')
                             ->schema([
-                                Infolists\Components\TextEntry::make('variant_image')
+                                Infolists\Components\ImageEntry::make('variant_image')
                                     ->label('')
                                     ->state(function ($record) {
-                                        $url = $record->productVariant?->primaryImage?->image_url
+                                        return $record->productVariant?->primaryImage?->image_url
                                             ?? $record->productVariant?->image_url
                                             ?? $record->product?->primaryImage?->image_url
                                             ?? null;
-                                        if (!$url) return '';
-                                        
-                                        // Tıklanabilir resim için onclick ile modal aç
-                                        return '<img src="' . e($url) . '" alt="Variant" class="h-12 w-12 rounded-md object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal(\'' . e($url) . '\')" />';
                                     })
-                                    ->html(),
+                                    ->height(48)
+                                    ->width(48)
+                                    ->extraImgAttributes(['class' => 'rounded-md cursor-pointer hover:opacity-80 transition-opacity'])
+                                    ->extraImgAttributes(fn ($state) => [
+                                        'onclick' => $state ? "openImageModal('" . e($state) . "')" : '',
+                                        'class' => 'rounded-md cursor-pointer hover:opacity-80 transition-opacity'
+                                    ]),
                                 Infolists\Components\TextEntry::make('product.name')
                                     ->label('Ürün Adı')
                                     ->default(fn($record) => $record->product?->name ?? $record->product_name ?? '-')
                                     ->weight('bold')
-                                    ->color('primary'),
+                                    ->color('primary')
+                                    ->tooltip(fn($record) => $record->product?->name ?? $record->product_name ?? '-'),
 
                                 Infolists\Components\TextEntry::make('product_sku')
                                     ->label('Varyant SKU')
                                     ->default(fn($record) => $record->product_sku ?: ($record->productVariant?->sku ?? '-'))
                                     ->badge()
-                                    ->color('gray'),
+                                    ->color('gray')
+                                    ->tooltip(fn($record) => $record->product_sku ?: ($record->productVariant?->sku ?? '-')),
 
                                 Infolists\Components\TextEntry::make('productVariant.name')
                                     ->label('Varyant')
                                     ->default(fn($record) => $record->productVariant?->name ?? '-')
                                     ->badge()
-                                    ->color('primary'),
+                                    ->color('primary')
+                                    ->tooltip(fn($record) => $record->productVariant?->name ?? '-'),
 
                                 Infolists\Components\TextEntry::make('product_attributes')
                                     ->label('Varyant Özellikleri')
                                     ->state(function ($record) {
-                                        $attrs = (array) ($record->product_attributes ?? []);
                                         $parts = [];
+                                        
+                                        // Önce product_attributes'tan al
+                                        $attrs = (array) ($record->product_attributes ?? []);
+                                        
+                                        // Renk ve beden bilgilerini ekle
                                         if (!empty($attrs['color'])) {
                                             $parts[] = 'Renk: ' . $attrs['color'];
                                         }
                                         if (!empty($attrs['size'])) {
                                             $parts[] = 'Beden: ' . $attrs['size'];
                                         }
+                                        
+                                        // Diğer özellikleri ekle
                                         foreach ($attrs as $key => $value) {
                                             if (in_array($key, ['color', 'size', 'applied_discounts'])) {
                                                 continue;
                                             }
-                                            if (is_scalar($value)) {
+                                            if (is_scalar($value) && !empty($value)) {
                                                 $parts[] = ucfirst($key) . ': ' . $value;
                                             }
                                         }
+                                        
+                                        // ProductVariant'tan variant options'ları al
+                                        if ($record->productVariant && $record->productVariant->relationLoaded('variantOptions')) {
+                                            foreach ($record->productVariant->variantOptions as $option) {
+                                                if ($option->relationLoaded('variantType')) {
+                                                    $type = $option->variantType;
+                                                    $parts[] = $type->display_name . ': ' . $option->display_value;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Eğer variant options yüklenmemişse, manuel olarak yükle
+                                        if (empty($parts) && $record->productVariant && !$record->productVariant->relationLoaded('variantOptions')) {
+                                            $variant = $record->productVariant->load('variantOptions.variantType');
+                                            foreach ($variant->variantOptions as $option) {
+                                                $type = $option->variantType;
+                                                $parts[] = $type->display_name . ': ' . $option->display_value;
+                                            }
+                                        }
+                                        
+                                        // Eğer hiçbir özellik yoksa, variant'ın kendi bilgilerini kullan
+                                        if (empty($parts) && $record->productVariant) {
+                                            if ($record->productVariant->color) {
+                                                $parts[] = 'Renk: ' . $record->productVariant->color;
+                                            }
+                                            if ($record->productVariant->size) {
+                                                $parts[] = 'Beden: ' . $record->productVariant->size;
+                                            }
+                                        }
+                                        
                                         return empty($parts) ? '-' : implode(', ', $parts);
                                     })
-                                    ->color('gray'),
+                                    ->color('gray')
+                                    ->tooltip(function ($record) {
+                                        $parts = [];
+                                        
+                                        // Önce product_attributes'tan al
+                                        $attrs = (array) ($record->product_attributes ?? []);
+                                        
+                                        // Renk ve beden bilgilerini ekle
+                                        if (!empty($attrs['color'])) {
+                                            $parts[] = 'Renk: ' . $attrs['color'];
+                                        }
+                                        if (!empty($attrs['size'])) {
+                                            $parts[] = 'Beden: ' . $attrs['size'];
+                                        }
+                                        
+                                        // Diğer özellikleri ekle
+                                        foreach ($attrs as $key => $value) {
+                                            if (in_array($key, ['color', 'size', 'applied_discounts'])) {
+                                                continue;
+                                            }
+                                            if (is_scalar($value) && !empty($value)) {
+                                                $parts[] = ucfirst($key) . ': ' . $value;
+                                            }
+                                        }
+                                        
+                                        // ProductVariant'tan variant options'ları al
+                                        if ($record->productVariant && $record->productVariant->relationLoaded('variantOptions')) {
+                                            foreach ($record->productVariant->variantOptions as $option) {
+                                                if ($option->relationLoaded('variantType')) {
+                                                    $type = $option->variantType;
+                                                    $parts[] = $type->display_name . ': ' . $option->display_value;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Eğer variant options yüklenmemişse, manuel olarak yükle
+                                        if (empty($parts) && $record->productVariant && !$record->productVariant->relationLoaded('variantOptions')) {
+                                            $variant = $record->productVariant->load('variantOptions.variantType');
+                                            foreach ($variant->variantOptions as $option) {
+                                                $type = $option->variantType;
+                                                $parts[] = $type->display_name . ': ' . $option->display_value;
+                                            }
+                                        }
+                                        
+                                        // Eğer hiçbir özellik yoksa, variant'ın kendi bilgilerini kullan
+                                        if (empty($parts) && $record->productVariant) {
+                                            if ($record->productVariant->color) {
+                                                $parts[] = 'Renk: ' . $record->productVariant->color;
+                                            }
+                                            if ($record->productVariant->size) {
+                                                $parts[] = 'Beden: ' . $record->productVariant->size;
+                                            }
+                                        }
+                                        
+                                        return empty($parts) ? '-' : implode(', ', $parts);
+                                    }),
 
                                 Infolists\Components\TextEntry::make('quantity')
                                     ->label('Adet')

@@ -10,6 +10,7 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewOrder extends ViewRecord
 {
@@ -85,6 +86,15 @@ class ViewOrder extends ViewRecord
     public function getTitle(): string
     {
         return 'Sipariş: ' . $this->record->order_number;
+    }
+
+    protected function resolveRecord(string|int $key): Model
+    {
+        $record = parent::resolveRecord($key);
+        return $record->load([
+            'items.productVariant.variantOptions.variantType',
+            'items.product'
+        ]);
     }
 
     protected function getFooterWidgets(): array
