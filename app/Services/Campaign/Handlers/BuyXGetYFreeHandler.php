@@ -12,8 +12,21 @@ use App\ValueObjects\Campaign\CartContext;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * "X Al Y Bedava" kampanyası için handler.
+ *
+ * Belirli tetikleyici ürün ve adet koşulları sağlandığında hediye ürün(ler) ekler.
+ */
 class BuyXGetYFreeHandler implements CampaignHandlerInterface
 {
+    /**
+     * Kampanyanın uygulanabilirliğini kontrol eder.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return bool Uygulanabilirse true
+     */
     public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
     {
         try {
@@ -55,6 +68,14 @@ class BuyXGetYFreeHandler implements CampaignHandlerInterface
         }
     }
 
+    /**
+     * Kampanyayı uygular: koşullar sağlanıyorsa hediye ürün listesi oluşturur.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return CampaignResult Kampanya sonucu
+     */
     public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
@@ -65,7 +86,7 @@ class BuyXGetYFreeHandler implements CampaignHandlerInterface
             $rules = $campaign->rules;
             $rewards = $campaign->rewards;
 
-            // "3 Al 1 Hediye" logic'i
+            // "3 Al 1 Hediye" mantığı
             $requiredQuantity = $rules['buy_quantity'] ?? 3;
             $freeQuantity = $rules['free_quantity'] ?? 1;
             $triggerProducts = $rules['trigger_products'] ?? [];
@@ -73,7 +94,7 @@ class BuyXGetYFreeHandler implements CampaignHandlerInterface
 
             $freeItems = new Collection();
 
-            // Trigger product'lar için kontrol
+            // Tetikleyici ürünler için kontrol
             if (!empty($triggerProducts)) {
                 foreach ($triggerProducts as $productId) {
                     $cartQuantity = $context->getTotalQuantityForProduct($productId);
@@ -145,16 +166,33 @@ class BuyXGetYFreeHandler implements CampaignHandlerInterface
         }
     }
 
+    /**
+     * Bu handler'ın desteklediği kampanya türünü döndürür.
+     *
+     * @return string Kampanya türü anahtarı
+     */
     public function getSupportedType(): string
     {
         return 'buy_x_get_y_free';
     }
 
+    /**
+     * Handler önceliğini döndürür (yüksek sayı = yüksek öncelik).
+     *
+     * @return int Öncelik
+     */
     public function getPriority(): int
     {
         return 80; // Yüksek öncelik
     }
 
+    /**
+     * Kampanya kurallarının temel doğrulamalarını yapar.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return bool Geçerliyse true
+     */
     private function checkCampaignRules(Campaign $campaign, CartContext $context): bool
     {
         $rules = $campaign->rules;

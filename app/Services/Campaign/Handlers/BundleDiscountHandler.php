@@ -13,50 +13,88 @@ use App\ValueObjects\Pricing\Discount;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Bundle (paket) indirimi kampanyası için handler.
+ *
+ * Sepette tanımlı bundle kurallarını doğrular, uygunluk varsa indirim tutarını
+ * hesaplar ve sonuç döndürür.
+ */
 class BundleDiscountHandler implements CampaignHandlerInterface
 {
+    /**
+     * Bu kampanya türü bu handler tarafından destekleniyor mu?
+     *
+     * @param Campaign $campaign Kampanya modeli
+     * @return bool Destekliyorsa true
+     */
     public function supports(Campaign $campaign): bool
     {
         return $campaign->type === CampaignType::BUNDLE_DISCOUNT->value;
     }
 
+    /**
+     * Kampanyanın sepet bağlamında uygulanabilir olup olmadığını kontrol eder.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return bool Uygulanabilirse true
+     */
     public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
     {
         return $this->validateCampaign($campaign) && $this->validateContext($context);
     }
 
+    /**
+     * Bu handler'ın desteklediği kampanya türünü döndürür.
+     *
+     * @return string Kampanya türü anahtarı
+     */
     public function getSupportedType(): string
     {
         return CampaignType::BUNDLE_DISCOUNT->value;
     }
 
+    /**
+     * Handler önceliğini döndürür (yüksek sayı = yüksek öncelik).
+     *
+     * @return int Öncelik
+     */
     public function getPriority(): int
     {
         return 50; // Orta öncelik
     }
 
+    /**
+     * Kampanyayı uygular ve sonucu döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return CampaignResult Kampanya sonucu
+     */
     public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
-            // Validation chain
+            // Doğrulama zinciri
             if (!$this->validateCampaign($campaign)) {
-                return CampaignResult::failed('Campaign validation failed');
+                return CampaignResult::failed('Kampanya doğrulaması başarısız');
             }
 
             if (!$this->validateContext($context)) {
-                return CampaignResult::failed('Invalid cart context');
+                return CampaignResult::failed('Geçersiz sepet bağlamı');
             }
 
-            // Bundle validation
+            // Bundle doğrulaması
             $bundleResult = $this->validateBundleRequirements($campaign, $context);
             if (!$bundleResult['valid']) {
                 return CampaignResult::failed($bundleResult['reason']);
             }
 
-            // Calculate bundle discount
+            // Bundle indirimini hesapla
             $discountAmount = $this->calculateBundleDiscount($campaign, $context);
             if ($discountAmount <= 0) {
-                return CampaignResult::failed('No discount applicable');
+                return CampaignResult::failed('Uygulanabilir indirim yok');
             }
 
             Log::info('Bundle discount applied', [
@@ -82,14 +120,20 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         }
     }
 
+    /**
+     * Kampanyanın aktiflik, tarih ve kural uygunluğunu doğrular.
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Geçerliyse true
+     */
     private function validateCampaign(Campaign $campaign): bool
     {
-        // Campaign must be active
+        // Kampanya aktif olmalı
         if (!$campaign->is_active) {
             return false;
         }
 
-        // Campaign must be within date range
+        // Kampanya tarih aralığı içinde olmalı
         $now = now();
         if ($campaign->starts_at && $now->lt($campaign->starts_at)) {
             return false;
@@ -99,7 +143,7 @@ class BundleDiscountHandler implements CampaignHandlerInterface
             return false;
         }
 
-        // Must have valid bundle rules
+        // Geçerli bundle kuralları olmalı
         $rules = $campaign->rules ?? [];
         if (empty($rules['bundle_products']) || !is_array($rules['bundle_products'])) {
             return false;
@@ -108,11 +152,24 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         return true;
     }
 
+    /**
+     * Sepet bağlamının temel geçerlilik kontrollerini yapar.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @return bool Geçerliyse true
+     */
     private function validateContext(CartContext $context): bool
     {
         return $context->getItems()->isNotEmpty() && $context->getTotalAmount() > 0;
     }
 
+    /**
+     * Bundle gereksinimlerini doğrular ve ayrıntılı sonuç döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return array{valid:bool,reason?:string,bundle_products?:array,found_products?:array,max_bundles?:int}
+     */
     private function validateBundleRequirements(Campaign $campaign, CartContext $context): array
     {
         $rules = $campaign->rules ?? [];
@@ -143,7 +200,7 @@ class BundleDiscountHandler implements CampaignHandlerInterface
             if ($cartItem['quantity'] < $requiredQuantity) {
                 return [
                     'valid' => false,
-                    'reason' => "Bundle için yeterli miktar yok. Gerekli: {$requiredQuantity}, Mevcut: {$cartItem['quantity']}"
+                    'reason' => "Bundle için yeteri kadar ürün yok. Gerekli: {$requiredQuantity}, Mevcut: {$cartItem['quantity']}"
                 ];
             }
 
@@ -163,7 +220,7 @@ class BundleDiscountHandler implements CampaignHandlerInterface
             ];
         }
 
-        // Minimum bundle count kontrolü
+        // Minimum bundle sayısı kontrolü
         $minBundleCount = $rules['min_bundle_count'] ?? 1;
         $maxPossibleBundles = $this->calculateMaxPossibleBundles($bundleProductsInCart, $bundleProducts);
         
@@ -182,6 +239,13 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Seçilen ürünlerle en fazla kaç bundle yapılabileceğini hesaplar.
+     *
+     * @param array $cartProducts Sepetteki bundle ürünleri
+     * @param array $bundleProducts Bundle kuralındaki ürünler
+     * @return int Maksimum bundle sayısı
+     */
     private function calculateMaxPossibleBundles(array $cartProducts, array $bundleProducts): int
     {
         $maxBundles = PHP_INT_MAX;
@@ -202,6 +266,13 @@ class BundleDiscountHandler implements CampaignHandlerInterface
         return max(0, $maxBundles);
     }
 
+    /**
+     * Bundle indirim tutarını hesaplar.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return float İndirim tutarı
+     */
     private function calculateBundleDiscount(Campaign $campaign, CartContext $context): float
     {
         $rules = $campaign->rules ?? [];
@@ -254,7 +325,7 @@ class BundleDiscountHandler implements CampaignHandlerInterface
                 break;
         }
 
-        // Maximum discount limit kontrolü
+        // Maksimum indirim limiti kontrolü
         $maxDiscount = $rewards['max_discount'] ?? null;
         if ($maxDiscount && $totalDiscount > $maxDiscount) {
             $totalDiscount = $maxDiscount;

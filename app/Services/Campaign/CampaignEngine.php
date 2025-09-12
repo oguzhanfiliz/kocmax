@@ -13,6 +13,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Kampanya motoru: aktif kampanyaları tespit eder, uygun handler'lar ile
+ * uygular, öncelik sırasına göre sıralar ve önbellekleme yapar.
+ */
 class CampaignEngine
 {
     /** @var Collection<CampaignHandlerInterface> */
@@ -21,6 +25,12 @@ class CampaignEngine
     private bool $cachingEnabled;
     private int $cacheLifetime;
 
+    /**
+     * Yapıcı: önbellek davranışını yapılandırır.
+     *
+     * @param bool $cachingEnabled Önbellek aktif mi?
+     * @param int $cacheLifetime Önbellek yaşam süresi (saniye)
+     */
     public function __construct(
         bool $cachingEnabled = true,
         int $cacheLifetime = 3600
@@ -65,7 +75,7 @@ class CampaignEngine
                 $handler = $this->handlers->get($campaign->type);
                 
                 if (!$handler) {
-                    Log::warning('Campaign handler not found', [
+                    Log::warning("Kampanya handler'ı bulunamadı", [
                         'campaign_id' => $campaign->id,
                         'type' => $campaign->type
                     ]);
@@ -85,7 +95,7 @@ class CampaignEngine
                     // Kampanya kullanım sayısını artır
                     $campaign->incrementUsage();
 
-                    // Stackable değilse dur
+                    // Birlikte kullanılabilir (stackable) değilse döngüyü durdur
                     if (!$campaign->is_stackable) {
                         break;
                     }
@@ -99,7 +109,7 @@ class CampaignEngine
             return $results;
 
         } catch (\Exception $e) {
-            Log::error('Campaign engine failed', [
+            Log::error('Kampanya motoru hatası', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -163,14 +173,20 @@ class CampaignEngine
             if (Cache::supportsTags()) {
                 Cache::tags(['campaigns'])->flush();
             } else {
-                // Fallback: clear specific campaign cache keys
+                // Geri dönüş (fallback): belirli kampanya önbellek anahtarlarını temizle
                 Cache::forget('campaigns.active');
                 Cache::forget('campaigns.rules');
-                // Clear additional specific keys if needed
+                // Gerekirse ilave belirli anahtarları temizle
             }
         }
     }
 
+    /**
+     * Aktif ve bağlamla uyumlu kampanyaları döndürür.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @return Collection Aktif kampanyalar
+     */
     private function getActiveCampaigns(CartContext $context): Collection
     {
         return Campaign::active()
@@ -179,6 +195,13 @@ class CampaignEngine
             ->get();
     }
 
+    /**
+     * Önbellek anahtarı üretir (kullanıcı ve sepet bağlamına göre).
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return string Önbellek anahtarı
+     */
     private function getCacheKey(CartContext $context, ?User $user = null): string
     {
         $userKey = $user ? $user->id : 'guest';
