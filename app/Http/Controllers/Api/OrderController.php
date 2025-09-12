@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use App\Exceptions\Pricing\PricingException;
 
 /**
  * @OA\Tag(
@@ -616,7 +617,19 @@ class OrderController extends Controller
             ]);
 
             // 1. Sepet toplam tutarını hesapla
-            $cartTotal = $this->calculateCartTotal($validated['cart_items']);
+            try {
+                $cartTotal = $this->calculateCartTotal($validated['cart_items']);
+            } catch (\RuntimeException $e) {
+                Log::warning('Cart total calculation failed due to missing price', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'error_code' => 'PRICE_MISSING'
+                ], 422);
+            }
             
             // 2. External payment API simülasyonu
             $paymentSuccess = $this->simulateExternalPaymentAPI();
@@ -632,7 +645,19 @@ class OrderController extends Controller
             }
 
             // 3. Sipariş oluştur (henüz ödeme yapılmadı)
-            $order = $this->createOrderFromCart($validated, $user, $cartTotal);
+            try {
+                $order = $this->createOrderFromCart($validated, $user, $cartTotal);
+            } catch (\RuntimeException $e) {
+                Log::warning('Order creation failed due to missing price', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'error_code' => 'PRICE_MISSING'
+                ], 422);
+            }
 
             Log::info('Order created successfully from checkout payment', [
                 'order_id' => $order->id,
@@ -742,14 +767,29 @@ class OrderController extends Controller
     private function calculateCartTotal(array $cartItems): float
     {
         $total = 0.0;
-        
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $pricing = app(\App\Services\PricingService::class);
+
         foreach ($cartItems as $item) {
-            $variant = ProductVariant::find($item['product_variant_id']);
+            $variant = ProductVariant::with('product')->find($item['product_variant_id']);
             if ($variant) {
-                $total += (float) $variant->price * (int) $item['quantity'];
+                $qty = (int) $item['quantity'];
+                try {
+                    $priceResult = $pricing->calculatePrice($variant, $qty, $user);
+                    $total += $priceResult->getTotalFinalPrice()->getAmount();
+                } catch (PricingException $e) {
+                    // Dönüştür ve üst seviyede 422 için yakalat
+                    Log::warning('Price missing for cart item', [
+                        'variant_id' => $variant->id,
+                        'quantity' => $qty,
+                        'user_id' => $user?->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    throw new \RuntimeException('Sepette fiyatı hesaplanamayan bir ürün var. Lütfen sepetinizi kontrol edin.');
+                }
             }
         }
-        
+
         return $total;
     }
 
@@ -762,12 +802,28 @@ class OrderController extends Controller
         $shippingAddressData = $this->resolveAddress($validated, 'shipping', $user);
         $billingAddressData = $this->resolveAddress($validated, 'billing', $user);
         
+        // Kargo ücretini hesapla (şimdilik sabit veya config)
+        $shippingAmount = $this->computeShippingAmount($shippingAddressData, $billingAddressData, $user);
+
+        // Sepet kalemlerini fiyat kurallarıyla yeniden hesapla (indirim toplamını ölçmek için)
+        $pricing = app(\App\Services\PricingService::class);
+        $orderDiscountTotal = 0.0;
+        foreach ($validated['cart_items'] as $ci) {
+            $variant = ProductVariant::with('product')->find($ci['product_variant_id']);
+            if (!$variant) { continue; }
+            $pr = $pricing->calculatePrice($variant, (int) $ci['quantity'], $user);
+            $orderDiscountTotal += $pr->getTotalDiscountAmount()->getAmount();
+        }
+
         // Sipariş verilerini hazırla
         $orderData = [
             'user_id' => $user->id,
             'order_number' => $this->generateOrderNumber(),
-            'total_amount' => $totalAmount,
-            'subtotal' => $totalAmount, // Basitleştirildi
+            'subtotal' => $totalAmount,
+            'shipping_amount' => $shippingAmount,
+            'tax_amount' => 0,
+            'discount_amount' => $orderDiscountTotal,
+            'total_amount' => $totalAmount + $shippingAmount,
             'currency_code' => 'TRY',
             'status' => 'pending',
             'payment_method' => 'online',
@@ -800,17 +856,26 @@ class OrderController extends Controller
         // Order oluştur
         $order = Order::create($orderData);
         
-        // Order items oluştur
+        // Order items oluştur (pricing ile)
+        $pricing = app(\App\Services\PricingService::class);
         foreach ($validated['cart_items'] as $item) {
             $variant = ProductVariant::with('product')->find($item['product_variant_id']);
             
             if ($variant && $variant->product) {
+                $qty = (int) $item['quantity'];
+                $priceResult = $pricing->calculatePrice($variant, $qty, $user);
+                $unitFinal = $priceResult->getUnitFinalPrice()->getAmount();
+                $lineFinal = $priceResult->getTotalFinalPrice()->getAmount();
+                $lineDiscount = $priceResult->getTotalDiscountAmount()->getAmount();
+
                 $order->items()->create([
                     'product_id' => $variant->product_id,
                     'product_variant_id' => $variant->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $variant->price,
-                    'total' => $variant->price * $item['quantity'],
+                    'quantity' => $qty,
+                    'price' => $unitFinal,
+                    'discount_amount' => $lineDiscount,
+                    'tax_amount' => 0,
+                    'total' => $lineFinal,
                     'product_name' => $variant->product->name,
                     'product_sku' => $variant->sku ?? '',
                     'product_attributes' => [
@@ -822,8 +887,8 @@ class OrderController extends Controller
                 Log::info('Order item created', [
                     'product_variant_id' => $variant->id,
                     'product_name' => $variant->product->name,
-                    'price' => $variant->price,
-                    'quantity' => $item['quantity']
+                    'unit_price' => $unitFinal,
+                    'quantity' => $qty
                 ]);
             } else {
                 Log::warning('ProductVariant or Product not found', [
@@ -835,6 +900,39 @@ class OrderController extends Controller
         }
         
         return $order;
+    }
+
+    /**
+     * Variant fiyatını resolve eder: variant.price yoksa product.base_price
+     */
+    private function resolveVariantUnitPrice(\App\Models\ProductVariant $variant): ?float
+    {
+        // Önce TRY'ye çevrilmiş birim fiyatı dene
+        try {
+            $converted = $variant->getPriceInCurrency('TRY');
+            if ($converted !== null) {
+                return (float) $converted;
+            }
+        } catch (\Throwable $e) {
+            // ignore and try fallbacks
+        }
+        // Fallback: variant.price
+        if ($variant->price !== null) {
+            return (float) $variant->price;
+        }
+        // Fallback: product.base_price
+        if ($variant->product && $variant->product->base_price !== null) {
+            return (float) $variant->product->base_price;
+        }
+        return null;
+    }
+
+    /**
+     * Basit kargo ücreti hesaplama (şimdilik sabit)
+     */
+    private function computeShippingAmount(array $shippingAddress, array $billingAddress, $user): float
+    {
+        return (float) (config('shipping.flat_rate', 30.0));
     }
 
     /**

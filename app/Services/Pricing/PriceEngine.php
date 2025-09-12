@@ -53,7 +53,7 @@ class PriceEngine
         array $context = []
     ): PriceResult {
         try {
-            $customerType = $this->customerTypeDetector->detect($customer);
+            $customerType = $this->customerTypeDetector->detect($customer, $context);
             
             if ($this->cachingEnabled) {
                 $cacheKey = $this->generateCacheKey($variant, $quantity, $customer, $context);
@@ -88,13 +88,47 @@ class PriceEngine
         array $context,
         CustomerType $customerType
     ): PriceResult {
-        $strategy = $this->getStrategyForCustomerType($customerType);
+        $preferredStrategy = $this->getStrategyForCustomerType($customerType);
         
-        if (!$strategy) {
+        if (!$preferredStrategy) {
             throw new InvalidPriceException("No pricing strategy found for customer type: {$customerType->value}");
         }
 
-        if (!$strategy->canCalculatePrice($variant, $quantity, $customer)) {
+        // Build a fallback chain by customer type
+        $fallbackTypes = [];
+        if ($customerType->isB2B()) {
+            // Try B2B-compatible first (covers WHOLESALE), then B2C, then Guest
+            $fallbackTypes = [CustomerType::B2B, CustomerType::B2C, CustomerType::GUEST];
+        } elseif ($customerType === CustomerType::GUEST) {
+            // Guest first, then B2C as a soft fallback
+            $fallbackTypes = [CustomerType::GUEST, CustomerType::B2C];
+        } else {
+            // B2C/RETAIL: try B2C, then Guest
+            $fallbackTypes = [CustomerType::B2C, CustomerType::GUEST];
+        }
+
+        // Resolve strategies from types, de-duplicate and skip nulls
+        $candidates = collect($fallbackTypes)
+            ->map(fn(CustomerType $type) => $this->getStrategyForCustomerType($type))
+            ->filter()
+            ->uniqueStrict(fn($s) => get_class($s))
+            ->values();
+
+        // Ensure preferred strategy is first in the list
+        if ($candidates->isEmpty() || get_class($candidates->first()) !== get_class($preferredStrategy)) {
+            $candidates->prepend($preferredStrategy);
+        }
+
+        // Find the first strategy that can calculate
+        $strategy = $candidates->first(function (PricingStrategyInterface $strategy) use ($variant, $quantity, $customer) {
+            try {
+                return $strategy->canCalculatePrice($variant, $quantity, $customer);
+            } catch (\Throwable $t) {
+                return false;
+            }
+        });
+
+        if (!$strategy) {
             throw new InvalidPriceException("Cannot calculate price for the given parameters");
         }
 
@@ -107,6 +141,16 @@ class PriceEngine
         // Add performance metadata
         $result = $result->withMetadata('calculation_time_ms', round($calculationTime, 2));
         $result = $result->withMetadata('strategy_used', get_class($strategy));
+        if (get_class($strategy) !== get_class($preferredStrategy)) {
+            Log::warning('Pricing fallback strategy used', [
+                'variant_id' => $variant->id,
+                'quantity' => $quantity,
+                'customer_id' => $customer?->id,
+                'detected_customer_type' => $customerType->value,
+                'preferred_strategy' => get_class($preferredStrategy),
+                'used_strategy' => get_class($strategy)
+            ]);
+        }
         $result = $result->withMetadata('customer_tier', $this->customerTypeDetector->getCustomerTier($customer));
         
         // Log performance if calculation takes too long

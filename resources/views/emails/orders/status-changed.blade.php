@@ -26,13 +26,13 @@
             
             <div class="status-update">
                 <h3>📍 Durum Güncellemesi</h3>
-                <p><strong>{{ $message }}</strong></p>
+                <p><strong>{{ $statusMessage }}</strong></p>
             </div>
 
             <div class="order-details">
                 <h3>Sipariş Detayları</h3>
                 <p><strong>Sipariş No:</strong> #{{ $order->order_number }}</p>
-                <p><strong>Yeni Durum:</strong> {{ $order->status->value }}</p>
+                <p><strong>Yeni Durum:</strong> {{ \App\Enums\OrderStatus::from((string) $order->status)->getLabel() }}</p>
                 <p><strong>Güncelleme Tarihi:</strong> {{ now()->format('d.m.Y H:i') }}</p>
                 <p><strong>Toplam Tutar:</strong> {{ number_format($order->total_amount, 2) }} ₺</p>
                 

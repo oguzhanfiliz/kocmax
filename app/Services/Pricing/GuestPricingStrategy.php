@@ -20,9 +20,22 @@ class GuestPricingStrategy extends AbstractPricingStrategy
 
     public function getBasePrice(ProductVariant $variant): Price
     {
-        // Guests pay the full retail price (same as B2C)
-        $price = $variant->price ?? $variant->product->base_price;
-        return new Price((float) $price);
+        // Misafir kullanıcılar için fiyat TRY'ye çevrilerek hesaplanır
+        try {
+            $amountTry = $variant->getPriceInCurrency('TRY');
+            if ($amountTry <= 0 && $variant->product?->base_price) {
+                $converter = app(\App\Services\CurrencyConversionService::class);
+                $amountTry = $converter->convertPrice(
+                    (float) $variant->product->base_price,
+                    (string) ($variant->product->base_currency ?? 'TRY'),
+                    'TRY'
+                );
+            }
+        } catch (\Throwable $e) {
+            $amountTry = (float) ($variant->price ?? $variant->product->base_price ?? 0);
+        }
+
+        return new Price((float) $amountTry, 'TRY');
     }
 
     public function getAvailableDiscounts(

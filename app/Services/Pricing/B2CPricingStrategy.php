@@ -20,9 +20,24 @@ class B2CPricingStrategy extends AbstractPricingStrategy
 
     public function getBasePrice(ProductVariant $variant): Price
     {
-        // B2C customers pay the full retail price
-        $price = $variant->price ?? $variant->product->base_price;
-        return new Price((float) $price);
+        // B2C müşterileri için fiyat TRY'ye çevrilerek hesaplanır
+        try {
+            $amountTry = $variant->getPriceInCurrency('TRY');
+            if ($amountTry <= 0 && $variant->product?->base_price) {
+                // Varyant fiyatı yoksa ürün baz fiyatını TRY'ye çevir
+                $converter = app(\App\Services\CurrencyConversionService::class);
+                $amountTry = $converter->convertPrice(
+                    (float) $variant->product->base_price,
+                    (string) ($variant->product->base_currency ?? 'TRY'),
+                    'TRY'
+                );
+            }
+        } catch (\Throwable $e) {
+            // Son çare: ham değerler
+            $amountTry = (float) ($variant->price ?? $variant->product->base_price ?? 0);
+        }
+
+        return new Price((float) $amountTry, 'TRY');
     }
 
     public function getAvailableDiscounts(
@@ -31,6 +46,25 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         int $quantity = 1
     ): Collection {
         $discounts = collect();
+
+        // Smart Pricing (ProductListResource ile tutarlı indirim yüzdesi)
+        try {
+            /** @var \App\Services\Pricing\CustomerTypeDetectorService $detector */
+            $detector = app(\App\Services\Pricing\CustomerTypeDetectorService::class);
+            $smartPercentage = (float) $detector->getDiscountPercentage($customer, $quantity);
+            if ($smartPercentage > 0) {
+                $discounts->push(
+                    Discount::percentage(
+                        $smartPercentage,
+                        'Smart Pricing',
+                        'Kullanıcı tipine göre otomatik indirim',
+                        92 // Kampanyadan biraz düşük, B2C için yüksek öncelik
+                    )
+                );
+            }
+        } catch (\Throwable $e) {
+            // ignore smart pricing if service not available
+        }
 
         // Add customer-specific discounts
         $discounts = $discounts->merge($this->getCustomerDiscounts($variant, $customer, $quantity));

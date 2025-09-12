@@ -17,7 +17,7 @@ class OrderStatusChangedMail extends Mailable
 
     public function __construct(
         public Order $order,
-        public string $message
+        public string $statusMessage
     ) {}
 
     public function envelope(): Envelope
@@ -34,7 +34,7 @@ class OrderStatusChangedMail extends Mailable
             with: [
                 'order' => $this->order,
                 'user' => $this->order->user,
-                'message' => $this->message,
+                'statusMessage' => $this->statusMessage,
             ],
         );
     }

@@ -136,6 +136,13 @@ class Order extends Model
         return $query->where('status', 'delivered');
     }
 
+    // Completed order scope (used by pricing/loyalty calculations)
+    public function scopeCompleted($query)
+    {
+        // Consider an order completed when it is delivered
+        return $query->where('status', 'delivered');
+    }
+
     public function scopeCancelled($query)
     {
         return $query->where('status', 'cancelled');

@@ -20,16 +20,28 @@ class B2BPricingStrategy extends AbstractPricingStrategy
 
     public function getBasePrice(ProductVariant $variant): Price
     {
-        // B2B customers get the variant price or base price from product
-        $price = $variant->price ?? $variant->product->base_price;
-        
-        // Apply default B2B discount if configured
+        // B2B fiyatını TRY'ye çevir ve varsayılan B2B indirimi uygula
+        try {
+            $amountTry = $variant->getPriceInCurrency('TRY');
+            if ($amountTry <= 0 && $variant->product?->base_price) {
+                $converter = app(\App\Services\CurrencyConversionService::class);
+                $amountTry = $converter->convertPrice(
+                    (float) $variant->product->base_price,
+                    (string) ($variant->product->base_currency ?? 'TRY'),
+                    'TRY'
+                );
+            }
+        } catch (\Throwable $e) {
+            $amountTry = (float) ($variant->price ?? $variant->product->base_price ?? 0);
+        }
+
+        // Varsayılan B2B indirimi
         $defaultDiscount = $this->customerType->getDefaultDiscountPercentage();
         if ($defaultDiscount > 0) {
-            $price = $price * (1 - $defaultDiscount / 100);
+            $amountTry = $amountTry * (1 - $defaultDiscount / 100);
         }
-        
-        return new Price((float) $price);
+
+        return new Price((float) $amountTry, 'TRY');
     }
 
     public function getAvailableDiscounts(
@@ -38,6 +50,25 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         int $quantity = 1
     ): Collection {
         $discounts = collect();
+
+        // Smart Pricing (ProductListResource ile tutarlı indirim yüzdesi)
+        try {
+            /** @var \App\Services\Pricing\CustomerTypeDetectorService $detector */
+            $detector = app(\App\Services\Pricing\CustomerTypeDetectorService::class);
+            $smartPercentage = (float) $detector->getDiscountPercentage($customer, $quantity);
+            if ($smartPercentage > 0) {
+                $discounts->push(
+                    Discount::percentage(
+                        $smartPercentage,
+                        'Smart Pricing',
+                        'Kullanıcı tipine göre otomatik indirim',
+                        92 // Dealer indirimlerinin altında, yine de yüksek öncelik
+                    )
+                );
+            }
+        } catch (\Throwable $e) {
+            // ignore smart pricing if service not available
+        }
 
         // Add customer-specific dealer discounts
         $discounts = $discounts->merge($this->getCustomerDiscounts($variant, $customer, $quantity));

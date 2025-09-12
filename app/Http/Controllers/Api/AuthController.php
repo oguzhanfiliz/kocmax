@@ -148,9 +148,19 @@ class AuthController extends Controller
 
         // Check email verification for B2C users (only if enabled)
         if (config('auth.email_verification_enabled') && !$user->is_approved_dealer && !$user->email_verified_at) {
+            // Doğrulama token'ını yenile ve e-posta gönder
+            try {
+                $user->update(['email_verification_token' => Str::random(64)]);
+                Mail::to($user->email)->send(new EmailVerificationMail($user));
+            } catch (\Throwable $e) {
+                // E-posta gönderilemese bile kullanıcıya doğrulama gerektiğini bildir
+            }
+
+            Auth::logout();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Giriş yapmadan önce lütfen e-posta adresinizi doğrulayın.',
+                'message' => 'Giriş yapmadan önce e-posta adresinizi doğrulayın. Doğrulama bağlantısı tekrar gönderildi.',
                 'data' => [
                     'email_verification_required' => true,
                     'email' => $user->email
