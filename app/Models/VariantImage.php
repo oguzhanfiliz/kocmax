@@ -23,6 +23,21 @@ class VariantImage extends Model
         'sort_order' => 'integer',
     ];
 
+    public function getImageUrlAttribute(): ?string
+    {
+        // Depoda relatif yol saklanır; burada tam URL döndür
+        $path = $this->attributes['image_url'] ?? null;
+        if (!$path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
+    }
+
     /**
      * Image belongs to a product variant
      */

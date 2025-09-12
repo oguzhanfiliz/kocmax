@@ -15,6 +15,7 @@ use Filament\Infolists\Infolist;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\Order\OrderService;
+use Filament\Support\Facades\FilamentView;
 
 class OrderResource extends Resource
 {
@@ -436,7 +437,9 @@ class OrderResource extends Resource
                                             ?? $record->product?->primaryImage?->image_url
                                             ?? null;
                                         if (!$url) return '';
-                                        return '<img src="' . e($url) . '" alt="Variant" class="h-12 w-12 rounded-md object-cover" />';
+                                        
+                                        // Tıklanabilir resim için onclick ile modal aç
+                                        return '<img src="' . e($url) . '" alt="Variant" class="h-12 w-12 rounded-md object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal(\'' . e($url) . '\')" />';
                                     })
                                     ->html(),
                                 Infolists\Components\TextEntry::make('product.name')
@@ -501,8 +504,19 @@ class OrderResource extends Resource
                                 Infolists\Components\TextEntry::make('edit_link')
                                     ->label('İncele')
                                     ->state(function ($record) {
-                                        $url = \App\Filament\Resources\ProductResource::getUrl('edit', ['record' => $record->product_id]);
-                                        return '<a href="' . e($url) . '" target="_blank" class="text-primary underline">İncele</a>';
+                                        try {
+                                            // Admin panelindeki ürün düzenleme sayfasına yönlendir (slug ile)
+                                            $product = $record->product ?? null;
+                                            if (!$product || !$product->slug) {
+                                                return '';
+                                            }
+                                            
+                                            $adminUrl = \App\Filament\Resources\ProductResource::getUrl('edit', ['record' => $product->slug]);
+                                            $adminUrl .= '?activeRelationManager=1';
+                                            return '<a href="' . e($adminUrl) . '" target="_blank" class="text-primary underline">İncele</a>';
+                                        } catch (\Throwable $e) {
+                                            return '';
+                                        }
                                     })
                                     ->html(),
                             ])

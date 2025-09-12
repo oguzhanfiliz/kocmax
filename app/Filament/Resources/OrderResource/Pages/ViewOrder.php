@@ -9,6 +9,7 @@ use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Contracts\View\View;
 
 class ViewOrder extends ViewRecord
 {
@@ -84,5 +85,17 @@ class ViewOrder extends ViewRecord
     public function getTitle(): string
     {
         return 'Sipariş: ' . $this->record->order_number;
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            // Modal'ı footer widget olarak ekle
+        ];
+    }
+
+    public function getFooter(): ?View
+    {
+        return view('filament.components.image-modal');
     }
 }
