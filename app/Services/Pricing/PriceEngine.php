@@ -15,6 +15,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Fiyatlandırma motoru: müşteri tipine göre uygun stratejiyi seçer,
+ * hesaplamayı gerçekleştirir, önbellekleme ve geri dönüş (fallback)
+ * mekanizmalarını yönetir.
+ */
 class PriceEngine
 {
     // Fiyatlandırma motoru: stratejilerle fiyat hesaplar, önbellek ve geri dönüş mekanizması uygular
@@ -26,6 +31,13 @@ class PriceEngine
     private bool $cachingEnabled;
     private int $cacheLifetime;
 
+    /**
+     * Yapıcı: bağımlılıkları ve önbellek ayarlarını yapılandırır.
+     *
+     * @param CustomerTypeDetector $customerTypeDetector Müşteri tipi belirleyicisi
+     * @param bool $cachingEnabled Önbellek etkin mi?
+     * @param int $cacheLifetime Önbellek yaşam süresi (saniye)
+     */
     public function __construct(
         CustomerTypeDetector $customerTypeDetector,
         bool $cachingEnabled = true,
@@ -37,7 +49,12 @@ class PriceEngine
         $this->cacheLifetime = $cacheLifetime;
     }
 
-    // Strateji ekler ve önceliğe göre (yüksekten düşüğe) sıralar
+    /**
+     * Strateji ekler ve önceliğe göre (yüksekten düşüğe) sıralar.
+     *
+     * @param PricingStrategyInterface $strategy Eklenecek strateji
+     * @return self
+     */
     public function addStrategy(PricingStrategyInterface $strategy): self
     {
         $this->strategies->push($strategy);
@@ -48,7 +65,16 @@ class PriceEngine
         return $this;
     }
 
-    // Verilen varyant için fiyat hesaplar; gerekirse önbellek kullanır
+    /**
+     * Verilen varyant için fiyat hesaplar; gerekirse önbellek kullanır.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param array $context Ek bağlam bilgileri
+     * @return PriceResult Hesaplanan fiyat sonucu
+     * @throws PricingException Hesaplama başarısız olursa fırlatılır
+     */
     public function calculatePrice(
         ProductVariant $variant,
         int $quantity = 1,
@@ -84,7 +110,16 @@ class PriceEngine
         }
     }
 
-    // Fiyat hesaplamayı gerçekleştirir; müşteri tipine göre strateji seçer ve geri dönüş zinciri uygular
+    /**
+     * Fiyat hesaplamayı gerçekleştirir; müşteri tipine göre strateji seçer ve geri dönüş zinciri uygular.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param array $context Ek bağlam
+     * @param CustomerType $customerType Tespit edilen müşteri tipi
+     * @return PriceResult Hesaplanan fiyat sonucu
+     */
     private function performPriceCalculation(
         ProductVariant $variant,
         int $quantity,
@@ -171,7 +206,14 @@ class PriceEngine
         return $result;
     }
 
-    // Uygun stratejiye göre mevcut indirimleri döndürür
+    /**
+     * Uygun stratejiye göre mevcut indirimleri döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param int $quantity Adet
+     * @return Collection İndirimler
+     */
     public function getAvailableDiscounts(
         ProductVariant $variant,
         ?User $customer = null,
@@ -187,7 +229,14 @@ class PriceEngine
         return $strategy->getAvailableDiscounts($variant, $customer, $quantity);
     }
 
-    // Verilen parametrelerle fiyatın hesaplanabilir olup olmadığını doğrular
+    /**
+     * Verilen parametrelerle fiyatın hesaplanabilir olup olmadığını doğrular.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @return bool Hesaplanabiliyorsa true
+     */
     public function validatePricing(
         ProductVariant $variant,
         int $quantity,
@@ -211,7 +260,14 @@ class PriceEngine
         }
     }
 
-    // Birden fazla kalem için toplu fiyat hesaplar; hatalı kalemleri atlayarak devam eder
+    /**
+     * Birden fazla kalem için toplu fiyat hesaplar; hatalı kalemleri atlayarak devam eder.
+     *
+     * @param array $items Her elemanda `variant` (ProductVariant) ve `quantity` (int) beklenir
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param array $context Ek bağlam
+     * @return Collection Sonuç listesi
+     */
     public function bulkCalculatePrice(array $items, ?User $customer = null, array $context = []): Collection
     {
         $results = collect();
@@ -247,7 +303,12 @@ class PriceEngine
         return $results;
     }
 
-    // Yaygın miktarlar için ön hesaplama yaparak önbelleği ısıtır
+    /**
+     * Yaygın miktarlar için ön hesaplama yaparak önbelleği ısıtır.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     */
     public function preCalculatePrices(ProductVariant $variant, ?User $customer = null): void
     {
         if (!$this->cachingEnabled) {
@@ -272,7 +333,12 @@ class PriceEngine
         }
     }
 
-    // Varyant (ve kullanıcı) için fiyat önbelleğini temizler
+    /**
+     * Varyant (ve kullanıcı) için fiyat önbelleğini temizler.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     */
     public function clearPriceCache(ProductVariant $variant, ?User $customer = null): void
     {
         if (!$this->cachingEnabled) {
@@ -291,13 +357,26 @@ class PriceEngine
         }
     }
 
-    // Verilen müşteri tipini destekleyen ilk stratejiyi döndürür
+    /**
+     * Verilen müşteri tipini destekleyen ilk stratejiyi döndürür.
+     *
+     * @param CustomerType $customerType Müşteri tipi
+     * @return PricingStrategyInterface|null Uygun strateji veya null
+     */
     private function getStrategyForCustomerType(CustomerType $customerType): ?PricingStrategyInterface
     {
         return $this->strategies->first(fn(PricingStrategyInterface $strategy) => $strategy->supports($customerType));
     }
 
-    // Fiyat hesaplaması için deterministik önbellek anahtarı üretir
+    /**
+     * Fiyat hesaplaması için deterministik önbellek anahtarı üretir.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param array $context Ek bağlam
+     * @return string Önbellek anahtarı
+     */
     private function generateCacheKey(ProductVariant $variant, int $quantity, ?User $customer, array $context): string
     {
         $customerKey = $customer ? $customer->id : 'guest';
@@ -306,19 +385,33 @@ class PriceEngine
         return "price_calculation:{$variant->id}:{$customerKey}:{$quantity}:{$contextHash}";
     }
 
-    // Kayıtlı stratejilerin koleksiyonunu döndürür
+    /**
+     * Kayıtlı stratejilerin koleksiyonunu döndürür.
+     *
+     * @return Collection<PricingStrategyInterface>
+     */
     public function getRegisteredStrategies(): Collection
     {
         return $this->strategies;
     }
 
-    // Belirtilen müşteri tipi için strateji mevcut mu kontrol eder
+    /**
+     * Belirtilen müşteri tipi için strateji mevcut mu kontrol eder.
+     *
+     * @param CustomerType $customerType Müşteri tipi
+     * @return bool Mevcutsa true
+     */
     public function hasStrategyFor(CustomerType $customerType): bool
     {
         return $this->getStrategyForCustomerType($customerType) !== null;
     }
 
-    // Önbelleği etkinleştirir ve yaşam süresini ayarlar
+    /**
+     * Önbelleği etkinleştirir ve yaşam süresini ayarlar.
+     *
+     * @param int $lifetime Önbellek yaşam süresi (saniye)
+     * @return self
+     */
     public function enableCaching(int $lifetime = 300): self
     {
         $this->cachingEnabled = true;
@@ -327,7 +420,11 @@ class PriceEngine
         return $this;
     }
 
-    // Önbelleği devre dışı bırakır
+    /**
+     * Önbelleği devre dışı bırakır.
+     *
+     * @return self
+     */
     public function disableCaching(): self
     {
         $this->cachingEnabled = false;

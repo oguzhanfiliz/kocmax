@@ -11,6 +11,12 @@ use App\ValueObjects\Pricing\Discount;
 use App\ValueObjects\Pricing\Price;
 use Illuminate\Support\Collection;
 
+/**
+ * Misafir (oturum açmamış) kullanıcılar için fiyatlandırma stratejisi.
+ *
+ * Temel fiyat TRY cinsinden hesaplanır ve oturum gerektirmeyen herkese açık
+ * promosyonlar ile sınırlı toplu alım indirimlerini uygular.
+ */
 class GuestPricingStrategy extends AbstractPricingStrategy
 {
     /**

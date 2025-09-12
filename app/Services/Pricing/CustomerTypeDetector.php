@@ -8,8 +8,21 @@ use App\Enums\Pricing\CustomerType;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Müşteri tipini (B2B, B2C, WHOLESALE, RETAIL, GUEST) belirleyen yardımcı sınıf.
+ *
+ * Kullanıcı rolü, bağlam bilgisi ve kullanıcı özelliklerine göre müşteri tipini
+ * tespit eder; ayrıca yardımcı kontrol metodları sağlar.
+ */
 class CustomerTypeDetector
 {
+    /**
+     * Kullanıcı ve bağlam bilgisine göre müşteri tipini tespit eder.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @param array $context Ek bağlam (force_type, order_quantity vb.)
+     * @return CustomerType Tespit edilen müşteri tipi
+     */
     public function detect(?User $customer = null, array $context = []): CustomerType
     {
         if (!$customer) {
@@ -35,6 +48,13 @@ class CustomerTypeDetector
         return $customerType;
     }
 
+    /**
+     * Asıl tespit mantığını uygular (rol, bağlam ve kullanıcı alanları).
+     *
+     * @param User $customer Kullanıcı
+     * @param array $context Bağlam
+     * @return CustomerType Müşteri tipi
+     */
     private function doDetect(User $customer, array $context = []): CustomerType
     {
         // Önce müşteri tipi override var mı kontrol et
@@ -88,26 +108,56 @@ class CustomerTypeDetector
         return CustomerType::B2C;
     }
 
+    /**
+     * Kullanıcının B2B müşteri olup olmadığını döndürür.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @return bool B2B ise true
+     */
     public function isB2BCustomer(?User $customer = null): bool
     {
         return $this->detect($customer)->isB2B();
     }
 
+    /**
+     * Kullanıcının B2C müşteri olup olmadığını döndürür.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @return bool B2C ise true
+     */
     public function isB2CCustomer(?User $customer = null): bool
     {
         return $this->detect($customer)->isB2C();
     }
 
+    /**
+     * Kullanıcının toptan (WHOLESALE) müşteri olup olmadığını döndürür.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @return bool Wholesale ise true
+     */
     public function isWholesaleCustomer(?User $customer = null): bool
     {
         return $this->detect($customer) === CustomerType::WHOLESALE;
     }
 
+    /**
+     * Kullanıcının bayi fiyatlarına erişip erişemeyeceğini döndürür.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @return bool Erişebiliyorsa true
+     */
     public function canAccessDealerPrices(?User $customer = null): bool
     {
         return $this->detect($customer)->canAccessDealerPrices();
     }
 
+    /**
+     * Kullanıcının müşteri katmanını (tier) döndürür.
+     *
+     * @param User|null $customer Kullanıcı (opsiyonel)
+     * @return string Müşteri katmanı anahtarı
+     */
     public function getCustomerTier(?User $customer = null): string
     {
         $customerType = $this->detect($customer);

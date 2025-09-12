@@ -14,6 +14,14 @@ use App\ValueObjects\Pricing\PriceResult;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
+/**
+ * Fiyatlandırma stratejileri için ortak davranışları barındıran soyut sınıf.
+ *
+ * - Temel fiyatın hesaplanması, indirimlerin uygulanması ve giriş doğrulamaları
+ *   gibi ortak akışları içerir.
+ * - Alt sınıflar müşteri tipine göre (B2B, B2C, misafir vb.) özel indirim kurallarını
+ *   uygulamak için gerekli metotları sağlar.
+ */
 abstract class AbstractPricingStrategy implements PricingStrategyInterface
 {
     // Müşteri tipini tutar (B2B, B2C, vb.)

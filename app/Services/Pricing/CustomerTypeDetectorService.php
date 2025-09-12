@@ -8,12 +8,19 @@ use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
- * Kullanıcı tipini tespit eden servis - B2B/B2C/Guest ayırımı
+ * Müşteri tipini tespit eden servis - B2B/B2C/WHOLESALE/RETAIL/Guest ayırımı.
+ *
+ * Request ve User bilgilerinden müşteri tipini belirler, müşteri katmanını (tier)
+ * ve strateji etiketini üretir, ayrıca akıllı fiyatlandırma için indirim yüzdesi
+ * hesaplamasını sağlar.
  */
 class CustomerTypeDetectorService
 {
     /**
-     * Request'ten user tipini belirle
+     * HTTP isteğinden müşteri tipini ve ilgili bilgileri tespit eder.
+     *
+     * @param Request $request HTTP isteği
+     * @return array{type:string,user:?\App\Models\User,is_authenticated:bool,is_dealer:bool,pricing_tier_id: mixed}
      */
     public function detectFromRequest(Request $request): array
     {
@@ -29,7 +36,10 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * User objesinden customer type belirle
+     * User nesnesinden müşteri tipini belirler.
+     *
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return string Müşteri tipi (B2B, B2C, WHOLESALE, RETAIL, GUEST)
      */
     public function getCustomerType(?User $user): string
     {
@@ -37,7 +47,7 @@ class CustomerTypeDetectorService
             return 'B2C';
         }
         
-        // Customer type override varsa öncelik ver
+        // Müşteri tipi override varsa öncelik ver
         if (!empty($user->customer_type_override)) {
             return strtoupper($user->customer_type_override);
         }
@@ -60,7 +70,7 @@ class CustomerTypeDetectorService
             return 'RETAIL';
         }
         
-        // Company bilgisi varsa B2B kabul et
+        // Şirket bilgisi varsa B2B kabul et
         if (!empty($user->company_name) || !empty($user->tax_number)) {
             return 'B2B';
         }
@@ -74,7 +84,10 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * User'ın dealer olup olmadığını kontrol et
+     * Kullanıcının dealer (bayi) olup olmadığını kontrol eder.
+     *
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return bool Dealer ise true
      */
     public function isDealer(?User $user): bool
     {
@@ -87,7 +100,10 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Customer tier belirle
+     * Kullanıcının müşteri katmanını (tier) belirler.
+     *
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return string Tier anahtarı
      */
     public function getCustomerTier(?User $user): string
     {
@@ -97,7 +113,7 @@ class CustomerTypeDetectorService
 
         $customerType = $this->getCustomerType($user);
         
-        // Determine customer tier based on order history and type
+        // Sipariş geçmişi ve tipe göre müşteri katmanını belirle
         $totalOrders = $user->orders()->completed()->count();
         $totalSpent = (float) ($user->orders()->completed()->sum('total_amount') ?? 0);
 
@@ -121,7 +137,10 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Customer type'a göre fiyatlandırma stratejisi belirle
+     * Müşteri tipine göre fiyatlandırma stratejisi anahtarı döndürür.
+     *
+     * @param string $customerType Müşteri tipi
+     * @return string Strateji anahtarı (dealer|retail|guest)
      */
     public function getPricingStrategy(string $customerType): string
     {
@@ -134,7 +153,11 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Müşteri tipine göre indirim yüzdesi hesapla
+     * Müşteri tipine ve miktara göre indirim yüzdesini hesaplar.
+     *
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @param int $quantity Adet
+     * @return float İndirim yüzdesi
      */
     public function getDiscountPercentage(?User $user, int $quantity = 1): float
     {
@@ -161,7 +184,11 @@ class CustomerTypeDetectorService
     }
 
     /**
-     * Uygulanabilir pricing rule'ı bul
+     * Uygulanabilir pricing rule'ı bulur (özel: veritabanı sorgusu).
+     *
+     * @param string $customerType Müşteri tipi
+     * @param int $quantity Adet
+     * @return \App\Models\PricingRule|null Uygun kural veya null
      */
     private function getApplicablePricingRule(string $customerType, int $quantity): ?\App\Models\PricingRule
     {
@@ -173,7 +200,10 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Customer type için display label döndür
+     * Müşteri tipi için görüntülenecek etiketi döndürür.
+     *
+     * @param string $customerType Müşteri tipi
+     * @return string Etiket
      */
     public function getTypeLabel(string $customerType): string
     {
@@ -188,7 +218,9 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Feature flag kontrolü - Smart pricing aktif mi?
+     * Özellik bayrağı kontrolü - Akıllı fiyatlandırma aktif mi?
+     *
+     * @return bool Aktifse true
      */
     public function isSmartPricingEnabled(): bool
     {
@@ -196,7 +228,12 @@ class CustomerTypeDetectorService
     }
     
     /**
-     * Cache key oluştur (user tipine göre)
+     * Önbellek anahtarı üretir (kullanıcı segmentine göre).
+     *
+     * @param string $baseKey Temel anahtar
+     * @param string $customerType Müşteri tipi
+     * @param int|null $userId Kullanıcı ID (opsiyonel)
+     * @return string Önbellek anahtarı
      */
     public function getCacheKey(string $baseKey, string $customerType, ?int $userId = null): string
     {
