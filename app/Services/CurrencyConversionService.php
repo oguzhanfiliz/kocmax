@@ -19,21 +19,19 @@ class CurrencyConversionService
      * Uses TCMB exchange rates for real-time conversion
      */
     public function convertVariantPrice(
-        ProductVariant $variant, 
+        ProductVariant $variant,
         string $targetCurrency = 'TRY'
     ): float {
-        $sourceCurrency = $variant->getSourceCurrency();
-        $sourcePrice = $variant->getSourcePrice();
-        
-        if ($sourceCurrency === $targetCurrency) {
-            return $sourcePrice;
+        $from = $variant->getSourceCurrency();
+        $amount = $variant->getSourcePrice();
+
+        if ($from === $targetCurrency) {
+            return round((float) $amount, 2);
         }
 
-        $cacheKey = $this->getCacheKey($sourceCurrency, $targetCurrency);
-        
-        return Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($variant, $targetCurrency) {
-            return $this->performConversion($variant, $targetCurrency);
-        });
+        // Cache only the exchange rate, not the converted amount
+        $rate = $this->getExchangeRate($from, $targetCurrency);
+        return round((float) $amount * $rate, 2);
     }
 
     /**

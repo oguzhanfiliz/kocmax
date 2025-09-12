@@ -22,7 +22,7 @@ class ContactAutoReplyMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Mesajınız Alındı - MUTFAK YAPIM',
+            subject: 'Mesajınız Alındı - Koçmax',
         );
     }
 

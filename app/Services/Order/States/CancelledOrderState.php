@@ -13,18 +13,18 @@ class CancelledOrderState implements OrderStateInterface
 {
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
-        // Cancelled is typically a final state
-        // In some systems, cancelled orders might be able to be reinstated,
-        // but for now we'll keep it final
+        // İptal durumu genellikle nihai bir durumdur
+        // Bazı sistemlerde iptal edilen siparişler yeniden etkinleştirilebilir,
+        // ancak şimdilik bunu nihai tutacağız
         return false;
     }
 
     public function process(Order $order): void
     {
-        // Cancelled state processing
-        // - Ensure refunds are processed
-        // - Ensure inventory is restored
-        // - Send cancellation notifications
+        //  İptal durumu işleme adımları
+        // - İadelerin işlendiğinden emin ol
+        // - Stokların geri yüklendiğinden emin ol
+        // - İptal bildirimlerini gönder
         
         Log::debug('Processing cancelled order', ['order_id' => $order->id]);
         
@@ -47,7 +47,7 @@ class CancelledOrderState implements OrderStateInterface
 
     public function getAvailableTransitions(): array
     {
-        // No transitions available from cancelled state
+        // İptal durumundan geçiş yok
         return [];
     }
 
@@ -59,7 +59,7 @@ class CancelledOrderState implements OrderStateInterface
             'cancelled_at' => now()
         ]);
 
-        // Actions to perform when entering cancelled state
+        // İptal durumuna girildiğinde yapılacak işlemler
         $this->processInventoryRestoration($order);
         $this->processRefundIfNeeded($order);
         $this->notifyStakeholders($order);
@@ -68,7 +68,7 @@ class CancelledOrderState implements OrderStateInterface
 
     public function exit(Order $order): void
     {
-        // Cancelled state is typically final, so this shouldn't be called
+        // İptal durumu genellikle nihai olduğundan bu metod normalde çağrılmamalıdır
         Log::warning('Attempting to exit cancelled state - this should not normally happen', [
             'order_id' => $order->id,
             'order_number' => $order->order_number
@@ -83,7 +83,7 @@ class CancelledOrderState implements OrderStateInterface
 
         foreach ($order->items as $item) {
             try {
-                // Only restore inventory if it was previously reserved (i.e., order was in processing state)
+                // Stok sadece önceden rezerve edildiyse geri yüklenir (ör. sipariş processing durumundayken)
                 if ($order->getOriginal('status') === 'processing') {
                     if ($item->productVariant) {
                         $item->productVariant->increment('stock', $item->quantity);
@@ -125,7 +125,7 @@ class CancelledOrderState implements OrderStateInterface
         ]);
 
         try {
-            // In a real implementation, this would call the payment service to process refund
+            // Gerçek uygulamada, iade işlemi için ödeme servisi çağrılır
             $paymentService = app(\App\Services\Order\OrderPaymentService::class);
             $refundResult = $paymentService->processRefund($order, $order->total_amount, 'Order cancellation');
             
@@ -150,10 +150,10 @@ class CancelledOrderState implements OrderStateInterface
 
     private function notifyStakeholders(Order $order): void
     {
-        // Notify customer
+        // Müşteriyi bilgilendir
         $this->notifyCustomer($order);
         
-        // Notify internal teams
+        // Dahili ekipleri bilgilendir
         $this->notifyInternalTeams($order);
     }
 
@@ -171,7 +171,7 @@ class CancelledOrderState implements OrderStateInterface
 
         Log::info('Recording cancellation metrics', $cancellationData);
         
-        // In a real implementation, this would store cancellation analytics data
+        // Gerçek uygulamada, iptal analitik verileri depolanır
     }
 
     private function verifyCancellationTasks(Order $order): void
@@ -200,10 +200,10 @@ class CancelledOrderState implements OrderStateInterface
     {
         Log::debug('Sending cancellation notifications', ['order_id' => $order->id]);
         
-        // Send to customer
+        // Müşteriye gönder
         $this->notifyCustomer($order);
         
-        // Send to internal teams
+        // Dahili ekiplere gönder
         $this->notifyInternalTeams($order);
     }
 
@@ -214,9 +214,9 @@ class CancelledOrderState implements OrderStateInterface
             'order_value' => $order->total_amount
         ]);
 
-        // Update cancellation rate metrics
-        // Track cancellation reasons
-        // Update customer cancellation history
+        // İptal oranı metriklerini güncelle
+        // İptal nedenlerini takip et
+        // Müşteri iptal geçmişini güncelle
     }
 
     private function notifyCustomer(Order $order): void
@@ -229,7 +229,7 @@ class CancelledOrderState implements OrderStateInterface
                 'customer_email' => $customerEmail
             ]);
             
-            // In a real implementation, send cancellation confirmation email
+            // Gerçek uygulamada iptal onay e-postası gönderilir
         }
     }
 
@@ -240,8 +240,8 @@ class CancelledOrderState implements OrderStateInterface
             'order_value' => $order->total_amount
         ]);
 
-        // Notify customer service, sales, warehouse teams
-        // Alert if high-value order cancellation
+        // Müşteri hizmetleri, satış ve depo ekiplerini bilgilendir
+        // Yüksek tutarlı sipariş iptalinde uyarı gönder
         if ($order->total_amount > 1000) {
             Log::alert('High-value order cancelled', [
                 'order_id' => $order->id,
@@ -253,19 +253,19 @@ class CancelledOrderState implements OrderStateInterface
 
     private function verifyInventoryRestored(Order $order): bool
     {
-        // In a real implementation, this would verify that inventory was properly restored
+        // Gerçek uygulamada, stokların düzgün şekilde geri yüklendiği doğrulanır
         return true;
     }
 
     private function verifyRefundProcessed(Order $order): bool
     {
-        // In a real implementation, this would verify that refund was processed if needed
+        // Gerçek uygulamada, gerekiyorsa iadenin işlendiği doğrulanır
         return !$order->isPaid() || !empty($order->refund_transaction_id);
     }
 
     private function verifyNotificationsSent(Order $order): bool
     {
-        // In a real implementation, this would verify that notifications were sent
+        // Gerçek uygulamada, bildirimlerin gönderildiği doğrulanır
         return true;
     }
 }

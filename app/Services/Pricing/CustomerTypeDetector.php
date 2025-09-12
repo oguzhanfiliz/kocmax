@@ -16,7 +16,7 @@ class CustomerTypeDetector
             return CustomerType::GUEST;
         }
 
-        // If no context, try to get from cache
+        // Bağlam yoksa önbellekten almaya çalış
         if (empty($context)) {
             $cacheKey = "customer_type_{$customer->id}";
             $cached = Cache::get($cacheKey);
@@ -27,9 +27,9 @@ class CustomerTypeDetector
 
         $customerType = $this->doDetect($customer, $context);
 
-        // Cache result if no context was provided
+        // Bağlam sağlanmadıysa sonucu önbelleğe al
         if (empty($context)) {
-            Cache::put("customer_type_{$customer->id}", $customerType->value, 3600); // 1 hour
+            Cache::put("customer_type_{$customer->id}", $customerType->value, 3600); // 1 saat
         }
 
         return $customerType;
@@ -37,17 +37,17 @@ class CustomerTypeDetector
 
     private function doDetect(User $customer, array $context = []): CustomerType
     {
-        // Check for customer type override first
+        // Önce müşteri tipi override var mı kontrol et
         if (!empty($customer->customer_type_override)) {
             return CustomerType::from($customer->customer_type_override);
         }
 
-        // Check context for forced type
+        // Bağlamda zorunlu tip (force_type) var mı kontrol et
         if (isset($context['force_type'])) {
             return CustomerType::from($context['force_type']);
         }
 
-        // Check context for B2B behavioral indicators
+        // Bağlamda B2B davranış göstergelerini kontrol et
         if (isset($context['order_quantity']) && $context['order_quantity'] >= 100) {
             return CustomerType::B2B;
         }
@@ -56,12 +56,12 @@ class CustomerTypeDetector
             return CustomerType::B2B;
         }
 
-        // Check for high volume wholesale qualification
+        // Yüksek hacimli toptan uygunluk kriterini kontrol et
         if (($customer->lifetime_value ?? 0) >= 50000) {
             return CustomerType::WHOLESALE;
         }
 
-        // Check user roles to determine customer type
+        // Müşteri tipini belirlemek için kullanıcı rollerini kontrol et
         if ($customer->hasRole('dealer')) {
             return CustomerType::B2B;
         }
@@ -74,17 +74,17 @@ class CustomerTypeDetector
             return CustomerType::RETAIL;
         }
 
-        // Check if user has dealer-related fields
+        // Kullanıcının bayiyle ilgili alanları var mı kontrol et
         if ($customer->is_approved_dealer ?? false) {
             return CustomerType::B2B;
         }
 
-        // Check company information
+        // Firma bilgilerini kontrol et
         if (!empty($customer->company_name) || !empty($customer->tax_number)) {
             return CustomerType::B2B;
         }
 
-        // Default to B2C for registered users without specific business indicators
+        // Özel iş göstergeleri olmayan kayıtlı kullanıcılar için varsayılan: B2C
         return CustomerType::B2C;
     }
 
@@ -116,7 +116,7 @@ class CustomerTypeDetector
             return 'guest';
         }
 
-        // Determine customer tier based on order history and type
+        // Sipariş geçmişi ve tipe göre müşteri katmanını belirle
         $totalOrders = $customer->orders()->completed()->count();
         $totalSpent = (float) ($customer->orders()->completed()->sum('total_amount') ?? 0);
 

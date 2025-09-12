@@ -40,7 +40,7 @@ class OrderNotificationService
             // Send email notification to admin
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
-                Mail::to($adminEmail)->send(new OrderCreatedMail($order));
+                Mail::to($adminEmail)->send(new OrderCreatedMail($order, attachPdf: true));
                 Log::info('Order created admin email sent', ['admin' => $adminEmail]);
             }
 
@@ -84,7 +84,7 @@ class OrderNotificationService
             if ($newStatus === OrderStatus::Processing) {
                 $adminEmail = $this->getAdminEmail();
                 if ($adminEmail && $adminEmail !== $recipient) {
-                    Mail::to($adminEmail)->send(new OrderStatusChangedMail($order, $message));
+                    Mail::to($adminEmail)->send(new OrderStatusChangedMail($order, $message, attachPdf: true));
                     Log::info('Order status changed admin email sent', [
                         'admin' => $adminEmail,
                         'status' => $newStatus->value,
@@ -124,7 +124,7 @@ class OrderNotificationService
             // Send email notification to admin
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
-                Mail::to($adminEmail)->send(new OrderShippedMail($order));
+                Mail::to($adminEmail)->send(new OrderShippedMail($order, attachPdf: true));
                 Log::info('Order shipped admin email sent', ['admin' => $adminEmail]);
             }
 
@@ -157,7 +157,7 @@ class OrderNotificationService
             // Send email notification to admin
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
-                Mail::to($adminEmail)->send(new OrderDeliveredMail($order));
+                Mail::to($adminEmail)->send(new OrderDeliveredMail($order, attachPdf: true));
                 Log::info('Order delivered admin email sent', ['admin' => $adminEmail]);
             }
 
@@ -190,7 +190,7 @@ class OrderNotificationService
             // Send email notification to admin
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
-                Mail::to($adminEmail)->send(new OrderCancelledMail($order));
+                Mail::to($adminEmail)->send(new OrderCancelledMail($order, attachPdf: true));
                 Log::info('Order cancelled admin email sent', ['admin' => $adminEmail]);
             }
 

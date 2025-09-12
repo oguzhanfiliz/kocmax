@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class PriceEngine
 {
+    // Fiyatlandırma motoru: stratejilerle fiyat hesaplar, önbellek ve geri dönüş mekanizması uygular
     /** @var Collection<PricingStrategyInterface> */
     private Collection $strategies;
     
@@ -28,7 +29,7 @@ class PriceEngine
     public function __construct(
         CustomerTypeDetector $customerTypeDetector,
         bool $cachingEnabled = true,
-        int $cacheLifetime = 300 // 5 minutes
+        int $cacheLifetime = 300 // 5 dakika
     ) {
         $this->strategies = collect();
         $this->customerTypeDetector = $customerTypeDetector;
@@ -36,16 +37,18 @@ class PriceEngine
         $this->cacheLifetime = $cacheLifetime;
     }
 
+    // Strateji ekler ve önceliğe göre (yüksekten düşüğe) sıralar
     public function addStrategy(PricingStrategyInterface $strategy): self
     {
         $this->strategies->push($strategy);
         
-        // Sort strategies by priority (highest first)
+        // Stratejileri önceliğe göre sırala (en yüksek önce)
         $this->strategies = $this->strategies->sortByDesc(fn($strategy) => $strategy->getPriority());
         
         return $this;
     }
 
+    // Verilen varyant için fiyat hesaplar; gerekirse önbellek kullanır
     public function calculatePrice(
         ProductVariant $variant,
         int $quantity = 1,
@@ -81,6 +84,7 @@ class PriceEngine
         }
     }
 
+    // Fiyat hesaplamayı gerçekleştirir; müşteri tipine göre strateji seçer ve geri dönüş zinciri uygular
     private function performPriceCalculation(
         ProductVariant $variant,
         int $quantity,
@@ -94,32 +98,32 @@ class PriceEngine
             throw new InvalidPriceException("No pricing strategy found for customer type: {$customerType->value}");
         }
 
-        // Build a fallback chain by customer type
+        // Müşteri tipine göre geri dönüş (fallback) zinciri oluştur
         $fallbackTypes = [];
         if ($customerType->isB2B()) {
-            // Try B2B-compatible first (covers WHOLESALE), then B2C, then Guest
+            // Önce B2B uyumlu (WHOLESALE dahil), sonra B2C, en son Guest dene
             $fallbackTypes = [CustomerType::B2B, CustomerType::B2C, CustomerType::GUEST];
         } elseif ($customerType === CustomerType::GUEST) {
-            // Guest first, then B2C as a soft fallback
+            // Önce Guest, sonra yumuşak geri dönüş olarak B2C
             $fallbackTypes = [CustomerType::GUEST, CustomerType::B2C];
         } else {
-            // B2C/RETAIL: try B2C, then Guest
+            // B2C/RETAIL: önce B2C, ardından Guest dene
             $fallbackTypes = [CustomerType::B2C, CustomerType::GUEST];
         }
 
-        // Resolve strategies from types, de-duplicate and skip nulls
+        // Tiplere göre stratejileri çöz, yinelenenleri kaldır ve null olanları atla
         $candidates = collect($fallbackTypes)
             ->map(fn(CustomerType $type) => $this->getStrategyForCustomerType($type))
             ->filter()
             ->uniqueStrict(fn($s) => get_class($s))
             ->values();
 
-        // Ensure preferred strategy is first in the list
+        // Tercih edilen stratejinin listede ilk olduğundan emin ol
         if ($candidates->isEmpty() || get_class($candidates->first()) !== get_class($preferredStrategy)) {
             $candidates->prepend($preferredStrategy);
         }
 
-        // Find the first strategy that can calculate
+        // Hesaplama yapabilen ilk stratejiyi bul
         $strategy = $candidates->first(function (PricingStrategyInterface $strategy) use ($variant, $quantity, $customer) {
             try {
                 return $strategy->canCalculatePrice($variant, $quantity, $customer);
@@ -136,9 +140,9 @@ class PriceEngine
         
         $result = $strategy->calculatePrice($variant, $quantity, $customer, $context);
         
-        $calculationTime = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
+        $calculationTime = (microtime(true) - $startTime) * 1000; // Milisaniyeye çevir
         
-        // Add performance metadata
+        // Performans metadatası ekle
         $result = $result->withMetadata('calculation_time_ms', round($calculationTime, 2));
         $result = $result->withMetadata('strategy_used', get_class($strategy));
         if (get_class($strategy) !== get_class($preferredStrategy)) {
@@ -153,8 +157,8 @@ class PriceEngine
         }
         $result = $result->withMetadata('customer_tier', $this->customerTypeDetector->getCustomerTier($customer));
         
-        // Log performance if calculation takes too long
-        if ($calculationTime > 100) { // 100ms threshold
+        // Hesaplama çok uzun sürerse performans logu yaz
+        if ($calculationTime > 100) { // 100ms eşik
             Log::warning('Slow price calculation detected', [
                 'variant_id' => $variant->id,
                 'quantity' => $quantity,
@@ -167,6 +171,7 @@ class PriceEngine
         return $result;
     }
 
+    // Uygun stratejiye göre mevcut indirimleri döndürür
     public function getAvailableDiscounts(
         ProductVariant $variant,
         ?User $customer = null,
@@ -182,6 +187,7 @@ class PriceEngine
         return $strategy->getAvailableDiscounts($variant, $customer, $quantity);
     }
 
+    // Verilen parametrelerle fiyatın hesaplanabilir olup olmadığını doğrular
     public function validatePricing(
         ProductVariant $variant,
         int $quantity,
@@ -205,6 +211,7 @@ class PriceEngine
         }
     }
 
+    // Birden fazla kalem için toplu fiyat hesaplar; hatalı kalemleri atlayarak devam eder
     public function bulkCalculatePrice(array $items, ?User $customer = null, array $context = []): Collection
     {
         $results = collect();
@@ -232,7 +239,7 @@ class PriceEngine
                     'error' => $e->getMessage()
                 ]);
                 
-                // Continue with other items even if one fails
+                // Bir öğe başarısız olsa bile diğerleriyle devam et
                 continue;
             }
         }
@@ -240,20 +247,21 @@ class PriceEngine
         return $results;
     }
 
+    // Yaygın miktarlar için ön hesaplama yaparak önbelleği ısıtır
     public function preCalculatePrices(ProductVariant $variant, ?User $customer = null): void
     {
         if (!$this->cachingEnabled) {
             return;
         }
         
-        // Pre-calculate common quantities
+        // Yaygın miktarları önceden hesapla
         $commonQuantities = [1, 5, 10, 25, 50, 100];
         
         foreach ($commonQuantities as $quantity) {
             try {
                 $this->calculatePrice($variant, $quantity, $customer);
             } catch (\Exception $e) {
-                // Ignore errors during pre-calculation
+                // Ön hesaplama sırasında hataları yok say
                 Log::debug('Pre-calculation failed', [
                     'variant_id' => $variant->id,
                     'quantity' => $quantity,
@@ -264,6 +272,7 @@ class PriceEngine
         }
     }
 
+    // Varyant (ve kullanıcı) için fiyat önbelleğini temizler
     public function clearPriceCache(ProductVariant $variant, ?User $customer = null): void
     {
         if (!$this->cachingEnabled) {
@@ -275,18 +284,20 @@ class PriceEngine
             $pattern = "price_calculation:{$variant->id}:{$customer->id}:*";
         }
         
-        // Clear cache entries matching the pattern
+        // Desene uyan önbellek kayıtlarını temizle
         $keys = Cache::getStore()->getRedis()->keys($pattern);
         if (!empty($keys)) {
             Cache::getStore()->getRedis()->del(...$keys);
         }
     }
 
+    // Verilen müşteri tipini destekleyen ilk stratejiyi döndürür
     private function getStrategyForCustomerType(CustomerType $customerType): ?PricingStrategyInterface
     {
         return $this->strategies->first(fn(PricingStrategyInterface $strategy) => $strategy->supports($customerType));
     }
 
+    // Fiyat hesaplaması için deterministik önbellek anahtarı üretir
     private function generateCacheKey(ProductVariant $variant, int $quantity, ?User $customer, array $context): string
     {
         $customerKey = $customer ? $customer->id : 'guest';
@@ -295,16 +306,19 @@ class PriceEngine
         return "price_calculation:{$variant->id}:{$customerKey}:{$quantity}:{$contextHash}";
     }
 
+    // Kayıtlı stratejilerin koleksiyonunu döndürür
     public function getRegisteredStrategies(): Collection
     {
         return $this->strategies;
     }
 
+    // Belirtilen müşteri tipi için strateji mevcut mu kontrol eder
     public function hasStrategyFor(CustomerType $customerType): bool
     {
         return $this->getStrategyForCustomerType($customerType) !== null;
     }
 
+    // Önbelleği etkinleştirir ve yaşam süresini ayarlar
     public function enableCaching(int $lifetime = 300): self
     {
         $this->cachingEnabled = true;
@@ -313,6 +327,7 @@ class PriceEngine
         return $this;
     }
 
+    // Önbelleği devre dışı bırakır
     public function disableCaching(): self
     {
         $this->cachingEnabled = false;

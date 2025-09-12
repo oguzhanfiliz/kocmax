@@ -10,6 +10,8 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Attachment;
+use App\Services\Pdf\OrderPdfService;
 
 class OrderStatusChangedMail extends Mailable
 {
@@ -17,7 +19,8 @@ class OrderStatusChangedMail extends Mailable
 
     public function __construct(
         public Order $order,
-        public string $statusMessage
+        public string $statusMessage,
+        public bool $attachPdf = false
     ) {}
 
     public function envelope(): Envelope
@@ -41,6 +44,16 @@ class OrderStatusChangedMail extends Mailable
 
     public function attachments(): array
     {
-        return [];
+        if (!$this->attachPdf) {
+            return [];
+        }
+
+        $pdf = app(OrderPdfService::class)->render($this->order);
+        $fileName = 'order-' . $this->order->order_number . '.pdf';
+
+        return [
+            Attachment::fromData(fn () => $pdf, $fileName)
+                ->withMime('application/pdf')
+        ];
     }
 }

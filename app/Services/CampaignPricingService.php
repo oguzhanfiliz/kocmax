@@ -13,17 +13,30 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Campaign ve Pricing sistemlerini birleştiren ana service
+ * Kampanya ve Fiyatlandırma sistemlerini entegre eden, sepet ve ürün bazlı
+ * nihai fiyatları hesaplayan ana servis sınıfı.
  */
 class CampaignPricingService
 {
+    /**
+     * CampaignPricingService yapıcı metodu.
+     *
+     * @param PriceEngine $priceEngine Fiyat hesaplama motoru
+     * @param CampaignEngine $campaignEngine Kampanya uygulama motoru
+     */
     public function __construct(
         private readonly PriceEngine $priceEngine,
         private readonly CampaignEngine $campaignEngine
     ) {}
 
     /**
-     * Sepet için fiyat hesaplama + kampanya uygulaması
+     * Bir alışveriş sepetindeki ürünler için fiyatları hesaplar ve uygun kampanyaları uygular.
+     *
+     * @param array $cartItems Sepetteki ürünleri içeren dizi. Her eleman ['variant' => ProductVariant, 'quantity' => int] formatında olmalıdır.
+     * @param User|null $user İşlem yapan kullanıcı (varsa).
+     * @param array $context Fiyatlandırma ve kampanyalar için ek bağlamsal veri.
+     * @return array Fiyatlandırma sonuçları, kampanya öncesi toplam, uygulanan kampanyalar ve nihai toplamı içeren bir dizi.
+     * @throws \App\Exceptions\Pricing\PricingException Fiyatlandırma sırasında bir hata oluşursa.
      */
     public function calculateCartPricing(array $cartItems, ?User $user = null, array $context = []): array
     {
@@ -96,12 +109,19 @@ class CampaignPricingService
     }
 
     /**
-     * Tek bir ürün için fiyat + kampanya kontrolü
+     * Tek bir ürün için fiyatlandırma ve kampanya kontrolü yapar.
+     * `calculateCartPricing` metodunu tek ürünlük bir sepet ile çağırır.
+     *
+     * @param \App\Models\ProductVariant $variant Fiyatı hesaplanacak ürün varyantı.
+     * @param int $quantity Ürün adedi.
+     * @param User|null $user İşlem yapan kullanıcı (varsa).
+     * @param array $context Fiyatlandırma ve kampanyalar için ek bağlamsal veri.
+     * @return array Fiyatlandırma sonuçlarını içeren dizi.
      */
     public function calculateProductPricing(
-        \App\Models\ProductVariant $variant, 
-        int $quantity, 
-        ?User $user = null, 
+        \App\Models\ProductVariant $variant,
+        int $quantity,
+        ?User $user = null,
         array $context = []
     ): array {
         $cartItems = [[
@@ -113,7 +133,10 @@ class CampaignPricingService
     }
 
     /**
-     * Müşteri için mevcut kampanyaları getir
+     * Belirtilen kullanıcı ve müşteri tipi için mevcut ve uygun olan tüm kampanyaları listeler.
+     *
+     * @param User|null $user Kampanyaları görüntülenecek kullanıcı (varsa).
+     * @return Collection Mevcut kampanyaların koleksiyonu.
      */
     public function getAvailableCampaigns(?User $user = null): Collection
     {
@@ -125,13 +148,22 @@ class CampaignPricingService
     }
 
     /**
-     * Kampanya istatistiklerini getir
+     * Belirli bir kampanyanın performans istatistiklerini getirir.
+     *
+     * @param \App\Models\Campaign $campaign İstatistikleri alınacak kampanya.
+     * @return array Kampanya istatistiklerini içeren dizi (kullanım sayısı, toplam ciro vb.).
      */
     public function getCampaignStats(\App\Models\Campaign $campaign): array
     {
         return $this->campaignEngine->getCampaignStats($campaign);
     }
 
+    /**
+     * Uygulanan kampanyaların sağladığı toplam faydayı (indirim, ücretsiz ürün değeri vb.) hesaplar.
+     *
+     * @param Collection $appliedCampaigns Uygulanan kampanyaların sonuçlarını içeren koleksiyon.
+     * @return array Toplam indirim, ücretsiz ürün değeri, toplam fayda ve kampanya açıklamalarını içeren bir dizi.
+     */
     private function calculateCampaignBenefits(Collection $appliedCampaigns): array
     {
         $totalDiscount = 0;
@@ -161,6 +193,13 @@ class CampaignPricingService
         ];
     }
 
+    /**
+     * Kampanya indirimlerini orijinal toplam tutardan düşerek nihai toplamı hesaplar.
+     *
+     * @param float $originalTotal Kampanyalar uygulanmadan önceki sepet toplamı.
+     * @param Collection $appliedCampaigns Uygulanan kampanyaların koleksiyonu.
+     * @return float İndirimler sonrası nihai sepet tutarı.
+     */
     private function calculateFinalTotal(float $originalTotal, Collection $appliedCampaigns): float
     {
         $discount = 0;
@@ -172,6 +211,12 @@ class CampaignPricingService
         return max(0, $originalTotal - $discount);
     }
 
+    /**
+     * Uygulanan kampanyalardan gelen tüm ücretsiz ürünleri tek bir koleksiyonda birleştirir.
+     *
+     * @param Collection $appliedCampaigns Uygulanan kampanyaların koleksiyonu.
+     * @return Collection Tüm ücretsiz ürünleri içeren koleksiyon.
+     */
     private function extractFreeItems(Collection $appliedCampaigns): Collection
     {
         $freeItems = new Collection();

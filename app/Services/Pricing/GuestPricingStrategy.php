@@ -13,11 +13,23 @@ use Illuminate\Support\Collection;
 
 class GuestPricingStrategy extends AbstractPricingStrategy
 {
+    /**
+     * Misafir (oturum açmamış) kullanıcılar için fiyatlandırma stratejisi.
+     */
     public function __construct()
     {
-        parent::__construct(CustomerType::GUEST, 60); // Lower priority
+        parent::__construct(CustomerType::GUEST, 60); // Daha düşük öncelik
     }
 
+    /**
+     * Varyantın temel fiyatını TRY cinsinden döndürür.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — fiyatı hesaplanacak ürün varyantı
+     *
+     * Döner:
+     * - Price — TRY para biriminde temel fiyat
+     */
     public function getBasePrice(ProductVariant $variant): Price
     {
         // Misafir kullanıcılar için fiyat TRY'ye çevrilerek hesaplanır
@@ -38,6 +50,17 @@ class GuestPricingStrategy extends AbstractPricingStrategy
         return new Price((float) $amountTry, 'TRY');
     }
 
+    /**
+     * Misafir kullanıcılar için uygulanabilir indirimleri döndürür.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — indirimleri hesaplanacak ürün varyantı
+     * - customer: ?User — kullanıcı (misafir olabilir)
+     * - quantity: int — adet (varsayılan 1)
+     *
+     * Döner:
+     * - Collection — uygulanabilir indirimlerin listesi
+     */
     public function getAvailableDiscounts(
         ProductVariant $variant,
         ?User $customer = null,
@@ -45,7 +68,7 @@ class GuestPricingStrategy extends AbstractPricingStrategy
     ): Collection {
         $discounts = collect();
 
-        // Limited discounts for guest users
+        // Misafir kullanıcılar için sınırlı indirimler
         $discounts = $discounts->merge($this->getPublicPromotions($variant, $quantity));
         $discounts = $discounts->merge($this->getMinimumBulkDiscounts($variant, $quantity));
         $discounts = $discounts->merge($this->getSignUpIncentiveDiscounts($variant));
@@ -53,32 +76,53 @@ class GuestPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * Misafire özel müşteri bazlı indirimleri döndürür (misafirlerde boş set).
+     *
+     * Parametreler:
+     * - variant: ProductVariant — ürün varyantı
+     * - customer: ?User — kullanıcı
+     * - quantity: int — adet
+     *
+     * Döner:
+     * - Collection — misafirler için boş koleksiyon
+     */
     protected function getCustomerDiscounts(ProductVariant $variant, ?User $customer = null, int $quantity = 1): Collection
     {
-        // Guests don't have customer-specific discounts
+        // Misafirlerin müşteri-özel indirimleri yoktur
         return collect();
     }
 
+    /**
+     * Oturum gerektirmeyen herkese açık kampanyalardan indirimleri döndürür.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — ürün varyantı
+     * - quantity: int — adet
+     *
+     * Döner:
+     * - Collection — herkese açık kampanyalara dayalı indirimler
+     */
     protected function getPublicPromotions(ProductVariant $variant, int $quantity): Collection
     {
         $discounts = collect();
 
-        // Only public campaigns that don't require login
+        // Giriş gerektirmeyen herkese açık kampanyalar
         $campaigns = \App\Models\Campaign::active()
-            ->where('is_public', true) // Assuming there's a public flag
+            ->where('is_public', true) // Varsayımsal olarak herkese açık bayrağı
             ->whereHas('products', function($query) use ($variant) {
                 $query->where('product_id', $variant->product_id);
             })
             ->get();
 
         foreach ($campaigns as $campaign) {
-            if ($campaign->discount_percentage > 0 && $campaign->discount_percentage <= 15) { // Limit discount for guests
+            if ($campaign->discount_percentage > 0 && $campaign->discount_percentage <= 15) { // Misafirler için indirim sınırı
                 $discounts->push(
                     Discount::percentage(
                         $campaign->discount_percentage,
                         $campaign->name,
-                        $campaign->description ?? 'Limited time offer',
-                        70 // Good priority for public campaigns
+                        $campaign->description ?? 'Sınırlı süreli teklif',
+                        70 // Herkese açık kampanyalar için iyi öncelik
                     )
                 );
             }
@@ -87,14 +131,24 @@ class GuestPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * Misafirler için çok sınırlı toplu alım indirimlerini döndürür.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — ürün varyantı
+     * - quantity: int — adet
+     *
+     * Döner:
+     * - Collection — uygun ise en yüksek tek indirim
+     */
     protected function getMinimumBulkDiscounts(ProductVariant $variant, int $quantity): Collection
     {
         $discounts = collect();
 
-        // Very limited bulk discounts for guests
+        // Misafirler için çok sınırlı toplu alım indirimleri
         $bulkTiers = [
-            ['min_qty' => 5, 'discount' => 2.0, 'name' => 'Multi-item Discount'],
-            ['min_qty' => 10, 'discount' => 5.0, 'name' => 'Bulk Purchase Discount'],
+            ['min_qty' => 5, 'discount' => 2.0, 'name' => 'Çoklu Ürün İndirimi'],
+            ['min_qty' => 10, 'discount' => 5.0, 'name' => 'Toplu Alım İndirimi'],
         ];
 
         foreach ($bulkTiers as $tier) {
@@ -103,45 +157,65 @@ class GuestPricingStrategy extends AbstractPricingStrategy
                     Discount::percentage(
                         $tier['discount'],
                         $tier['name'],
-                        "Save when you buy {$tier['min_qty']}+ items",
+                        "{$tier['min_qty']}+ adet alımda tasarruf edin",
                         50
                     )
                 );
             }
         }
 
-        // Return only the highest applicable discount
+        // Yalnızca en yüksek uygulanabilir indirimi döndür
         return $discounts->sortByDesc('value')->take(1);
     }
 
+    /**
+     * Misafirleri üye olmaya teşvik eden indirimleri döndürür.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — ürün varyantı
+     *
+     * Döner:
+     * - Collection — üyelik teşvik indirimleri
+     */
     protected function getSignUpIncentiveDiscounts(ProductVariant $variant): Collection
     {
         $discounts = collect();
 
-        // Encourage guest users to sign up
+        // Misafir kullanıcıları üye olmaya teşvik et
         $discounts->push(
             Discount::percentage(
                 5.0,
-                'Sign Up & Save',
-                'Create an account to unlock this discount and more benefits',
-                30 // Lower priority as it's not immediately applicable
+                'Üye Ol ve Kazan',
+                'Bu indirim ve daha fazla avantaj için hesap oluşturun',
+                30 // Hemen uygulanabilir olmadığından daha düşük öncelik
             )
         );
 
         return $discounts;
     }
 
+    /**
+     * Verilen parametrelerle misafir için fiyat hesaplanabilir mi kontrol eder.
+     *
+     * Parametreler:
+     * - variant: ProductVariant — ürün varyantı
+     * - quantity: int — adet
+     * - customer: ?User — kullanıcı (misafir olabilir)
+     *
+     * Döner:
+     * - bool — hesaplanabilirse true, aksi halde false
+     */
     public function canCalculatePrice(
         ProductVariant $variant,
         int $quantity,
         ?User $customer = null
     ): bool {
-        // Guests can see prices but with limitations
+        // Misafirler fiyatları görebilir fakat sınırlamalar vardır
         try {
             $this->validateInputs($variant, $quantity);
             
-            // Guests might have quantity limitations
-            if ($quantity > 100) { // Arbitrary limit for guests
+            // Misafirlerde adet sınırlaması olabilir
+            if ($quantity > 100) { // Misafirler için keyfi sınır
                 return false;
             }
             
@@ -151,6 +225,15 @@ class GuestPricingStrategy extends AbstractPricingStrategy
         }
     }
 
+    /**
+     * Bu stratejinin belirtilen müşteri tipini destekleyip desteklemediğini döndürür.
+     *
+     * Parametreler:
+     * - customerType: CustomerType — müşteri tipi
+     *
+     * Döner:
+     * - bool — destekliyorsa true, aksi halde false
+     */
     public function supports(CustomerType $customerType): bool
     {
         return $customerType === CustomerType::GUEST;

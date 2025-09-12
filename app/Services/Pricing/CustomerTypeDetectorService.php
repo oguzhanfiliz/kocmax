@@ -43,6 +43,11 @@ class CustomerTypeDetectorService
         }
         
         // Roller kontrol et
+        // Admin / Manager kullanıcıları için fiyat önizlemelerinde B2B davranışı istenir
+        if ($user->hasRole('admin') || $user->hasRole('manager')) {
+            return 'B2B';
+        }
+
         if ($user->hasRole('wholesale')) {
             return 'WHOLESALE';
         }

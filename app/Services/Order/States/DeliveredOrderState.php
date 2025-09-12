@@ -13,17 +13,17 @@ class DeliveredOrderState implements OrderStateInterface
 {
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
-        // Delivered is typically a final state
-        // Some systems might allow return/refund states, but for now we'll keep it final
+        // Teslim durumu genellikle nihai bir durumdur
+        // Bazı sistemler iade/geri ödeme durumlarına izin verebilir, ancak şimdilik nihai tutacağız
         return false;
     }
 
     public function process(Order $order): void
     {
-        // Delivered state processing
-        // - Send completion notifications
-        // - Request customer feedback
-        // - Process any final tasks
+        // Teslim durumu işleme adımları
+        // - Tamamlama bildirimlerini gönder
+        // - Müşteri geri bildirimi iste
+        // - Varsa son işlemleri gerçekleştir
         
         Log::debug('Processing delivered order', ['order_id' => $order->id]);
         
@@ -46,7 +46,7 @@ class DeliveredOrderState implements OrderStateInterface
 
     public function getAvailableTransitions(): array
     {
-        // No transitions available from delivered state
+        // Teslim durumundan geçiş yok
         return [];
     }
 
@@ -58,7 +58,7 @@ class DeliveredOrderState implements OrderStateInterface
             'delivered_at' => $order->delivered_at
         ]);
 
-        // Actions to perform when entering delivered state
+        // Teslim durumuna girildiğinde yapılacak işlemler
         $this->recordDeliveryTime($order);
         $this->notifyStakeholders($order);
         $this->processCompletionTasks($order);
@@ -67,7 +67,7 @@ class DeliveredOrderState implements OrderStateInterface
 
     public function exit(Order $order): void
     {
-        // Delivered state is typically final, so this shouldn't be called
+        // Teslim durumu genellikle nihai olduğundan bu metod normalde çağrılmamalıdır
         Log::warning('Attempting to exit delivered state - this should not normally happen', [
             'order_id' => $order->id,
             'order_number' => $order->order_number
@@ -80,7 +80,7 @@ class DeliveredOrderState implements OrderStateInterface
             $order->update(['delivered_at' => now()]);
         }
 
-        // Calculate delivery metrics
+        // Teslimat metriklerini hesapla
         $totalTime = null;
         $processingTime = null;
         $shippingTime = null;
@@ -107,13 +107,13 @@ class DeliveredOrderState implements OrderStateInterface
 
     private function notifyStakeholders(Order $order): void
     {
-        // Notify customer
+        // Müşteriyi bilgilendir
         $this->notifyCustomer($order);
         
-        // Notify internal teams
+        // Dahili ekipleri bilgilendir
         $this->notifyInternalTeams($order);
         
-        // Update analytics
+        // Analitikleri güncelle
         $this->updateAnalytics($order);
     }
 
@@ -123,15 +123,15 @@ class DeliveredOrderState implements OrderStateInterface
             'order_id' => $order->id
         ]);
 
-        // Process loyalty points if applicable
+        // Uygunsa sadakat puanlarını işle
         if ($order->user) {
             $this->processLoyaltyPoints($order);
         }
 
-        // Generate final invoice/receipt
+        // Nihai fatura/fiş üret
         $this->generateFinalReceipt($order);
         
-        // Update sales metrics
+        // Satış metriklerini güncelle
         $this->updateSalesMetrics($order);
     }
 
@@ -146,8 +146,8 @@ class DeliveredOrderState implements OrderStateInterface
             'user_id' => $order->user_id
         ]);
 
-        // In a real implementation, this would update customer lifetime value,
-        // order frequency, average order value, etc.
+        // Gerçek uygulamada; müşteri yaşam boyu değeri, sipariş sıklığı,
+        // ortalama sipariş değeri vb. güncellenir
     }
 
     private function sendDeliveryConfirmation(Order $order): void
@@ -157,7 +157,7 @@ class DeliveredOrderState implements OrderStateInterface
             'customer_email' => $order->shipping_email ?? $order->billing_email
         ]);
 
-        // In a real implementation, this would send delivery confirmation email/SMS
+        // Gerçek uygulamada teslimat onay e-posta/SMS gönderilir
     }
 
     private function requestCustomerFeedback(Order $order): void
@@ -166,13 +166,13 @@ class DeliveredOrderState implements OrderStateInterface
             'order_id' => $order->id
         ]);
 
-        // Schedule feedback request (usually sent a few days after delivery)
-        // In a real implementation, this would schedule a job to send feedback request
+        // Geri bildirim talebini planla (genelde teslimattan birkaç gün sonra)
+        // Gerçek uygulamada bu işlem için bir iş planlanır
     }
 
     private function processFinalTasks(Order $order): void
     {
-        // Any final cleanup or processing tasks
+        // Son temizlik veya işlem adımları
         Log::debug('Processing final tasks for delivered order', [
             'order_id' => $order->id
         ]);
@@ -188,7 +188,7 @@ class DeliveredOrderState implements OrderStateInterface
                 'customer_email' => $customerEmail
             ]);
             
-            // In a real implementation, send delivery confirmation email
+            // Gerçek uygulamada teslim onay e-postası gönderilir
         }
     }
 
@@ -198,7 +198,7 @@ class DeliveredOrderState implements OrderStateInterface
             'order_id' => $order->id
         ]);
 
-        // Notify customer service, sales, analytics teams
+        // Müşteri hizmetleri, satış ve analitik ekiplerini bilgilendir
     }
 
     private function updateAnalytics(Order $order): void
@@ -209,7 +209,7 @@ class DeliveredOrderState implements OrderStateInterface
             'customer_type' => $order->customer_type
         ]);
 
-        // Update revenue analytics, conversion metrics, etc.
+        // Gelir analitiği, dönüşüm metrikleri vb. güncellenir
     }
 
     private function processLoyaltyPoints(Order $order): void
@@ -218,8 +218,8 @@ class DeliveredOrderState implements OrderStateInterface
             return;
         }
 
-        // Calculate loyalty points based on order value
-        $pointsRate = $order->customer_type === 'B2B' ? 0.01 : 0.02; // B2C gets more points
+        // Sipariş değerine göre sadakat puanlarını hesapla
+        $pointsRate = $order->customer_type === 'B2B' ? 0.01 : 0.02; // B2C daha fazla puan alır
         $points = intval($order->total_amount * $pointsRate);
 
         if ($points > 0) {
@@ -229,7 +229,7 @@ class DeliveredOrderState implements OrderStateInterface
                 'points_awarded' => $points
             ]);
 
-            // In a real implementation, this would add points to user's loyalty account
+            // Gerçek uygulamada kullanıcının sadakat hesabına puan eklenir
         }
     }
 
@@ -239,8 +239,8 @@ class DeliveredOrderState implements OrderStateInterface
             'order_id' => $order->id
         ]);
 
-        // Generate and store final receipt/invoice
-        // This might be different from the initial invoice if there were any adjustments
+        // Nihai makbuz/fatura üret ve sakla
+        // Eğer düzeltmeler olduysa bu, ilk faturadan farklı olabilir
     }
 
     private function updateSalesMetrics(Order $order): void
@@ -251,8 +251,8 @@ class DeliveredOrderState implements OrderStateInterface
             'customer_type' => $order->customer_type
         ]);
 
-        // Update daily/monthly/yearly sales metrics
-        // Update product performance metrics
-        // Update customer segment performance
+        // Günlük/aylık/yıllık satış metriklerini güncelle
+        // Ürün performans metriklerini güncelle
+        // Müşteri segment performansını güncelle
     }
 }

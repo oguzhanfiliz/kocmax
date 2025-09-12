@@ -13,11 +13,20 @@ use Illuminate\Support\Collection;
 
 class B2CPricingStrategy extends AbstractPricingStrategy
 {
+    /**
+     * B2C müşterileri için fiyatlandırma stratejisi.
+     */
     public function __construct()
     {
-        parent::__construct(CustomerType::B2C, 80); // High priority but lower than B2B
+        parent::__construct(CustomerType::B2C, 80); // Yüksek öncelik, B2B'den düşük
     }
 
+    /**
+     * Varyantın temel fiyatını TRY cinsinden döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @return Price TRY cinsinden temel fiyat
+     */
     public function getBasePrice(ProductVariant $variant): Price
     {
         // B2C müşterileri için fiyat TRY'ye çevrilerek hesaplanır
@@ -40,6 +49,14 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         return new Price((float) $amountTry, 'TRY');
     }
 
+    /**
+     * B2C müşterileri için uygulanabilir indirimleri döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param int $quantity Adet
+     * @return Collection İndirimler koleksiyonu
+     */
     public function getAvailableDiscounts(
         ProductVariant $variant,
         ?User $customer = null,
@@ -47,7 +64,7 @@ class B2CPricingStrategy extends AbstractPricingStrategy
     ): Collection {
         $discounts = collect();
 
-        // Smart Pricing (ProductListResource ile tutarlı indirim yüzdesi)
+        // Akıllı Fiyatlandırma (ProductListResource ile tutarlı indirim yüzdesi)
         try {
             /** @var \App\Services\Pricing\CustomerTypeDetectorService $detector */
             $detector = app(\App\Services\Pricing\CustomerTypeDetectorService::class);
@@ -56,34 +73,42 @@ class B2CPricingStrategy extends AbstractPricingStrategy
                 $discounts->push(
                     Discount::percentage(
                         $smartPercentage,
-                        'Smart Pricing',
+                        'Akıllı Fiyatlandırma',
                         'Kullanıcı tipine göre otomatik indirim',
                         92 // Kampanyadan biraz düşük, B2C için yüksek öncelik
                     )
                 );
             }
         } catch (\Throwable $e) {
-            // ignore smart pricing if service not available
+            // Servis yoksa akıllı fiyatlandırmayı yok say
         }
 
-        // Add customer-specific discounts
+        // Müşteri-özel indirimleri ekle
         $discounts = $discounts->merge($this->getCustomerDiscounts($variant, $customer, $quantity));
 
-        // Add promotional discounts
+        // Promosyon indirimlerini ekle
         $discounts = $discounts->merge($this->getPromotionalDiscounts($variant, $quantity));
 
-        // Add limited bulk discounts for B2C (smaller quantities)
+        // B2C için sınırlı toplu indirimler (daha küçük adetler)
         $discounts = $discounts->merge($this->getB2CBulkDiscounts($variant, $quantity));
 
-        // Add seasonal/campaign discounts
+        // Sezonsal/kampanya indirimlerini ekle
         $discounts = $discounts->merge($this->getSeasonalDiscounts($variant));
 
-        // Add first-time customer discount
+        // İlk alışveriş indirimini ekle
         $discounts = $discounts->merge($this->getFirstTimeCustomerDiscount($variant, $customer));
 
         return $discounts;
     }
 
+    /**
+     * B2C müşterisi için müşteri-özel indirimleri döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @param int $quantity Adet
+     * @return Collection Müşteri-özel indirimler
+     */
     protected function getCustomerDiscounts(ProductVariant $variant, ?User $customer = null, int $quantity = 1): Collection
     {
         $discounts = collect();
@@ -92,15 +117,15 @@ class B2CPricingStrategy extends AbstractPricingStrategy
             return $discounts;
         }
 
-        // Customer loyalty program
+        // Müşteri sadakat programı
         $totalOrders = $customer->orders()->completed()->count();
         
         if ($totalOrders >= 5) {
             $loyaltyPercentage = match(true) {
-                $totalOrders >= 50 => 5.0,  // VIP Customer
-                $totalOrders >= 25 => 3.0,  // Gold Customer
-                $totalOrders >= 10 => 2.0,  // Silver Customer
-                $totalOrders >= 5 => 1.0,   // Bronze Customer
+                $totalOrders >= 50 => 5.0,  // VIP Müşteri
+                $totalOrders >= 25 => 3.0,  // Altın Müşteri
+                $totalOrders >= 10 => 2.0,  // Gümüş Müşteri
+                $totalOrders >= 5 => 1.0,   // Bronz Müşteri
                 default => 0.0
             };
 
@@ -108,21 +133,21 @@ class B2CPricingStrategy extends AbstractPricingStrategy
                 $discounts->push(
                     Discount::percentage(
                         $loyaltyPercentage,
-                        'Customer Loyalty Discount',
-                        "Thank you for being a loyal customer ({$totalOrders} orders)",
+                        'Müşteri Sadakat İndirimi',
+                        "Sadakatiniz için teşekkürler ({$totalOrders} sipariş)",
                         70
                     )
                 );
             }
         }
 
-        // Birthday discount (if we have customer's birthday)
+        // Doğum günü indirimi (doğum tarihi varsa)
         if ($customer->birth_date && $customer->birth_date->isCurrentMonth()) {
             $discounts->push(
                 Discount::percentage(
                     5.0,
-                    'Birthday Special',
-                    'Happy Birthday! Enjoy this special discount',
+                    'Doğum Günü Fırsatı',
+                    'Doğum gününüz kutlu olsun! Bu özel indirimin tadını çıkarın',
                     80
                 )
             );
@@ -131,11 +156,18 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * Aktif kampanyalara bağlı promosyon indirimlerini döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @return Collection Promosyon indirimleri
+     */
     protected function getPromotionalDiscounts(ProductVariant $variant, int $quantity): Collection
     {
         $discounts = collect();
 
-        // Check for active campaigns
+        // Aktif kampanyaları kontrol et
         $campaigns = \App\Models\Campaign::active()
             ->whereHas('products', function($query) use ($variant) {
                 $query->where('product_id', $variant->product_id);
@@ -148,8 +180,8 @@ class B2CPricingStrategy extends AbstractPricingStrategy
                     Discount::percentage(
                         $campaign->discount_percentage,
                         $campaign->name,
-                        $campaign->description ?? 'Special promotional offer',
-                        90 // High priority for active campaigns
+                        $campaign->description ?? 'Özel promosyon teklifi',
+                        90 // Aktif kampanyalar için yüksek öncelik
                     )
                 );
             }
@@ -158,16 +190,23 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * B2C için daha küçük adet eşikleriyle toplu alım indirimlerini döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param int $quantity Adet
+     * @return Collection Uygulanabilir en yüksek tek indirim
+     */
     protected function getB2CBulkDiscounts(ProductVariant $variant, int $quantity): Collection
     {
         $discounts = collect();
 
-        // Smaller quantity thresholds for B2C customers
+        // B2C müşterileri için daha küçük adet eşikleri
         $bulkTiers = [
-            ['min_qty' => 3, 'discount' => 2.0, 'name' => 'Buy 3+ Save 2%'],
-            ['min_qty' => 5, 'discount' => 5.0, 'name' => 'Buy 5+ Save 5%'],
-            ['min_qty' => 10, 'discount' => 8.0, 'name' => 'Buy 10+ Save 8%'],
-            ['min_qty' => 20, 'discount' => 12.0, 'name' => 'Buy 20+ Save 12%'],
+            ['min_qty' => 3, 'discount' => 2.0, 'name' => '3+ Al %2 Kazan'],
+            ['min_qty' => 5, 'discount' => 5.0, 'name' => '5+ Al %5 Kazan'],
+            ['min_qty' => 10, 'discount' => 8.0, 'name' => '10+ Al %8 Kazan'],
+            ['min_qty' => 20, 'discount' => 12.0, 'name' => '20+ Al %12 Kazan'],
         ];
 
         foreach ($bulkTiers as $tier) {
@@ -176,17 +215,23 @@ class B2CPricingStrategy extends AbstractPricingStrategy
                     Discount::percentage(
                         $tier['discount'],
                         $tier['name'],
-                        "Multi-item discount for {$tier['min_qty']}+ items",
+                        "{$tier['min_qty']}+ ürün için çoklu alım indirimi",
                         60
                     )
                 );
             }
         }
 
-        // Return only the highest applicable discount
+        // Yalnızca en yüksek uygulanabilir indirimi döndür
         return $discounts->sortByDesc('value')->take(1);
     }
 
+    /**
+     * Sezona göre promosyonları değerlendirerek sezonsal indirimleri döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @return Collection Sezonsal indirimler
+     */
     protected function getSeasonalDiscounts(ProductVariant $variant): Collection
     {
         $discounts = collect();
@@ -194,7 +239,7 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         $currentMonth = now()->month;
         $currentSeason = $this->getCurrentSeason($currentMonth);
 
-        // Check if product categories match seasonal promotions
+        // Ürün kategorileri sezonsal promosyonlarla eşleşiyor mu kontrol et
         $productCategories = $variant->product->categories->pluck('name')->map(fn($name) => strtolower($name));
 
         $seasonalPromotions = [
@@ -229,11 +274,11 @@ class B2CPricingStrategy extends AbstractPricingStrategy
                         Discount::percentage(
                             $promotion['discount'],
                             $promotion['name'],
-                            "Seasonal discount for {$currentSeason} collection",
+                            "{$currentSeason} koleksiyonu için sezonsal indirim",
                             40
                         )
                     );
-                    break; // Only apply one seasonal discount
+                    break; // Yalnızca bir sezonsal indirim uygula
                 }
             }
         }
@@ -241,6 +286,13 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * İlk alışveriş yapan müşteriler için indirimleri döndürür.
+     *
+     * @param ProductVariant $variant Ürün varyantı
+     * @param User|null $customer Müşteri (opsiyonel)
+     * @return Collection İlk alışveriş indirimi
+     */
     protected function getFirstTimeCustomerDiscount(ProductVariant $variant, ?User $customer = null): Collection
     {
         $discounts = collect();
@@ -249,16 +301,16 @@ class B2CPricingStrategy extends AbstractPricingStrategy
             return $discounts;
         }
 
-        // Check if this is customer's first order
+        // Müşterinin ilk siparişi mi kontrol et
         $orderCount = $customer->orders()->count();
         
         if ($orderCount === 0) {
             $discounts->push(
                 Discount::percentage(
                     10.0,
-                    'First Time Customer',
-                    'Welcome! Enjoy 10% off your first order',
-                    75 // High priority for first-time customers
+                    'İlk Alışveriş',
+                    'Hoş geldiniz! İlk siparişinizde %10 indirim',
+                    75 // İlk alışveriş için yüksek öncelik
                 )
             );
         }
@@ -266,6 +318,12 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    /**
+     * Ay bilgisine göre sezon adını döndürür.
+     *
+     * @param int $month Ay
+     * @return string Sezon anahtarı (winter|spring|summer|autumn)
+     */
     private function getCurrentSeason(int $month): string
     {
         return match(true) {
@@ -277,6 +335,12 @@ class B2CPricingStrategy extends AbstractPricingStrategy
         };
     }
 
+    /**
+     * Bu strateji belirtilen müşteri tipini destekliyor mu?
+     *
+     * @param CustomerType $customerType Müşteri tipi
+     * @return bool Destekliyorsa true
+     */
     public function supports(CustomerType $customerType): bool
     {
         return $customerType->isB2C() && $customerType !== CustomerType::GUEST;

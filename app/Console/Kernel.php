@@ -12,7 +12,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Döviz kuru güncelleme cron'u
+        if (config('services.exchange_rate.provider') === 'tcmb') {
+            $schedule->command('app:update-rates')
+                ->hourly() // Her saat başı TCMB'den güncelle
+                ->withoutOverlapping()
+                ->onOneServer()
+                ->runInBackground()
+                ->sendOutputTo(storage_path('logs/exchange_rate_cron.log'));
+        }
     }
 
     /**

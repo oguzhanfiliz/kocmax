@@ -17,6 +17,12 @@ class ViewOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('download_pdf')
+                ->label('PDF İndir')
+                ->icon('heroicon-m-arrow-down-tray')
+                ->color('gray')
+                ->url(fn() => route('admin.orders.pdf', $this->record))
+                ->openUrlInNewTab(),
             Actions\Action::make('approve')
                 ->label('Onayla (İşleme Al)')
                 ->icon('heroicon-m-check-badge')

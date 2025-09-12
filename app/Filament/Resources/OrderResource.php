@@ -279,6 +279,12 @@ class OrderResource extends Resource
                     ->label('Görüntüle'),
                 Tables\Actions\EditAction::make()
                     ->label('Düzenle'),
+                Tables\Actions\Action::make('download_pdf')
+                    ->label('PDF İndir')
+                    ->icon('heroicon-m-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn (Order $record) => route('admin.orders.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('approve')
                     ->label('Onayla')
                     ->icon('heroicon-m-check-badge')

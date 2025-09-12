@@ -152,4 +152,9 @@ Route::get('/', function () {
     return redirect('/admin/login');
 });
 
+// Admin - Order PDF indirme
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/admin/orders/{order}/pdf', [\App\Http\Controllers\Admin\OrderPdfController::class, 'download'])
+        ->name('admin.orders.pdf');
+});
 

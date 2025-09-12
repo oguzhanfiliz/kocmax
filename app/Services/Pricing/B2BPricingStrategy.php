@@ -13,11 +13,14 @@ use Illuminate\Support\Collection;
 
 class B2BPricingStrategy extends AbstractPricingStrategy
 {
+    // B2B fiyatlandırma stratejisi yapıcı metodu
+    // En yüksek öncelikli (100) olarak ayarlanmıştır
     public function __construct()
     {
-        parent::__construct(CustomerType::B2B, 100); // Highest priority
+        parent::__construct(CustomerType::B2B, 100); // En yüksek öncelik
     }
 
+    // Ürünün B2B temel fiyatını hesaplar ve varsayılan B2B indirimini uygular
     public function getBasePrice(ProductVariant $variant): Price
     {
         // B2B fiyatını TRY'ye çevir ve varsayılan B2B indirimi uygula
@@ -44,14 +47,15 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         return new Price((float) $amountTry, 'TRY');
     }
 
+    // Ürün için uygulanabilir tüm indirimleri toplar ve birleştirir
     public function getAvailableDiscounts(
-        ProductVariant $variant,
-        ?User $customer = null,
-        int $quantity = 1
+        ProductVariant $variant,  // İndirim uygulanacak ürün varyantı
+        ?User $customer = null,   // Müşteri bilgisi (opsiyonel)
+        int $quantity = 1         // Sipariş adedi
     ): Collection {
         $discounts = collect();
 
-        // Smart Pricing (ProductListResource ile tutarlı indirim yüzdesi)
+        // Akıllı Fiyatlandırma (Müşteri tipine göre otomatik indirim)
         try {
             /** @var \App\Services\Pricing\CustomerTypeDetectorService $detector */
             $detector = app(\App\Services\Pricing\CustomerTypeDetectorService::class);
@@ -60,14 +64,14 @@ class B2BPricingStrategy extends AbstractPricingStrategy
                 $discounts->push(
                     Discount::percentage(
                         $smartPercentage,
-                        'Smart Pricing',
+                        'Akıllı Fiyatlandırma',
                         'Kullanıcı tipine göre otomatik indirim',
-                        92 // Dealer indirimlerinin altında, yine de yüksek öncelik
+                        92 // Bayi indirimlerinin altında, yine de yüksek öncelik
                     )
                 );
             }
         } catch (\Throwable $e) {
-            // ignore smart pricing if service not available
+            // Servis kullanılamıyorsa akıllı fiyatlandırmayı atla
         }
 
         // Add customer-specific dealer discounts
@@ -88,15 +92,17 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    // Müşteriye özel bayi indirimlerini getirir
     protected function getCustomerDiscounts(ProductVariant $variant, ?User $customer = null, int $quantity = 1): Collection
     {
         $discounts = collect();
 
+        // Sadece bayi kullanıcılar için indirim uygula
         if (!$customer || !$customer->hasRole('dealer')) {
             return $discounts;
         }
 
-        // Get specific dealer discounts for this product
+        // Bu ürün için tanımlı bayi indirimlerini getir
         $dealerDiscounts = \App\Models\DealerDiscount::active()
             ->forDealer($customer->id)
             ->forProduct($variant->product_id)
@@ -125,16 +131,17 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         return $discounts;
     }
 
+    // Hacim bazlı indirimleri hesaplar (miktara göre artan indirimler)
     protected function getVolumeDiscounts(ProductVariant $variant, int $quantity): Collection
     {
         $discounts = collect();
 
-        // Define volume discount tiers for B2B
+        // B2B için hacim indirimi kademeleri
         $volumeTiers = [
-            ['min_qty' => 100, 'discount' => 5.0, 'name' => 'Volume Discount - 100+'],
-            ['min_qty' => 500, 'discount' => 10.0, 'name' => 'Volume Discount - 500+'],
-            ['min_qty' => 1000, 'discount' => 15.0, 'name' => 'Volume Discount - 1000+'],
-            ['min_qty' => 5000, 'discount' => 20.0, 'name' => 'Volume Discount - 5000+'],
+            ['min_qty' => 100, 'discount' => 5.0, 'name' => 'Hacim İndirimi - 100+ Adet'],
+            ['min_qty' => 500, 'discount' => 10.0, 'name' => 'Hacim İndirimi - 500+ Adet'],
+            ['min_qty' => 1000, 'discount' => 15.0, 'name' => 'Hacim İndirimi - 1000+ Adet'],
+            ['min_qty' => 5000, 'discount' => 20.0, 'name' => 'Hacim İndirimi - 5000+ Adet'],
         ];
 
         foreach ($volumeTiers as $tier) {
@@ -154,15 +161,17 @@ class B2BPricingStrategy extends AbstractPricingStrategy
         return $discounts->sortByDesc('value')->take(1);
     }
 
+    // Uzun süreli müşteriler için sadakat indirimlerini hesaplar
     protected function getLoyaltyDiscounts(ProductVariant $variant, ?User $customer = null): Collection
     {
         $discounts = collect();
 
+        // Sadece bayi kullanıcılar için sadakat indirimi uygula
         if (!$customer || !$customer->hasRole('dealer')) {
             return $discounts;
         }
 
-        // Check customer's order history and relationship duration
+        // Müşterinin sipariş geçmişini ve üyelik süresini kontrol et
         $customerSince = $customer->created_at;
         $monthsAsCustomer = $customerSince->diffInMonths(now());
         
