@@ -13,45 +13,82 @@ use App\ValueObjects\Pricing\Discount;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Flash Sale (ani satış) kampanyası için handler.
+ *
+ * Belirlenen ürün(ler) ve kurallara göre sepet toplamına ani indirim uygular.
+ */
 class FlashSaleHandler implements CampaignHandlerInterface
 {
+    /**
+     * Bu handler'ın desteklediği kampanya türünü doğrular.
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Destekliyorsa true
+     */
     public function supports(Campaign $campaign): bool
     {
         return $campaign->type === CampaignType::FLASH_SALE->value;
     }
 
+    /**
+     * Kampanyanın belirtilen sepet bağlamında uygulanabilirliğini kontrol eder.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return bool Uygulanabilirse true
+     */
     public function canApply(Campaign $campaign, CartContext $context, ?User $user = null): bool
     {
         return $this->validateCampaign($campaign) && $this->validateContext($context);
     }
 
+    /**
+     * Bu handler'ın desteklediği kampanya türü anahtarını döndürür.
+     *
+     * @return string Kampanya türü anahtarı
+     */
     public function getSupportedType(): string
     {
         return CampaignType::FLASH_SALE->value;
     }
 
+    /**
+     * Handler önceliği (yüksek sayı = yüksek öncelik).
+     *
+     * @return int Öncelik
+     */
     public function getPriority(): int
     {
         return 100; // Yüksek öncelik (flash sale)
     }
 
+    /**
+     * Kampanyayı uygular ve sonucu döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param User|null $user Kullanıcı (opsiyonel)
+     * @return CampaignResult Kampanya sonucu
+     */
     public function apply(Campaign $campaign, CartContext $context, ?User $user = null): CampaignResult
     {
         try {
-            // Validation chain
+            // Doğrulama zinciri
             if (!$this->validateCampaign($campaign)) {
-                return CampaignResult::failed('Campaign validation failed');
+                return CampaignResult::failed('Kampanya doğrulaması başarısız');
             }
 
             if (!$this->validateContext($context)) {
-                return CampaignResult::failed('Invalid cart context');
+                return CampaignResult::failed('Geçersiz sepet bağlamı');
             }
 
-            // Calculate flash sale discount
+            // Flash sale indirimini hesapla
             $discountAmount = $this->calculateFlashDiscount($campaign, $context);
             
             if ($discountAmount <= 0) {
-                return CampaignResult::failed('No discount applicable');
+                return CampaignResult::failed('Uygulanabilir indirim yok');
             }
 
             Log::info('Flash sale applied', [
@@ -73,18 +110,24 @@ class FlashSaleHandler implements CampaignHandlerInterface
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return CampaignResult::failed('Flash sale calculation failed');
+            return CampaignResult::failed('Flash sale hesaplama başarısız');
         }
     }
 
+    /**
+     * Kampanyanın aktiflik, tarih ve kural geçerliliğini doğrular.
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Geçerliyse true
+     */
     private function validateCampaign(Campaign $campaign): bool
     {
-        // Campaign must be active
+        // Kampanya aktif olmalı
         if (!$campaign->is_active) {
             return false;
         }
 
-        // Campaign must be within date range
+        // Kampanya tarih aralığı içinde olmalı
         $now = now();
         if ($campaign->starts_at && $now->lt($campaign->starts_at)) {
             return false;
@@ -94,7 +137,7 @@ class FlashSaleHandler implements CampaignHandlerInterface
             return false;
         }
 
-        // Must have valid flash sale rules
+        // Geçerli flash sale kuralları olmalı
         $rules = $campaign->rules ?? [];
         if (empty($rules['flash_discount_type']) || empty($rules['flash_discount_value'])) {
             return false;
@@ -103,11 +146,24 @@ class FlashSaleHandler implements CampaignHandlerInterface
         return true;
     }
 
+    /**
+     * Sepet bağlamının geçerliliğini kontrol eder.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @return bool Geçerliyse true
+     */
     private function validateContext(CartContext $context): bool
     {
         return $context->getItems()->isNotEmpty() && $context->getTotalAmount() > 0;
     }
 
+    /**
+     * Flash sale indirim tutarını hesaplar.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return float İndirim tutarı
+     */
     private function calculateFlashDiscount(Campaign $campaign, CartContext $context): float
     {
         $rules = $campaign->rules ?? [];
@@ -115,12 +171,12 @@ class FlashSaleHandler implements CampaignHandlerInterface
         
         $discountType = $rules['flash_discount_type'] ?? 'percentage';
         $discountValue = $rules['flash_discount_value'] ?? 0;
-        $targetProducts = $rules['flash_sale_products'] ?? []; // Specific products or empty for all
+        $targetProducts = $rules['flash_sale_products'] ?? []; // Belirli ürünler veya tümü için boş
 
         $cartItems = $context->getItems();
         $applicableAmount = 0;
 
-        // Calculate total amount for applicable products
+        // Uygun ürünlerin toplam tutarını hesapla
         foreach ($cartItems as $item) {
             $isApplicable = empty($targetProducts) || in_array($item['product_id'], $targetProducts);
             
@@ -133,20 +189,20 @@ class FlashSaleHandler implements CampaignHandlerInterface
             return 0;
         }
 
-        // Calculate discount
+        // İndirim tutarını hesapla
         $discountAmount = match ($discountType) {
             'percentage' => ($applicableAmount * $discountValue) / 100,
-            'fixed' => min($discountValue, $applicableAmount), // Don't exceed applicable amount
+            'fixed' => min($discountValue, $applicableAmount), // Uygulanabilir tutarı aşma
             default => 0
         };
 
-        // Apply maximum discount limit
+        // Maksimum indirim sınırını uygula
         $maxDiscount = $rewards['max_discount'] ?? null;
         if ($maxDiscount && $discountAmount > $maxDiscount) {
             $discountAmount = $maxDiscount;
         }
 
-        // Limit to cart total
+        // Sepet toplamı ile sınırla
         $cartTotal = $context->getTotalAmount();
         return min($discountAmount, $cartTotal);
     }

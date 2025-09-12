@@ -12,33 +12,51 @@ use App\ValueObjects\Campaign\CartContext;
 use App\ValueObjects\Pricing\Discount;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Miktar indirimi kampanyası için handler.
+ *
+ * Uygun ürün(ler) ve miktar kademelerine göre indirim hesaplar.
+ */
 class QuantityDiscountHandler implements CampaignHandlerInterface
 {
+    /**
+     * Bu handler'ın desteklediği kampanya türünü doğrular.
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Destekliyorsa true
+     */
     public function supports(Campaign $campaign): bool
     {
         return $campaign->type === CampaignType::QUANTITY_DISCOUNT->value;
     }
 
+    /**
+     * Kampanyayı uygular ve sonucu döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return CampaignResult Kampanya sonucu
+     */
     public function apply(Campaign $campaign, CartContext $context): CampaignResult
     {
         try {
-            // Validation chain
+            // Doğrulama zinciri
             if (!$this->validateCampaign($campaign)) {
-                return CampaignResult::failed('Campaign validation failed');
+                return CampaignResult::failed('Kampanya doğrulaması başarısız');
             }
 
             if (!$this->validateContext($context)) {
-                return CampaignResult::failed('Invalid cart context');
+                return CampaignResult::failed('Geçersiz sepet bağlamı');
             }
 
-            // Calculate quantity discount
+            // Miktar indirimini hesapla
             $discountResult = $this->calculateQuantityDiscount($campaign, $context);
             
             if ($discountResult['discount_amount'] <= 0) {
-                return CampaignResult::failed($discountResult['reason'] ?? 'No discount applicable');
+                return CampaignResult::failed($discountResult['reason'] ?? 'İndirim uygulanamadı');
             }
 
-            Log::info('Quantity discount applied', [
+            Log::info('Miktar indirimi uygulandı', [
                 'campaign_id' => $campaign->id,
                 'customer_id' => $context->getCustomerId(),
                 'qualifying_products' => $discountResult['qualifying_products'],
@@ -48,29 +66,35 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             ]);
 
             return CampaignResult::discount(
-                new Discount($discountResult['discount_amount'], 'Quantity Discount: ' . $campaign->name),
+                new Discount($discountResult['discount_amount'], 'Miktar İndirimi: ' . $campaign->name),
                 "Miktar indirimi uygulandı: {$campaign->name} ({$discountResult['tier_applied']['description']})"
             );
 
         } catch (\Exception $e) {
-            Log::error('Quantity discount handler failed', [
+            Log::error('Miktar indirimi handler hatası', [
                 'campaign_id' => $campaign->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return CampaignResult::failed('Quantity discount calculation failed');
+            return CampaignResult::failed('Miktar indirimi hesaplaması başarısız');
         }
     }
 
+    /**
+     * Kampanya temel doğrulamaları (aktiflik, tarih ve kural kademeleri).
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Geçerliyse true
+     */
     private function validateCampaign(Campaign $campaign): bool
     {
-        // Campaign must be active
+        // Kampanya aktif olmalı
         if (!$campaign->is_active) {
             return false;
         }
 
-        // Campaign must be within date range
+        // Kampanya tarih aralığı içinde olmalı
         $now = now();
         if ($campaign->starts_at && $now->lt($campaign->starts_at)) {
             return false;
@@ -80,7 +104,7 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             return false;
         }
 
-        // Must have valid quantity tiers
+        // Geçerli miktar kademeleri olmalı
         $rules = $campaign->rules ?? [];
         if (empty($rules['quantity_tiers']) || !is_array($rules['quantity_tiers'])) {
             return false;
@@ -89,22 +113,35 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         return true;
     }
 
+    /**
+     * Sepet bağlamının geçerliliğini kontrol eder.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @return bool Geçerliyse true
+     */
     private function validateContext(CartContext $context): bool
     {
         return $context->getItems()->isNotEmpty() && $context->getTotalAmount() > 0;
     }
 
+    /**
+     * Miktar indirimi hesaplamasını yapar ve detaylı sonuç döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return array{discount_amount:float,qualifying_products:array,total_quantity:int,tier_applied:array,apply_to_all:bool,reason?:string}
+     */
     private function calculateQuantityDiscount(Campaign $campaign, CartContext $context): array
     {
         $rules = $campaign->rules ?? [];
         $rewards = $campaign->rewards ?? [];
         
         $quantityTiers = $rules['quantity_tiers'] ?? [];
-        $targetProducts = $rules['target_products'] ?? []; // Specific products or empty for all
+        $targetProducts = $rules['target_products'] ?? []; // Belirli ürünler veya tümü için boş
         $targetCategories = $rules['target_categories'] ?? [];
-        $applyToAll = $rules['apply_to_all'] ?? true; // All products or just qualifying ones
+        $applyToAll = $rules['apply_to_all'] ?? true; // Tüm ürünler mi yoksa sadece uygun olanlar mı
         
-        // Get qualifying products and calculate total quantity
+        // Uygun ürünleri al ve toplam adedi hesapla
         $qualifyingResult = $this->getQualifyingProducts($context, $targetProducts, $targetCategories);
         
         if ($qualifyingResult['total_quantity'] <= 0) {
@@ -114,7 +151,7 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             ];
         }
 
-        // Find applicable tier
+        // Uygulanabilir kademeyi bul
         $applicableTier = $this->findApplicableTier($quantityTiers, $qualifyingResult['total_quantity']);
         
         if (!$applicableTier) {
@@ -124,7 +161,7 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             ];
         }
 
-        // Calculate discount based on tier and application type
+        // Kademeye göre indirim tutarını hesapla
         $discountAmount = $this->calculateTierDiscount(
             $applicableTier, 
             $qualifyingResult, 
@@ -132,13 +169,13 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             $applyToAll
         );
 
-        // Apply maximum discount limit
+        // Maksimum indirim sınırını uygula
         $maxDiscount = $rewards['max_discount'] ?? null;
         if ($maxDiscount && $discountAmount > $maxDiscount) {
             $discountAmount = $maxDiscount;
         }
 
-        // Limit to cart total
+        // Sepet toplamı ile sınırla
         $cartTotal = $context->getTotalAmount();
         $discountAmount = min($discountAmount, $cartTotal);
 
@@ -151,6 +188,14 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Hedef ürün/kategorilere göre uygun ürünleri ve toplam miktarı döndürür.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @param array $targetProducts Hedef ürünler
+     * @param array $targetCategories Hedef kategoriler
+     * @return array{products:array,total_quantity:int}
+     */
     private function getQualifyingProducts(CartContext $context, array $targetProducts, array $targetCategories): array
     {
         $cartItems = $context->getItems();
@@ -160,16 +205,16 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         foreach ($cartItems as $item) {
             $isQualifying = false;
 
-            // Check if specific products are targeted
+            // Belirli ürünler hedeflenmiş mi kontrol et
             if (!empty($targetProducts)) {
                 $isQualifying = in_array($item['product_id'], $targetProducts);
             }
-            // Check if specific categories are targeted
+            // Belirli kategoriler hedeflenmiş mi kontrol et
             elseif (!empty($targetCategories)) {
                 $productCategories = $item['categories'] ?? [];
                 $isQualifying = !empty(array_intersect($productCategories, $targetCategories));
             }
-            // If no specific targeting, all products qualify
+            // Spesifik hedef yoksa tüm ürünler uygundur
             else {
                 $isQualifying = true;
             }
@@ -186,9 +231,16 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Toplam miktara göre uygulanabilir kademeyi bulur.
+     *
+     * @param array $tiers Kademe tanımları
+     * @param int $totalQuantity Toplam miktar
+     * @return array|null Uygun kademe veya null
+     */
     private function findApplicableTier(array $tiers, int $totalQuantity): ?array
     {
-        // Sort tiers by minimum quantity in descending order to find the highest applicable tier
+        // En yüksek uygulanabilir kademeyi bulmak için minimum miktara göre azalan sırala
         usort($tiers, function ($a, $b) {
             return ($b['min_quantity'] ?? 0) <=> ($a['min_quantity'] ?? 0);
         });
@@ -203,13 +255,22 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         return null;
     }
 
+    /**
+     * Kademeye göre indirim tutarını hesaplar.
+     *
+     * @param array $tier Uygulanan kademe
+     * @param array $qualifyingResult Uygun ürünler ve toplam miktar
+     * @param CartContext $context Sepet bağlamı
+     * @param bool $applyToAll Tüm ürünlere mi uygulanacak?
+     * @return float İndirim tutarı
+     */
     private function calculateTierDiscount(array $tier, array $qualifyingResult, CartContext $context, bool $applyToAll): float
     {
         $discountType = $tier['discount_type'] ?? 'percentage';
         $discountValue = $tier['discount_value'] ?? 0;
-        $maxQuantity = $tier['max_quantity'] ?? null; // Maximum quantity to apply discount to
+        $maxQuantity = $tier['max_quantity'] ?? null; // İndirimin uygulanacağı maksimum miktar
         
-        // Determine which products to apply discount to
+        // İndirimin uygulanacağı ürünleri belirle
         $targetProducts = $applyToAll ? $context->getItems()->toArray() : $qualifyingResult['products'];
         
         $totalDiscount = 0;
@@ -223,7 +284,7 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             $productQuantity = $product['quantity'];
             $productPrice = $product['price'];
             
-            // Apply quantity limit if specified
+            // Miktar limiti varsa uygula
             if ($maxQuantity) {
                 $remainingLimit = $maxQuantity - $processedQuantity;
                 $applicableQuantity = min($productQuantity, $remainingLimit);
@@ -246,6 +307,14 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
         return $totalDiscount;
     }
 
+    /**
+     * Kademeli yüzde indirim hesaplamasını yapar.
+     *
+     * @param array $tier Kademe
+     * @param int $quantity Adet
+     * @param float $unitPrice Birim fiyat
+     * @return float İndirim tutarı
+     */
     private function calculateTieredPercentageDiscount(array $tier, int $quantity, float $unitPrice): float
     {
         $tieredRates = $tier['tiered_rates'] ?? [];
@@ -253,7 +322,7 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             return 0;
         }
 
-        // Sort tiered rates by quantity threshold
+        // Kademe oranlarını eşik miktarına göre sırala
         usort($tieredRates, function ($a, $b) {
             return ($a['from_quantity'] ?? 0) <=> ($b['from_quantity'] ?? 0);
         });
@@ -270,12 +339,12 @@ class QuantityDiscountHandler implements CampaignHandlerInterface
             $toQuantity = $rate['to_quantity'] ?? PHP_INT_MAX;
             $discountPercentage = $rate['discount_percentage'] ?? 0;
 
-            // Skip if we haven't reached this tier yet
+            // Bu kademeye henüz ulaşılmadıysa geç
             if ($quantity < $fromQuantity) {
                 continue;
             }
 
-            // Calculate quantity in this tier
+            // Bu kademe içindeki miktarı hesapla
             $tierStartQuantity = max(0, $fromQuantity - ($quantity - $remainingQuantity));
             $tierEndQuantity = min($remainingQuantity, $toQuantity - ($quantity - $remainingQuantity));
             $tierQuantity = max(0, $tierEndQuantity - $tierStartQuantity);

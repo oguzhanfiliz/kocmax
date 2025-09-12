@@ -15,37 +15,61 @@ use App\ValueObjects\Pricing\Discount;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Cross-sell (çapraz satış) kampanyası için handler.
+ *
+ * Tetikleyici ürün(ler) sepet koşullarını sağladığında önerilen ürün(ler) için
+ * indirim, hediye ürün veya kombine fayda uygular.
+ */
 class CrossSellHandler implements CampaignHandlerInterface
 {
+    /**
+     * Bağımlılık enjeksiyonu.
+     *
+     * @param ProductCacheService $productCacheService Ürün önbellek servisi
+     */
     public function __construct(
         private ProductCacheService $productCacheService
     ) {}
 
+    /**
+     * Bu handler'ın desteklediği kampanya türünü doğrular.
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Destekliyorsa true
+     */
     public function supports(Campaign $campaign): bool
     {
         return $campaign->type === CampaignType::CROSS_SELL->value;
     }
 
+    /**
+     * Cross-sell kampanyasını uygular ve sonucu döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return CampaignResult Kampanya sonucu
+     */
     public function apply(Campaign $campaign, CartContext $context): CampaignResult
     {
         try {
-            // Validation chain
+            // Doğrulama zinciri
             if (!$this->validateCampaign($campaign)) {
-                return CampaignResult::failed('Campaign validation failed');
+                return CampaignResult::failed('Kampanya doğrulaması başarısız');
             }
 
             if (!$this->validateContext($context)) {
-                return CampaignResult::failed('Invalid cart context');
+                return CampaignResult::failed('Geçersiz sepet bağlamı');
             }
 
-            // Cross-sell validation and calculation
+            // Cross-sell doğrulaması ve hesaplama
             $crossSellResult = $this->calculateCrossSellBenefit($campaign, $context);
             
             if (!$crossSellResult['applicable']) {
                 return CampaignResult::failed($crossSellResult['reason']);
             }
 
-            Log::info('Cross-sell campaign applied', [
+            Log::info('Cross-sell kampanyası uygulandı', [
                 'campaign_id' => $campaign->id,
                 'customer_id' => $context->getCustomerId(),
                 'trigger_products' => $crossSellResult['trigger_products'],
@@ -53,10 +77,10 @@ class CrossSellHandler implements CampaignHandlerInterface
                 'benefit_type' => $crossSellResult['benefit_type']
             ]);
 
-            // Return result based on benefit type
+            // Fayda tipine göre sonucu döndür
             return match ($crossSellResult['benefit_type']) {
                 'discount' => CampaignResult::discount(
-                    new Discount($crossSellResult['discount_amount'], 'Cross-sell Discount: ' . $campaign->name),
+                    new Discount($crossSellResult['discount_amount'], 'Cross-sell İndirimi: ' . $campaign->name),
                     "Cross-sell kampanyası: {$campaign->name} - İndirim uygulandı"
                 ),
                 'free_product' => CampaignResult::freeItems(
@@ -64,32 +88,38 @@ class CrossSellHandler implements CampaignHandlerInterface
                     "Cross-sell kampanyası: {$campaign->name} - Hediye ürün eklendi"
                 ),
                 'combined' => CampaignResult::combined(
-                    new Discount($crossSellResult['discount_amount'], 'Cross-sell Combined: ' . $campaign->name),
+                    new Discount($crossSellResult['discount_amount'], 'Cross-sell Kombine: ' . $campaign->name),
                     $crossSellResult['free_items'],
                     "Cross-sell kampanyası: {$campaign->name} - İndirim ve hediye ürün"
                 ),
-                default => CampaignResult::failed('Unknown benefit type')
+                default => CampaignResult::failed('Bilinmeyen fayda tipi')
             };
 
         } catch (\Exception $e) {
-            Log::error('Cross-sell handler failed', [
+            Log::error('Cross-sell handler başarısız', [
                 'campaign_id' => $campaign->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return CampaignResult::failed('Cross-sell calculation failed');
+            return CampaignResult::failed('Cross-sell hesaplama başarısız');
         }
     }
 
+    /**
+     * Kampanya temel doğrulamaları (aktiflik, tarih ve kural seti).
+     *
+     * @param Campaign $campaign Kampanya
+     * @return bool Geçerliyse true
+     */
     private function validateCampaign(Campaign $campaign): bool
     {
-        // Campaign must be active
+        // Kampanya aktif olmalı
         if (!$campaign->is_active) {
             return false;
         }
 
-        // Campaign must be within date range
+        // Kampanya tarih aralığı içinde olmalı
         $now = now();
         if ($campaign->starts_at && $now->lt($campaign->starts_at)) {
             return false;
@@ -99,7 +129,7 @@ class CrossSellHandler implements CampaignHandlerInterface
             return false;
         }
 
-        // Must have valid cross-sell rules
+        // Geçerli cross-sell kuralları olmalı
         $rules = $campaign->rules ?? [];
         if (empty($rules['trigger_products']) || !is_array($rules['trigger_products'])) {
             return false;
@@ -112,11 +142,24 @@ class CrossSellHandler implements CampaignHandlerInterface
         return true;
     }
 
+    /**
+     * Sepet bağlamının geçerliliğini kontrol eder.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @return bool Geçerliyse true
+     */
     private function validateContext(CartContext $context): bool
     {
         return $context->getItems()->isNotEmpty() && $context->getTotalAmount() > 0;
     }
 
+    /**
+     * Cross-sell faydasını hesaplar ve detaylı sonuç döndürür.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @return array Ayrıntılı sonuç
+     */
     private function calculateCrossSellBenefit(Campaign $campaign, CartContext $context): array
     {
         $rules = $campaign->rules ?? [];
@@ -127,7 +170,7 @@ class CrossSellHandler implements CampaignHandlerInterface
         $requireAllTriggers = $rules['require_all_triggers'] ?? false;
         $minTriggerQuantity = $rules['min_trigger_quantity'] ?? 1;
 
-        // Check if trigger products are in cart
+        // Tetikleyici ürünler sepette mi kontrol et
         $triggerResult = $this->checkTriggerProducts($context, $triggerProducts, $requireAllTriggers, $minTriggerQuantity);
         
         if (!$triggerResult['triggered']) {
@@ -137,7 +180,7 @@ class CrossSellHandler implements CampaignHandlerInterface
             ];
         }
 
-        // Check if suggested products are in cart
+        // Önerilen ürünler sepette mi kontrol et
         $suggestedResult = $this->checkSuggestedProducts($context, $suggestedProducts);
         
         if (!$suggestedResult['found_any']) {
@@ -147,7 +190,7 @@ class CrossSellHandler implements CampaignHandlerInterface
             ];
         }
 
-        // Calculate benefits
+        // Faydaları hesapla
         $benefitType = $rewards['benefit_type'] ?? 'discount'; // 'discount', 'free_product', 'combined'
         $benefits = $this->calculateBenefits($campaign, $context, $suggestedResult['found_products']);
 
@@ -161,6 +204,15 @@ class CrossSellHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Tetikleyici ürünleri kontrol eder.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @param array $triggerProducts Tetikleyici ürün listesi
+     * @param bool $requireAll Tüm tetikleyiciler gerekli mi?
+     * @param int $minQuantity Minimum adet
+     * @return array Sonuç bilgisi
+     */
     private function checkTriggerProducts(CartContext $context, array $triggerProducts, bool $requireAll, int $minQuantity): array
     {
         $cartItems = $context->getItems();
@@ -202,6 +254,13 @@ class CrossSellHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Önerilen ürünleri sepette arar.
+     *
+     * @param CartContext $context Sepet bağlamı
+     * @param array $suggestedProducts Önerilen ürünler
+     * @return array Sonuç bilgisi
+     */
     private function checkSuggestedProducts(CartContext $context, array $suggestedProducts): array
     {
         $cartItems = $context->getItems();
@@ -227,6 +286,14 @@ class CrossSellHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Önerilen ürünlere göre fayda tutarlarını/hediyeleri hesaplar.
+     *
+     * @param Campaign $campaign Kampanya
+     * @param CartContext $context Sepet bağlamı
+     * @param array $foundProducts Sepette bulunan önerilen ürünler
+     * @return array Hesaplanan faydalar
+     */
     private function calculateBenefits(Campaign $campaign, CartContext $context, array $foundProducts): array
     {
         $rewards = $campaign->rewards ?? [];
@@ -254,13 +321,13 @@ class CrossSellHandler implements CampaignHandlerInterface
             }
         }
 
-        // Apply maximum limits
+        // Maksimum limitleri uygula
         $maxDiscount = $rewards['max_discount'] ?? null;
         if ($maxDiscount && $discountAmount > $maxDiscount) {
             $discountAmount = $maxDiscount;
         }
 
-        // Limit discount to cart total
+        // İndirimi sepet toplamıyla sınırla
         $cartTotal = $context->getTotalAmount();
         $discountAmount = min($discountAmount, $cartTotal);
 
@@ -270,6 +337,13 @@ class CrossSellHandler implements CampaignHandlerInterface
         ];
     }
 
+    /**
+     * Tekil ürün bazında indirim tutarını hesaplar.
+     *
+     * @param array $product Ürün bilgisi
+     * @param array $benefitConfig Fayda yapılandırması
+     * @return float İndirim tutarı
+     */
     private function calculateProductDiscount(array $product, array $benefitConfig): float
     {
         $discountType = $benefitConfig['discount_type'] ?? 'percentage';
@@ -288,6 +362,13 @@ class CrossSellHandler implements CampaignHandlerInterface
         };
     }
 
+    /**
+     * Hediye ürün(ler)i hesaplar ve döndürür.
+     *
+     * @param array $product Ürün bilgisi
+     * @param array $benefitConfig Fayda yapılandırması
+     * @return array Hediye ürün listesi
+     */
     private function calculateFreeProducts(array $product, array $benefitConfig): array
     {
         $freeItems = [];
@@ -299,7 +380,7 @@ class CrossSellHandler implements CampaignHandlerInterface
             return $freeItems;
         }
 
-        // Calculate how many free items based on purchased quantity
+        // Satın alınan miktara göre kaç adet hediye verileceğini hesapla
         $purchasedQuantity = $product['quantity'];
         $freePerPurchased = $benefitConfig['free_per_purchased'] ?? 1;
         
@@ -307,14 +388,14 @@ class CrossSellHandler implements CampaignHandlerInterface
         $totalFreeQuantity = min($totalFreeQuantity, $maxFreeQuantity);
 
         if ($totalFreeQuantity > 0) {
-            // Get product details from cache
+            // Ürün detaylarını önbellekten al
             $freeProduct = $this->productCacheService->getProductVariant($freeProductId);
             
             if ($freeProduct) {
                 $freeItems[] = [
                     'product_id' => $freeProductId,
-                    'product_name' => $freeProduct->product->name ?? 'Unknown Product',
-                    'variant_name' => $freeProduct->name ?? 'Default Variant',
+                    'product_name' => $freeProduct->product->name ?? 'Bilinmeyen Ürün',
+                    'variant_name' => $freeProduct->name ?? 'Varsayılan Varyant',
                     'quantity' => $totalFreeQuantity,
                     'unit_price' => $freeProduct->price ?? 0,
                     'total_value' => ($freeProduct->price ?? 0) * $totalFreeQuantity

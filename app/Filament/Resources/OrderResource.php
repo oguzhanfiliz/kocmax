@@ -428,22 +428,85 @@ class OrderResource extends Resource
                         Infolists\Components\RepeatableEntry::make('items')
                             ->label('Ürünler')
                             ->schema([
+                                Infolists\Components\TextEntry::make('variant_image')
+                                    ->label('')
+                                    ->state(function ($record) {
+                                        $url = $record->productVariant?->primaryImage?->image_url
+                                            ?? $record->productVariant?->image_url
+                                            ?? $record->product?->primaryImage?->image_url
+                                            ?? null;
+                                        if (!$url) return '';
+                                        return '<img src="' . e($url) . '" alt="Variant" class="h-12 w-12 rounded-md object-cover" />';
+                                    })
+                                    ->html(),
                                 Infolists\Components\TextEntry::make('product.name')
-                                    ->label('Ürün Adı'),
-                                
+                                    ->label('Ürün Adı')
+                                    ->default(fn($record) => $record->product?->name ?? $record->product_name ?? '-')
+                                    ->weight('bold')
+                                    ->color('primary'),
+
+                                Infolists\Components\TextEntry::make('product_sku')
+                                    ->label('Varyant SKU')
+                                    ->default(fn($record) => $record->product_sku ?: ($record->productVariant?->sku ?? '-'))
+                                    ->badge()
+                                    ->color('gray'),
+
+                                Infolists\Components\TextEntry::make('productVariant.name')
+                                    ->label('Varyant')
+                                    ->default(fn($record) => $record->productVariant?->name ?? '-')
+                                    ->badge()
+                                    ->color('primary'),
+
+                                Infolists\Components\TextEntry::make('product_attributes')
+                                    ->label('Varyant Özellikleri')
+                                    ->state(function ($record) {
+                                        $attrs = (array) ($record->product_attributes ?? []);
+                                        $parts = [];
+                                        if (!empty($attrs['color'])) {
+                                            $parts[] = 'Renk: ' . $attrs['color'];
+                                        }
+                                        if (!empty($attrs['size'])) {
+                                            $parts[] = 'Beden: ' . $attrs['size'];
+                                        }
+                                        foreach ($attrs as $key => $value) {
+                                            if (in_array($key, ['color', 'size', 'applied_discounts'])) {
+                                                continue;
+                                            }
+                                            if (is_scalar($value)) {
+                                                $parts[] = ucfirst($key) . ': ' . $value;
+                                            }
+                                        }
+                                        return empty($parts) ? '-' : implode(', ', $parts);
+                                    })
+                                    ->color('gray'),
+
                                 Infolists\Components\TextEntry::make('quantity')
-                                    ->label('Adet'),
-                                
+                                    ->label('Adet')
+                                    ->state(fn ($record) => (int) $record->quantity)
+                                    ->badge()
+                                    ->color('info'),
+
                                 Infolists\Components\TextEntry::make('price')
                                     ->label('Birim Fiyat')
-                                    ->money('TRY'),
-                                
+                                    ->money('TRY')
+                                    ->color('warning'),
+
                                 Infolists\Components\TextEntry::make('total')
                                     ->label('Toplam')
-                                    ->state(fn ($record) => $record->quantity * $record->price)
-                                    ->money('TRY'),
+                                    ->state(fn ($record) => (float) $record->quantity * (float) $record->price)
+                                    ->money('TRY')
+                                    ->weight('bold')
+                                    ->color('success'),
+
+                                Infolists\Components\TextEntry::make('edit_link')
+                                    ->label('İncele')
+                                    ->state(function ($record) {
+                                        $url = \App\Filament\Resources\ProductResource::getUrl('edit', ['record' => $record->product_id]);
+                                        return '<a href="' . e($url) . '" target="_blank" class="text-primary underline">İncele</a>';
+                                    })
+                                    ->html(),
                             ])
-                            ->columns(4),
+                            ->columns(9),
                     ]),
 
                 Infolists\Components\Section::make('Notlar')

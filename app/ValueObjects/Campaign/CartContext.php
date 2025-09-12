@@ -6,41 +6,80 @@ namespace App\ValueObjects\Campaign;
 
 use Illuminate\Support\Collection;
 
+/**
+ * Sepet bağlamı değer nesnesi.
+ *
+ * Sepetteki kalemler, toplam tutar, müşteri tipi/ID ve ek metaverileri taşır.
+ */
 class CartContext
 {
+    /**
+     * Yapıcı metot.
+     *
+     * @param Collection $items Sepet kalemleri (ürün, varyant, adet vb.)
+     * @param float $totalAmount Sepet toplam tutarı
+     * @param string $customerType Müşteri tipi (örn: guest, B2C, B2B)
+     * @param int|null $customerId Müşteri ID (opsiyonel)
+     * @param array $metadata Ek metaveriler
+     */
     public function __construct(
-        private readonly Collection $items, // Cart items with product, variant, quantity
+        private readonly Collection $items, // Ürün, varyant ve adet bilgilerini içeren sepet kalemleri
         private readonly float $totalAmount,
         private readonly string $customerType = 'guest',
         private readonly ?int $customerId = null,
         private readonly array $metadata = []
     ) {}
 
+    /**
+     * Sepet kalemlerini döndürür.
+     *
+     * @return Collection<array>
+     */
     public function getItems(): Collection
     {
         return $this->items;
     }
 
+    /**
+     * Sepet toplam tutarını döndürür.
+     */
     public function getTotalAmount(): float
     {
         return $this->totalAmount;
     }
 
+    /**
+     * Müşteri tipini döndürür.
+     */
     public function getCustomerType(): string
     {
         return $this->customerType;
     }
 
+    /**
+     * Müşteri ID bilgisini döndürür.
+     */
     public function getCustomerId(): ?int
     {
         return $this->customerId;
     }
 
+    /**
+     * Ek metaverileri döndürür.
+     *
+     * @return array<string,mixed>
+     */
     public function getMetadata(): array
     {
         return $this->metadata;
     }
 
+    /**
+     * Belirli bir ürün ID'sine ait sepet kalemlerini döndürür.
+     *
+     * @param int $productId Ürün ID
+     * @return Collection<array>
+     */
     public function getItemsByProduct(int $productId): Collection
     {
         return $this->items->filter(function ($item) use ($productId) {
@@ -48,16 +87,29 @@ class CartContext
         });
     }
 
+    /**
+     * Sepetteki toplam ürün adedini döndürür.
+     */
     public function getTotalQuantity(): int
     {
         return $this->items->sum('quantity');
     }
 
+    /**
+     * Belirli bir ürün için toplam adedi döndürür.
+     *
+     * @param int $productId Ürün ID
+     */
     public function getTotalQuantityForProduct(int $productId): int
     {
         return $this->getItemsByProduct($productId)->sum('quantity');
     }
 
+    /**
+     * Sepette belirtilen ürün ID'si var mı?
+     *
+     * @param int $productId Ürün ID
+     */
     public function hasProduct(int $productId): bool
     {
         return $this->items->contains(function ($item) use ($productId) {
@@ -65,6 +117,11 @@ class CartContext
         });
     }
 
+    /**
+     * Sepette verilen ürün ID'lerinin hepsi var mı?
+     *
+     * @param array<int> $productIds Ürün ID listesi
+     */
     public function hasProducts(array $productIds): bool
     {
         foreach ($productIds as $productId) {
@@ -75,11 +132,22 @@ class CartContext
         return true;
     }
 
+    /**
+     * Sepette bulunan benzersiz ürün ID'lerini döndürür.
+     *
+     * @return array<int>
+     */
     public function getProductIds(): array
     {
         return $this->items->pluck('product_id')->unique()->toArray();
     }
 
+    /**
+     * Belirli bir kategoriye ait sepet kalemlerini döndürür.
+     *
+     * @param int $categoryId Kategori ID
+     * @return Collection<array>
+     */
     public function getItemsInCategory(int $categoryId): Collection
     {
         return $this->items->filter(function ($item) use ($categoryId) {
@@ -87,6 +155,12 @@ class CartContext
         });
     }
 
+    /**
+     * Metaveriye bir anahtar/değer ekleyerek yeni bir bağlam örneği döndürür (immutability).
+     *
+     * @param string $key Anahtar
+     * @param mixed $value Değer
+     */
     public function withMetadata(string $key, mixed $value): self
     {
         $metadata = array_merge($this->metadata, [$key => $value]);
@@ -101,7 +175,7 @@ class CartContext
     }
 
     /**
-     * Factory method for easy creation from cart data
+     * Sepet verilerinden kolay oluşturma için fabrikasyon metodu.
      */
     public static function fromCart(array $cartData): self
     {
@@ -114,7 +188,7 @@ class CartContext
     }
 
     /**
-     * Factory method for creating from array of items
+     * Kalemler dizisinden bağlam oluşturma için fabrikasyon metodu.
      */
     public static function fromItems(array $items, float $totalAmount, string $customerType = 'guest', ?int $customerId = null, array $metadata = []): self
     {
@@ -122,7 +196,9 @@ class CartContext
     }
 
     /**
-     * Convert to array for logging/debugging
+     * Loglama/hata ayıklama için dizi temsiline dönüştürür.
+     *
+     * @return array<string,mixed>
      */
     public function toArray(): array
     {

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -35,6 +36,16 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Customize password reset URL to use frontend instead of web route
+        ResetPassword::createUrlUsing(function ($notifiable, string $token) {
+            $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', '')), '/');
+
+            if (! empty($frontend)) {
+                return $frontend . '/reset-password?token=' . $token . '&email=' . urlencode($notifiable->getEmailForPasswordReset());
+            }
+
+            // Fallback: expose API reset endpoint with query (frontend can pick it up)
+            return url('/api/v1/auth/reset-password?token=' . $token . '&email=' . urlencode($notifiable->getEmailForPasswordReset()));
+        });
     }
 }
