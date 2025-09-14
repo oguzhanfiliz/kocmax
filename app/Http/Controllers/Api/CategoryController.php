@@ -11,6 +11,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @OA\Tag(
@@ -71,34 +72,45 @@ class CategoryController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Category::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name');
+        // Cache key oluştur - parametrelere göre
+        $cacheKey = 'categories.index.' . md5(serialize([
+            'parent_id' => $request->input('parent_id'),
+            'level' => $request->input('level'),
+            'with_products' => $request->boolean('with_products'),
+            'per_page' => $request->input('per_page')
+        ]));
 
-        // Filter by parent category
-        if ($request->filled('parent_id')) {
-            $query->where('parent_id', $request->input('parent_id'));
-        }
+        // Cache'den veri al (1 saat cache)
+        $categories = Cache::remember($cacheKey, 3600, function() use ($request) {
+            $query = Category::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name');
 
-        // Filter by level
-        if ($request->filled('level')) {
-            $level = (int) $request->input('level');
-            if ($level === 0) {
-                $query->whereNull('parent_id');
-            } else {
-                $query->whereNotNull('parent_id');
+            // Filter by parent category
+            if ($request->filled('parent_id')) {
+                $query->where('parent_id', $request->input('parent_id'));
             }
-        }
 
-        // 🚀 with_products=true parametresi geldiğinde products_count hesapla
-        if ($request->boolean('with_products')) {
-            $query->withCount(['products' => function($q) {
-                $q->where('is_active', true);
-            }]);
-        }
+            // Filter by level
+            if ($request->filled('level')) {
+                $level = (int) $request->input('level');
+                if ($level === 0) {
+                    $query->whereNull('parent_id');
+                } else {
+                    $query->whereNotNull('parent_id');
+                }
+            }
 
-        $categories = $query->get();
+            // 🚀 with_products=true parametresi geldiğinde products_count hesapla
+            if ($request->boolean('with_products')) {
+                $query->withCount(['products' => function($q) {
+                    $q->where('is_active', true);
+                }]);
+            }
+
+            return $query->get();
+        });
 
         return CategoryResource::collection($categories);
     }
@@ -138,33 +150,42 @@ class CategoryController extends Controller
      */
     public function menu(Request $request): JsonResponse
     {
-        $withChildren = $request->boolean('with_children', true);
-        $includeNonRoot = $request->boolean('include_non_root', false);
+        // Cache key oluştur - parametrelere göre
+        $cacheKey = 'categories.menu.' . md5(serialize([
+            'with_children' => $request->boolean('with_children', true),
+            'include_non_root' => $request->boolean('include_non_root', false)
+        ]));
 
-        $query = Category::query()
-            ->where('is_active', true)
-            ->where('is_in_menu', true)
-            ->orderBy('sort_order')
-            ->orderBy('name');
+        // Cache'den veri al (2 saat cache - menü sık değişmez)
+        $categories = Cache::remember($cacheKey, 7200, function() use ($request) {
+            $withChildren = $request->boolean('with_children', true);
+            $includeNonRoot = $request->boolean('include_non_root', false);
 
-        // Varsayılan: sadece kök kategoriler
-        if (! $includeNonRoot) {
-            $query->whereNull('parent_id');
+            $query = Category::query()
+                ->where('is_active', true)
+                ->where('is_in_menu', true)
+                ->orderBy('sort_order')
+                ->orderBy('name');
 
-            if ($withChildren) {
-                $query->with(['children' => function ($childQuery) {
-                    $childQuery->where('is_active', true)
-                              ->where('is_in_menu', true)
-                              ->orderBy('sort_order')
-                              ->orderBy('name');
-                }]);
+            // Varsayılan: sadece kök kategoriler
+            if (! $includeNonRoot) {
+                $query->whereNull('parent_id');
+
+                if ($withChildren) {
+                    $query->with(['children' => function ($childQuery) {
+                        $childQuery->where('is_active', true)
+                                  ->where('is_in_menu', true)
+                                  ->orderBy('sort_order')
+                                  ->orderBy('name');
+                    }]);
+                }
+            } else {
+                // Düz liste modunda children yükleme yapma (duplikasyon olmaması için)
+                $withChildren = false;
             }
-        } else {
-            // Düz liste modunda children yükleme yapma (duplikasyon olmaması için)
-            $withChildren = false;
-        }
 
-        $categories = $query->get();
+            return $query->get();
+        });
 
         return response()->json([
             'success' => true,

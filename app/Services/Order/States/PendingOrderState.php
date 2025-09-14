@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Log;
 
 class PendingOrderState implements OrderStateInterface
 {
+    /**
+     * Bu durumdan hangi durumlara geçilebileceğini belirtir.
+     *
+     * @param OrderStatus $newStatus Hedef durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
         return in_array($newStatus, [
@@ -19,17 +25,23 @@ class PendingOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * Pending durumunda yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function process(Order $order): void
     {
-        // Pending state processing
-        // - Check payment status
-        // - Validate inventory
-        // - Prepare for processing
+        // Pending durumunda yapılacak işlemler
+        // - Ödeme durumunu kontrol et
+        // - Stokları doğrula
+        // - Processing için hazırla
         
         Log::debug('Processing pending order', ['order_id' => $order->id]);
         
         if ($this->shouldAutoTransitionToProcessing($order)) {
-            // Automatically transition to processing if conditions are met
+            // Koşullar sağlanırsa otomatik olarak processing durumuna geç
             app(\App\Services\Order\OrderStatusService::class)->updateStatus(
                 $order, 
                 OrderStatus::Processing, 
@@ -39,6 +51,11 @@ class PendingOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Kullanılabilir eylemleri döndürür.
+     *
+     * @return array Eylemler
+     */
     public function getAvailableActions(): array
     {
         return [
@@ -50,6 +67,11 @@ class PendingOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Yapılabilir durum geçişlerini döndürür.
+     *
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(): array
     {
         return [
@@ -58,6 +80,12 @@ class PendingOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Pending durumuna girildiğinde yapılacak işlemler.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function enter(Order $order): void
     {
         Log::info('Order entered pending state', [
@@ -65,12 +93,15 @@ class PendingOrderState implements OrderStateInterface
             'order_number' => $order->order_number
         ]);
 
-        // Actions to perform when entering pending state
+        // Pending durumuna girerken yapılacak işlemler
         $this->validateOrderData($order);
         $this->checkInventoryAvailability($order);
         $this->schedulePaymentReminder($order);
     }
 
+    /**
+     * Pending durumundan çıkarken yapılacak işlemler.
+     */
     public function exit(Order $order): void
     {
         Log::info('Order exiting pending state', [
@@ -78,15 +109,21 @@ class PendingOrderState implements OrderStateInterface
             'order_number' => $order->order_number
         ]);
 
-        // Actions to perform when exiting pending state
+        // Pending durumundan çıkarken yapılacak işlemler
         $this->cancelPaymentReminder($order);
     }
 
+    /**
+     * Koşullar sağlanırsa otomatik processing durumuna geçilmesi gerekip gerekmediğini belirler.
+     */
     private function shouldAutoTransitionToProcessing(Order $order): bool
     {
         return $order->isPaid() && $this->hasInventoryAvailable($order);
     }
 
+    /**
+     * Sipariş için gereken stokların mevcut olup olmadığını kontrol eder.
+     */
     private function hasInventoryAvailable(Order $order): bool
     {
         foreach ($order->items as $item) {
@@ -103,16 +140,19 @@ class PendingOrderState implements OrderStateInterface
         return true;
     }
 
+    /**
+     * Pending durumunda sipariş verilerini doğrular.
+     */
     private function validateOrderData(Order $order): void
     {
         $issues = [];
 
-        // Check if order has items
+        // Siparişte öğe var mı kontrol et
         if ($order->items->isEmpty()) {
             $issues[] = 'Order has no items';
         }
 
-        // Check if required addresses are present
+        // Gerekli adresler mevcut mu kontrol et
         if (empty($order->shipping_address)) {
             $issues[] = 'Missing shipping address';
         }
@@ -121,7 +161,7 @@ class PendingOrderState implements OrderStateInterface
             $issues[] = 'Missing billing address';
         }
 
-        // Check if total amount makes sense
+        // Toplam tutar mantıklı mı kontrol et
         if ($order->total_amount <= 0) {
             $issues[] = 'Invalid total amount';
         }
@@ -134,6 +174,9 @@ class PendingOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Stok uygunluğunu kontrol eder ve sorunlu öğeleri loglar.
+     */
     private function checkInventoryAvailability(Order $order): void
     {
         $unavailableItems = [];
@@ -165,18 +208,23 @@ class PendingOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Ödeme hatırlatıcısı planlar (örnek uygulama).
+     */
     private function schedulePaymentReminder(Order $order): void
     {
-        // In a real implementation, this would schedule a job or notification
-        // to remind the customer about pending payment
+        // Gerçek uygulamada, bekleyen ödeme için müşteriyi hatırlatacak bir job/notification planlanır
         Log::debug('Payment reminder scheduled for pending order', [
             'order_id' => $order->id
         ]);
     }
 
+    /**
+     * Planlanmış ödeme hatırlatıcısını iptal eder.
+     */
     private function cancelPaymentReminder(Order $order): void
     {
-        // Cancel any scheduled payment reminders
+        // Planlanmış ödeme hatırlatmalarını iptal et
         Log::debug('Payment reminder cancelled for order', [
             'order_id' => $order->id
         ]);

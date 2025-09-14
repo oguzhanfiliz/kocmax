@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Slider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use OpenApi\Annotations as OA;
 
 /**
@@ -48,20 +49,26 @@ class SliderController extends Controller
     public function index()
     {
         try {
-            $sliders = Slider::active()
-                ->ordered()
-                ->get()
-                ->map(function (Slider $slider) {
-                    return [
-                        'id' => $slider->id,
-                        'title' => $slider->title,
-                        'image_url' => $this->getFullImageUrl($slider->image_url),
-                        'button_text' => $slider->button_text,
-                        'button_link' => $slider->button_link,
-                        'text_fields' => $slider->text_fields ? $this->transformTextFields($slider->text_fields) : null,
-                        'sort_order' => $slider->sort_order,
-                    ];
-                });
+            // Cache key - slider'lar sık değişmez
+            $cacheKey = 'sliders.index';
+
+            // Cache'den veri al (2 saat cache - slider'lar statik içerik)
+            $sliders = Cache::remember($cacheKey, 7200, function() {
+                return Slider::active()
+                    ->ordered()
+                    ->get()
+                    ->map(function (Slider $slider) {
+                        return [
+                            'id' => $slider->id,
+                            'title' => $slider->title,
+                            'image_url' => $this->getFullImageUrl($slider->image_url),
+                            'button_text' => $slider->button_text,
+                            'button_link' => $slider->button_link,
+                            'text_fields' => $slider->text_fields ? $this->transformTextFields($slider->text_fields) : null,
+                            'sort_order' => $slider->sort_order,
+                        ];
+                    });
+            });
 
             return response()->json([
                 'success' => true,

@@ -11,20 +11,38 @@ use Illuminate\Support\Facades\Log;
 
 class ShippedOrderState implements OrderStateInterface
 {
+    /**
+     * Bu durumdan hangi durumlara geçilebileceğini kontrol eder.
+     *
+     * Not: Kargoya verilmiş (shipped) siparişler genellikle iptal edilemez.
+     *
+     * @param OrderStatus $newStatus Hedef durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
         return in_array($newStatus, [
             OrderStatus::Delivered
-            // Note: Shipped orders typically cannot be cancelled
+            // Not: Kargoya verilen siparişler genellikle iptal edilemez
         ]);
     }
 
+    /**
+     * Shipped (kargoya verildi) durumunda yapılacak işlemleri yürütür.
+     *
+     * - Takip durumunu izle
+     * - Teslimat tahminlerini güncelle
+     * - Teslimat bildirimlerini yönet
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function process(Order $order): void
     {
-        // Shipped state processing
-        // - Monitor tracking status
-        // - Update delivery estimates
-        // - Handle delivery notifications
+        // Shipped durumu işleme
+        // - Takip durumunu izle
+        // - Teslimat tahminlerini güncelle
+        // - Teslimat bildirimlerini yönet
         
         Log::debug('Processing shipped order', ['order_id' => $order->id]);
         
@@ -33,6 +51,11 @@ class ShippedOrderState implements OrderStateInterface
         $this->sendTrackingNotifications($order);
     }
 
+    /**
+     * Bu durumdayken yapılabilecek eylemleri döndürür.
+     *
+     * @return array Eylemler
+     */
     public function getAvailableActions(): array
     {
         return [
@@ -45,6 +68,11 @@ class ShippedOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Bu durumdan yapılabilecek geçişleri döndürür.
+     *
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(): array
     {
         return [
@@ -52,6 +80,12 @@ class ShippedOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Shipped durumuna girildiğinde yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function enter(Order $order): void
     {
         Log::info('Order entered shipped state', [
@@ -60,12 +94,18 @@ class ShippedOrderState implements OrderStateInterface
             'tracking_number' => $order->tracking_number
         ]);
 
-        // Actions to perform when entering shipped state
+        // Shipped durumuna girerken yapılacak işlemler
         $this->initializeTracking($order);
         $this->notifyCustomerShipped($order);
         $this->scheduleDeliveryUpdates($order);
     }
 
+    /**
+     * Shipped durumundan çıkarken yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function exit(Order $order): void
     {
         Log::info('Order exiting shipped state', [
@@ -73,11 +113,14 @@ class ShippedOrderState implements OrderStateInterface
             'order_number' => $order->order_number
         ]);
 
-        // Actions to perform when exiting shipped state
+        // Shipped durumundan çıkarken yapılacak işlemler
         $this->cancelDeliveryUpdates($order);
         $this->finalizeShippingData($order);
     }
 
+    /**
+     * Takip numarası ile takip işlemlerini başlatır.
+     */
     private function initializeTracking(Order $order): void
     {
         if (empty($order->tracking_number)) {
@@ -93,33 +136,40 @@ class ShippedOrderState implements OrderStateInterface
             'carrier' => $order->shipping_carrier
         ]);
 
-        // Initialize tracking monitoring
+        // Takip izleme sürecini başlat
         $this->startTrackingMonitoring($order);
     }
 
+    /**
+     * Müşteriye kargo bilgilerini iletir (örnek).
+     */
     private function notifyCustomerShipped(Order $order): void
     {
-        // Send shipping confirmation to customer
+        // Müşteriye kargo onayı gönder
         Log::info('Sending shipping notification to customer', [
             'order_id' => $order->id,
             'customer_email' => $order->shipping_email ?? $order->billing_email
         ]);
 
-        // In a real implementation, this would send an email/SMS
-        // notification with tracking information
+        // Gerçek uygulamada, takip bilgilerini içeren e-posta/SMS gönderilir
     }
 
+    /**
+     * Teslimat güncellemelerini planlar (örnek).
+     */
     private function scheduleDeliveryUpdates(Order $order): void
     {
-        // Schedule periodic tracking updates
+        // Periyodik takip güncellemelerini planla
         Log::debug('Scheduling delivery updates for order', [
             'order_id' => $order->id
         ]);
 
-        // In a real implementation, this would schedule jobs to
-        // periodically check tracking status
+        // Gerçek uygulamada, belirli aralıklarla takip durumunu kontrol eden işler planlanır
     }
 
+    /**
+     * Takip durumunu günceller ve gerekiyorsa otomatik durum geçişi yapar.
+     */
     private function updateTrackingStatus(Order $order): void
     {
         if (empty($order->tracking_number)) {
@@ -131,11 +181,11 @@ class ShippedOrderState implements OrderStateInterface
             'tracking_number' => $order->tracking_number
         ]);
 
-        // Mock tracking status update
+        // Takip durumu güncellemesi (örnek/mock)
         $trackingInfo = $this->fetchTrackingInfo($order);
         
         if ($trackingInfo && $trackingInfo['status'] === 'delivered') {
-            // Automatically transition to delivered
+            // Takip bilgisine göre otomatik olarak delivered durumuna geç
             app(\App\Services\Order\OrderStatusService::class)->updateStatus(
                 $order,
                 OrderStatus::Delivered,
@@ -145,9 +195,12 @@ class ShippedOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Teslimat durumunu kontrol eder ve anomali varsa uyarı verir.
+     */
     private function checkDeliveryStatus(Order $order): void
     {
-        // Check if order has been shipped for too long without delivery
+        // Siparişin çok uzun süre teslim edilmeden kargoda kalıp kalmadığını kontrol et
         $shippedAt = $order->shipped_at;
         $maxDeliveryDays = $this->getMaxDeliveryDays($order);
         
@@ -159,14 +212,17 @@ class ShippedOrderState implements OrderStateInterface
                 'max_delivery_days' => $maxDeliveryDays
             ]);
             
-            // Trigger investigation or customer contact
+            // Araştırma başlat veya müşteri ile iletişime geç
             $this->triggerDeliveryInvestigation($order);
         }
     }
 
+    /**
+     * Müşteriye periyodik takip bildirimleri gönderir (örnek).
+     */
     private function sendTrackingNotifications(Order $order): void
     {
-        // Send periodic tracking updates to customer
+        // Müşteriye periyodik takip güncellemeleri gönder
         if ($order->tracking_number) {
             Log::debug('Sending tracking notification', [
                 'order_id' => $order->id,
@@ -175,40 +231,53 @@ class ShippedOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Takip izleme sürecini başlatır (örnek).
+     */
     private function startTrackingMonitoring(Order $order): void
     {
-        // Start monitoring tracking status changes
+        // Takip durum değişikliklerini izlemeyi başlat
         Log::debug('Starting tracking monitoring', [
             'order_id' => $order->id,
             'tracking_number' => $order->tracking_number
         ]);
     }
 
+    /**
+     * Planlanmış teslimat güncellemelerini iptal eder.
+     */
     private function cancelDeliveryUpdates(Order $order): void
     {
-        // Cancel scheduled delivery update jobs
+        // Planlanmış teslimat güncelleme işlerini iptal et
         Log::debug('Cancelling delivery updates', [
             'order_id' => $order->id
         ]);
     }
 
+    /**
+     * Shipped durumundan çıkarken gönderim verilerini finalize eder.
+     */
     private function finalizeShippingData(Order $order): void
     {
-        // Finalize shipping data when exiting shipped state
+        // Shipped durumundan çıkarken gönderim verilerini tamamla
         Log::debug('Finalizing shipping data', [
             'order_id' => $order->id
         ]);
     }
 
+    /**
+     * Takip bilgilerini mock olarak getirir (örnek).
+     *
+     * @return array|null Takip bilgileri veya null
+     */
     private function fetchTrackingInfo(Order $order): ?array
     {
-        // Mock tracking API call
+        // Mock takip API çağrısı
         if (empty($order->tracking_number)) {
             return null;
         }
 
-        // Mock tracking status - in real implementation, this would
-        // call the carrier's tracking API
+        // Mock takip durumu — gerçek uygulamada kargo firmasının takip API'si çağrılır
         $mockStatuses = ['in_transit', 'out_for_delivery', 'delivered'];
         $randomStatus = $mockStatuses[array_rand($mockStatuses)];
 
@@ -221,19 +290,25 @@ class ShippedOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Kargo yöntemi/konuma göre maksimum beklenen teslimat gün sayısını döndürür.
+     */
     private function getMaxDeliveryDays(Order $order): int
     {
-        // Return maximum expected delivery days based on shipping method/location
-        $defaultDays = 7; // Default 1 week
+        // Kargo yöntemi/konuma göre maksimum beklenen teslimat gün sayısını döndür
+        $defaultDays = 7; // Varsayılan 1 hafta
         
-        // Adjust based on country, shipping method, etc.
+        // Ülke, kargo yöntemi vb. baz alınarak ayarla
         if ($order->shipping_country !== 'TR') {
-            $defaultDays = 14; // International shipping
+            $defaultDays = 14; // Uluslararası gönderi
         }
         
         return $defaultDays;
     }
 
+    /**
+     * Geciken teslimat için araştırma sürecini tetikler (örnek).
+     */
     private function triggerDeliveryInvestigation(Order $order): void
     {
         Log::info('Triggering delivery investigation for delayed order', [
@@ -241,9 +316,9 @@ class ShippedOrderState implements OrderStateInterface
             'tracking_number' => $order->tracking_number
         ]);
 
-        // In a real implementation, this would:
-        // - Contact the shipping carrier
-        // - Notify customer service
-        // - Send proactive communication to customer
+        // Gerçek uygulamada şunlar yapılır:
+        // - Kargo firmasıyla iletişime geç
+        // - Müşteri hizmetlerini bilgilendir
+        // - Müşteriye proaktif bilgilendirme gönder
     }
 }

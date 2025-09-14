@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Log;
 
 class CancelledOrderState implements OrderStateInterface
 {
+    /**
+     * İptal durumundan geçişe izin verilip verilmediğini döndürür.
+     * Not: İptal durumu genellikle nihai bir durumdur.
+     *
+     * @param OrderStatus $newStatus Hedef durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
         // İptal durumu genellikle nihai bir durumdur
@@ -19,6 +26,16 @@ class CancelledOrderState implements OrderStateInterface
         return false;
     }
 
+    /**
+     * İptal edilmiş sipariş için yapılacak işlem adımlarını yürütür.
+     *
+     * - İadelerin işlendiğinden emin ol
+     * - Stokların geri yüklendiğinden emin ol
+     * - İptal bildirimlerini gönder
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function process(Order $order): void
     {
         //  İptal durumu işleme adımları
@@ -33,6 +50,11 @@ class CancelledOrderState implements OrderStateInterface
         $this->updateCancellationMetrics($order);
     }
 
+    /**
+     * Bu durumdayken yapılabilecek eylemleri döndürür.
+     *
+     * @return array Eylemler
+     */
     public function getAvailableActions(): array
     {
         return [
@@ -45,12 +67,23 @@ class CancelledOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Bu durumdan yapılabilecek geçişleri döndürür (genellikle yoktur).
+     *
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(): array
     {
         // İptal durumundan geçiş yok
         return [];
     }
 
+    /**
+     * İptal durumuna girişte yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function enter(Order $order): void
     {
         Log::info('Order entered cancelled state', [
@@ -66,6 +99,9 @@ class CancelledOrderState implements OrderStateInterface
         $this->recordCancellationMetrics($order);
     }
 
+    /**
+     * İptal durumundan çıkış denemesinde loglama yapar (normalde çağrılmaz).
+     */
     public function exit(Order $order): void
     {
         // İptal durumu genellikle nihai olduğundan bu metod normalde çağrılmamalıdır
@@ -75,6 +111,9 @@ class CancelledOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * İptal durumunda stok geri yükleme işlemlerini gerçekleştirir.
+     */
     private function processInventoryRestoration(Order $order): void
     {
         Log::info('Processing inventory restoration for cancelled order', [
@@ -109,6 +148,9 @@ class CancelledOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Gerekliyse iade işlemini gerçekleştirir.
+     */
     private function processRefundIfNeeded(Order $order): void
     {
         if (!$order->isPaid()) {
@@ -148,6 +190,9 @@ class CancelledOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * İlgili paydaşları iptal hakkında bilgilendirir.
+     */
     private function notifyStakeholders(Order $order): void
     {
         // Müşteriyi bilgilendir
@@ -157,6 +202,9 @@ class CancelledOrderState implements OrderStateInterface
         $this->notifyInternalTeams($order);
     }
 
+    /**
+     * İptal metriklerini kaydeder (örnek log).
+     */
     private function recordCancellationMetrics(Order $order): void
     {
         $cancellationData = [
@@ -174,6 +222,9 @@ class CancelledOrderState implements OrderStateInterface
         // Gerçek uygulamada, iptal analitik verileri depolanır
     }
 
+    /**
+     * İptal sonrası görevlerin tamamlandığını doğrular.
+     */
     private function verifyCancellationTasks(Order $order): void
     {
         $tasks = [
@@ -196,6 +247,9 @@ class CancelledOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * İptal bildirimlerini gönderir (müşteri ve iç ekipler).
+     */
     private function sendCancellationNotifications(Order $order): void
     {
         Log::debug('Sending cancellation notifications', ['order_id' => $order->id]);
@@ -207,6 +261,9 @@ class CancelledOrderState implements OrderStateInterface
         $this->notifyInternalTeams($order);
     }
 
+    /**
+     * İptal metriklerini günceller (örnek log).
+     */
     private function updateCancellationMetrics(Order $order): void
     {
         Log::debug('Updating cancellation metrics', [
@@ -219,6 +276,9 @@ class CancelledOrderState implements OrderStateInterface
         // Müşteri iptal geçmişini güncelle
     }
 
+    /**
+     * Müşteriyi iptal hakkında bilgilendirir (örnek log).
+     */
     private function notifyCustomer(Order $order): void
     {
         $customerEmail = $order->shipping_email ?? $order->billing_email;
@@ -233,6 +293,9 @@ class CancelledOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * İç ekipleri iptal hakkında bilgilendirir (örnek log).
+     */
     private function notifyInternalTeams(Order $order): void
     {
         Log::debug('Notifying internal teams of order cancellation', [
@@ -251,18 +314,27 @@ class CancelledOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Stokların düzgün geri yüklendiğini doğrular (örnek olarak true döner).
+     */
     private function verifyInventoryRestored(Order $order): bool
     {
         // Gerçek uygulamada, stokların düzgün şekilde geri yüklendiği doğrulanır
         return true;
     }
 
+    /**
+     * Gerekliyse iadenin işlendiğini doğrular (örnek mantık).
+     */
     private function verifyRefundProcessed(Order $order): bool
     {
         // Gerçek uygulamada, gerekiyorsa iadenin işlendiği doğrulanır
         return !$order->isPaid() || !empty($order->refund_transaction_id);
     }
 
+    /**
+     * Bildirimlerin gönderildiğini doğrular (örnek olarak true döner).
+     */
     private function verifyNotificationsSent(Order $order): bool
     {
         // Gerçek uygulamada, bildirimlerin gönderildiği doğrulanır

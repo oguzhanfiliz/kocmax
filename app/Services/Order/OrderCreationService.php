@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Log;
 
 class OrderCreationService
 {
+    /**
+     * Ödeme sürecinden gelen bağlam ve sipariş verileriyle yeni bir sipariş oluşturur.
+     *
+     * @param CheckoutContext $context Ödeme/checkout bağlamı
+     * @param array $orderData Sipariş verileri
+     * @return Order Oluşturulan sipariş
+     */
     public function createOrder(CheckoutContext $context, array $orderData): Order
     {
         $orderNumber = $this->generateOrderNumber();
@@ -24,7 +31,7 @@ class OrderCreationService
             'payment_status' => 'pending',
             'payment_method' => $orderData['payment_method'] ?? 'card',
             
-            // Amounts from cart summary
+            // Sepet özetinden gelen tutarlar
             'subtotal' => $context->getSummary()->getSubtotal(),
             'tax_amount' => $orderData['tax_amount'] ?? 0,
             'shipping_amount' => $orderData['shipping_amount'] ?? 0,
@@ -34,7 +41,7 @@ class OrderCreationService
             'coupon_code' => $orderData['coupon_code'] ?? null,
             'notes' => $orderData['notes'] ?? null,
             
-            // Shipping Address
+            // Kargo adresi
             'shipping_name' => $orderData['shipping_name'] ?? null,
             'shipping_email' => $orderData['shipping_email'] ?? null,
             'shipping_phone' => $orderData['shipping_phone'] ?? null,
@@ -44,7 +51,7 @@ class OrderCreationService
             'shipping_zip' => $orderData['shipping_zip'] ?? null,
             'shipping_country' => $orderData['shipping_country'] ?? 'TR',
             
-            // Billing Address
+            // Fatura adresi
             'billing_name' => $orderData['billing_name'] ?? $orderData['shipping_name'] ?? null,
             'billing_email' => $orderData['billing_email'] ?? $orderData['shipping_email'] ?? null,
             'billing_phone' => $orderData['billing_phone'] ?? $orderData['shipping_phone'] ?? null,
@@ -66,6 +73,13 @@ class OrderCreationService
         return $order;
     }
 
+    /**
+     * Sipariş kaydı için sipariş kalemlerini oluşturur.
+     *
+     * @param Order $order Sipariş
+     * @param array $cartItems Sepet öğeleri (dizi)
+     * @return void
+     */
     public function createOrderItems(Order $order, array $cartItems): void
     {
         foreach ($cartItems as $cartItem) {
@@ -92,13 +106,18 @@ class OrderCreationService
         }
     }
 
+    /**
+     * Benzersiz bir sipariş numarası üretir.
+     *
+     * @return string Sipariş numarası
+     */
     public function generateOrderNumber(): string
     {
         $prefix = 'ORD';
         $date = now()->format('Ymd');
         $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
         
-        // Ensure uniqueness
+        // Benzersizliği garanti et
         $orderNumber = "{$prefix}-{$date}-{$random}";
         while (Order::where('order_number', $orderNumber)->exists()) {
             $random = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
@@ -108,11 +127,17 @@ class OrderCreationService
         return $orderNumber;
     }
 
+    /**
+     * Sepet öğesinden ürün varyantı özelliklerini çıkarır.
+     *
+     * @param array $cartItem Sepet öğesi
+     * @return array Özellikler
+     */
     private function extractProductAttributes(array $cartItem): array
     {
         $attributes = [];
         
-        // Extract common product variant attributes
+        // Sık kullanılan varyant özelliklerini çıkar
         if (isset($cartItem['color'])) {
             $attributes['color'] = $cartItem['color'];
         }
@@ -125,7 +150,7 @@ class OrderCreationService
             $attributes['material'] = $cartItem['material'];
         }
         
-        // Include any other variant-specific attributes
+        // Diğer varyanta özgü özellikleri ekle
         if (isset($cartItem['attributes']) && is_array($cartItem['attributes'])) {
             $attributes = array_merge($attributes, $cartItem['attributes']);
         }

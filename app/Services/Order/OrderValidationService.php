@@ -11,19 +11,19 @@ use App\ValueObjects\Order\OrderValidationResult;
 class OrderValidationService
 {
     /**
-     * Validate order creation data
+     * Sipariş oluşturma verilerini doğrular.
      */
     public function validateOrderCreation(CheckoutContext $context, array $orderData): OrderValidationResult
     {
         $errors = [];
         $warnings = [];
 
-        // Validate checkout context
+        // Checkout bağlamını doğrula
         if ($context->isEmpty()) {
             $errors[] = 'Cart cannot be empty for order creation';
         }
 
-        // Validate required order data
+        // Gerekli sipariş verilerini doğrula
         $requiredFields = ['shipping_address', 'billing_address'];
         foreach ($requiredFields as $field) {
             if (!isset($orderData[$field]) || empty($orderData[$field])) {
@@ -31,7 +31,7 @@ class OrderValidationService
             }
         }
 
-        // Validate addresses
+        // Adresleri doğrula
         if (isset($orderData['shipping_address'])) {
             $shippingValidation = $this->validateAddress($orderData['shipping_address'], 'shipping');
             $errors = array_merge($errors, $shippingValidation);
@@ -42,19 +42,19 @@ class OrderValidationService
             $errors = array_merge($errors, $billingValidation);
         }
 
-        // Validate payment method if provided
+        // Ödeme yöntemi verildiyse doğrula
         if (isset($orderData['payment_method'])) {
             $paymentValidation = $this->validatePaymentMethod($orderData['payment_method']);
             $errors = array_merge($errors, $paymentValidation);
         }
 
-        // Business-specific validations
+        // İşe özgü doğrulamalar
         if ($context->isB2B()) {
             $b2bValidation = $this->validateB2BOrder($context, $orderData);
             $errors = array_merge($errors, $b2bValidation);
         }
 
-        // Generate warnings
+        // Uyarıları oluştur
         $warnings = $this->generateOrderWarnings($context, $orderData);
 
         return empty($errors) 
@@ -63,24 +63,24 @@ class OrderValidationService
     }
 
     /**
-     * Validate existing order
+     * Mevcut siparişi doğrular.
      */
     public function validateOrder(Order $order): OrderValidationResult
     {
         $errors = [];
         $warnings = [];
 
-        // Validate order integrity
+        // Sipariş bütünlüğünü doğrula
         if ($order->items()->count() === 0) {
             $errors[] = 'Order has no items';
         }
 
-        // Validate order amounts
+        // Sipariş tutarlarını doğrula
         if ($order->total_amount <= 0) {
             $errors[] = 'Order total amount must be greater than zero';
         }
 
-        // Validate order status consistency
+        // Sipariş durum tutarlılığını doğrula
         $statusValidation = $this->validateOrderStatus($order);
         $errors = array_merge($errors, $statusValidation);
 
@@ -90,7 +90,7 @@ class OrderValidationService
     }
 
     /**
-     * Validate address data
+     * Adres verilerini doğrular.
      */
     private function validateAddress(array $address, string $type): array
     {
@@ -103,7 +103,7 @@ class OrderValidationService
             }
         }
 
-        // Validate email for billing address
+        // Fatura adresi için e-posta doğrulaması
         if ($type === 'billing' && isset($address['email'])) {
             if (!filter_var($address['email'], FILTER_VALIDATE_EMAIL)) {
                 $errors[] = 'Invalid email format in billing address';
@@ -114,7 +114,7 @@ class OrderValidationService
     }
 
     /**
-     * Validate payment method
+     * Ödeme yöntemini doğrular.
      */
     private function validatePaymentMethod(string $paymentMethod): array
     {
@@ -129,18 +129,18 @@ class OrderValidationService
     }
 
     /**
-     * Validate B2B specific requirements
+     * B2B'ye özel gereklilikleri doğrular.
      */
     private function validateB2BOrder(CheckoutContext $context, array $orderData): array
     {
         $errors = [];
 
-        // B2B orders might require tax ID
+        // B2B siparişleri vergi numarası gerektirebilir
         if (!isset($orderData['tax_id']) || empty($orderData['tax_id'])) {
             $errors[] = 'Tax ID is required for B2B orders';
         }
 
-        // B2B orders might have minimum order amount
+        // B2B siparişlerinde minimum sipariş tutarı olabilir
         if ($context->getTotal() < 100) { // Example minimum
             $errors[] = 'B2B orders must have minimum amount of 100';
         }
@@ -149,13 +149,13 @@ class OrderValidationService
     }
 
     /**
-     * Validate order status consistency
+     * Sipariş durum tutarlılığını doğrular.
      */
     private function validateOrderStatus(Order $order): array
     {
         $errors = [];
 
-        // Check status transitions
+        // Durum geçişlerini kontrol et
         if ($order->status === 'shipped' && !$order->shipped_at) {
             $errors[] = 'Order marked as shipped but missing shipped_at timestamp';
         }
@@ -168,18 +168,18 @@ class OrderValidationService
     }
 
     /**
-     * Generate warnings for potential issues
+     * Potansiyel sorunlar için uyarılar üretir.
      */
     private function generateOrderWarnings(CheckoutContext $context, array $orderData): array
     {
         $warnings = [];
 
-        // Warning for high-value orders
+        // Yüksek tutarlı siparişler için uyarı
         if ($context->getTotal() > 1000) {
             $warnings[] = 'High-value order - consider additional verification';
         }
 
-        // Warning for international shipping
+        // Uluslararası gönderiler için uyarı
         if (isset($orderData['shipping_address']['country']) && 
             $orderData['shipping_address']['country'] !== 'TR') {
             $warnings[] = 'International shipping may require additional documentation';

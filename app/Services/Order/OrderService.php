@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService implements OrderServiceInterface
 {
+    /**
+     * Servis kurucusu.
+     */
     public function __construct(
         private OrderCreationService $creationService,
         private OrderStatusService $statusService,
@@ -33,32 +36,40 @@ class OrderService implements OrderServiceInterface
         private OrderNotificationService $notificationService
     ) {}
 
+    /**
+     * Checkout bağlamından sipariş oluşturur.
+     *
+     * @param CheckoutContext $context Checkout bağlamı
+     * @param array $orderData Sipariş verileri
+     * @return Order Oluşturulan sipariş
+     * @throws OrderCreationException Doğrulama hatası durumunda
+     */
     public function createFromCheckout(CheckoutContext $context, array $orderData): Order
     {
         try {
-            // Validate order creation
+            // Sipariş oluşturmayı doğrula
             $validation = $this->validationService->validateOrderCreation($context, $orderData);
             if (!$validation->isValid()) {
                 throw new OrderCreationException($validation->getErrors());
             }
 
             return DB::transaction(function() use ($context, $orderData) {
-                // Create order entity
+                // Sipariş kaydını oluştur
                 $order = $this->creationService->createOrder($context, $orderData);
                 
-                // Create order items
+                // Sipariş öğelerini oluştur
                 $this->creationService->createOrderItems($order, $context->getItems());
                 
-                // Set initial status
+                // Başlangıç durumunu ayarla
                 $this->statusService->setInitialStatus($order);
                 
-                // Process payment if immediate payment required
+                // Anında ödeme gerekiyorsa ödemeyi işle
                 if ($this->requiresImmediatePayment($orderData)) {
                     $paymentResult = $this->paymentService->processPayment($order, $orderData['payment_data'] ?? []);
                     $this->handlePaymentResult($order, $paymentResult);
                 }
                 
-                // Send notifications
+                // Bildirimleri gönder
                 $this->notificationService->sendOrderCreated($order);
                 
                 Log::info('Order created successfully', [
@@ -79,6 +90,15 @@ class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Sipariş durumunu günceller.
+     *
+     * @param Order $order Sipariş
+     * @param OrderStatus $newStatus Yeni durum
+     * @param User|null $updatedBy Güncelleyen kullanıcı
+     * @param string|null $reason Sebep
+     * @return void
+     */
     public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): void
     {
         try {
@@ -100,11 +120,11 @@ class OrderService implements OrderServiceInterface
 
             DB::transaction(function () use ($order, $newStatus, $updatedBy, $reason) {
                 $this->statusService->updateStatus($order, $newStatus, $updatedBy, $reason);
-                // Status-specific DB changes
+                // Duruma özel veritabanı değişiklikleri
                 $this->handleStatusChange($order, $newStatus);
             });
 
-            // Notify after commit (especially for payment completed)
+            // Commit sonrasında bildir (özellikle ödeme tamamlandığında)
             if ($newStatus === OrderStatus::Processing) {
                 \Illuminate\Support\Facades\DB::afterCommit(function () use ($order, $oldStatusValue, $newStatus) {
                     $this->notificationService->sendOrderStatusChanged(
@@ -133,6 +153,14 @@ class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Siparişi iptal eder.
+     *
+     * @param Order $order Sipariş
+     * @param User|null $cancelledBy İptal eden kullanıcı
+     * @param string|null $reason Sebep
+     * @return void
+     */
     public function cancelOrder(Order $order, ?User $cancelledBy = null, ?string $reason = null): void
     {
         if (!$order->canBeCancelled()) {
@@ -148,18 +176,18 @@ class OrderService implements OrderServiceInterface
 
         try {
             DB::transaction(function() use ($order, $cancelledBy, $reason) {
-                // Update status to cancelled
+                // Durumu iptal (cancelled) olarak güncelle
                 $this->updateStatus($order, OrderStatus::Cancelled, $cancelledBy, $reason);
                 
-                // Restore inventory
+                // Stokları geri yükle
                 $this->restoreInventory($order);
                 
-                // Process refund if payment was made
+                // Ödeme alındıysa iade işlemini yap
                 if ($order->isPaid()) {
                     $this->processRefund($order, $order->total_amount, 'Order cancellation');
                 }
                 
-                // Send cancellation notification
+                // İptal bildirimini gönder
                 $this->notificationService->sendOrderCancelled($order);
             });
 
@@ -178,6 +206,12 @@ class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Sipariş özeti hesaplar.
+     *
+     * @param Order $order Sipariş
+     * @return OrderSummary Özet
+     */
     public function calculateSummary(Order $order): OrderSummary
     {
         $itemDetails = [];
@@ -208,16 +242,25 @@ class OrderService implements OrderServiceInterface
         );
     }
 
+    /**
+     * Ödemeyi işler (facade).
+     */
     public function processPayment(Order $order, array $paymentData): PaymentResult
     {
         return $this->paymentService->processPayment($order, $paymentData);
     }
 
+    /**
+     * İade işlemini gerçekleştirir (facade).
+     */
     public function processRefund(Order $order, float $refundAmount, ?string $reason = null): PaymentResult
     {
         return $this->paymentService->processRefund($order, $refundAmount, $reason);
     }
 
+    /**
+     * Siparişi kargoya verildi olarak işaretler ve takip bilgilerini günceller.
+     */
     public function markAsShipped(Order $order, ?string $trackingNumber = null, ?string $carrier = null, ?User $shippedBy = null): void
     {
         DB::transaction(function () use ($order, $trackingNumber, $carrier, $shippedBy) {
@@ -229,10 +272,13 @@ class OrderService implements OrderServiceInterface
             ]);
         });
 
-        // Notify after commit
+        // Commit sonrası bilgilendir
         $this->notificationService->sendOrderShipped($order);
     }
 
+    /**
+     * Siparişi teslim edildi olarak işaretler.
+     */
     public function markAsDelivered(Order $order, ?User $deliveredBy = null): void
     {
         DB::transaction(function () use ($order, $deliveredBy) {
@@ -242,10 +288,13 @@ class OrderService implements OrderServiceInterface
             ]);
         });
 
-        // Notify after commit
+        // Commit sonrası bilgilendir
         $this->notificationService->sendOrderDelivered($order);
     }
 
+    /**
+     * Sipariş durum geçmişini döndürür.
+     */
     public function getStatusHistory(Order $order): array
     {
         return $order->statusHistory()
@@ -255,19 +304,28 @@ class OrderService implements OrderServiceInterface
             ->toArray();
     }
 
+    /**
+     * Mevcut siparişi doğrular.
+     */
     public function validateOrder(Order $order): OrderValidationResult
     {
         return $this->validationService->validateOrder($order);
     }
 
+    /**
+     * Anında ödeme gerekip gerekmediğini kontrol eder.
+     */
     private function requiresImmediatePayment(array $orderData): bool
     {
         $paymentMethod = $orderData['payment_method'] ?? 'card';
         
-        // B2B credit payments don't require immediate processing
+        // B2B kredi ödemeleri anında işlem gerektirmez
         return $paymentMethod !== 'credit';
     }
 
+    /**
+     * Ödeme sonucu ile siparişi günceller ve gerekli durum geçişlerini yapar.
+     */
     private function handlePaymentResult(Order $order, PaymentResult $paymentResult): void
     {
         if ($paymentResult->isSuccess()) {
@@ -276,7 +334,7 @@ class OrderService implements OrderServiceInterface
                 'payment_transaction_id' => $paymentResult->getTransactionId()
             ]);
             
-            // Automatically move to processing if payment successful
+            // Ödeme başarılıysa otomatik olarak processing durumuna geçir
             if ($order->status === 'pending') {
                 $this->updateStatus($order, OrderStatus::Processing, null, 'Payment confirmed');
             }
@@ -288,6 +346,9 @@ class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Durum değişikliklerine göre ek işlemleri gerçekleştirir.
+     */
     private function handleStatusChange(Order $order, OrderStatus $newStatus): void
     {
         match($newStatus) {
@@ -299,9 +360,12 @@ class OrderService implements OrderServiceInterface
         };
     }
 
+    /**
+     * Processing durumuna geçişte yapılacak işlemler.
+     */
     private function handleProcessingStatus(Order $order): void
     {
-        // Reserve inventory
+        // Stokları rezerve et
         foreach ($order->items as $item) {
             if ($item->productVariant) {
                 $item->productVariant->decrement('stock', $item->quantity);
@@ -311,26 +375,38 @@ class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Shipped durumuna geçişte yapılacak işlemler.
+     */
     private function handleShippedStatus(Order $order): void
     {
-        // Notify shipping provider
-        // Generate tracking information
+        // Kargo sağlayıcısını bilgilendir
+        // Takip bilgilerini oluştur
         $this->notificationService->sendOrderShipped($order);
     }
 
+    /**
+     * Delivered durumuna geçişte yapılacak işlemler.
+     */
     private function handleDeliveredStatus(Order $order): void
     {
-        // Complete order
-        // Send completion notifications
+        // Siparişi tamamla
+        // Tamamlama bildirimlerini gönder
         $this->notificationService->sendOrderDelivered($order);
     }
 
+    /**
+     * Cancelled durumuna geçişte yapılacak işlemler.
+     */
     private function handleCancelledStatus(Order $order): void
     {
-        // Additional cleanup if needed
+        // Gerekirse ek temizlik işlemleri
         $this->notificationService->sendOrderCancelled($order);
     }
 
+    /**
+     * İptal sonrası stokları geri yükler.
+     */
     private function restoreInventory(Order $order): void
     {
         foreach ($order->items as $item) {
@@ -342,3 +418,4 @@ class OrderService implements OrderServiceInterface
         }
     }
 }
+

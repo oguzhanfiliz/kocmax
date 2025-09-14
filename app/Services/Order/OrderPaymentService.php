@@ -15,6 +15,13 @@ class OrderPaymentService
 {
     private array $supportedMethods = ['card', 'credit', 'bank_transfer', 'wallet'];
 
+    /**
+     * Ödeme işlemini gerçekleştirir.
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return PaymentResult Ödeme sonucu
+     */
     public function processPayment(Order $order, array $paymentData): PaymentResult
     {
         try {
@@ -32,7 +39,7 @@ class OrderPaymentService
                 default => throw new InvalidPaymentMethodException("Unsupported payment method: {$paymentMethod}")
             };
 
-            // Update order payment status
+            // Sipariş ödeme durumunu güncelle
             $this->updateOrderPaymentStatus($order, $result);
             
             Log::info('Payment processed', [
@@ -48,13 +55,21 @@ class OrderPaymentService
             Log::error('Payment processing failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
-                'payment_data' => array_diff_key($paymentData, ['card_number', 'card_cvv']) // Don't log sensitive data
+                'payment_data' => array_diff_key($paymentData, ['card_number', 'card_cvv']) // Hassas verileri loglama
             ]);
             
             return PaymentResult::failure($e->getMessage());
         }
     }
 
+    /**
+     * İade işlemini gerçekleştirir.
+     *
+     * @param Order $order Sipariş
+     * @param float $refundAmount İade tutarı
+     * @param string|null $reason İade nedeni
+     * @return PaymentResult İade sonucu
+     */
     public function processRefund(Order $order, float $refundAmount, ?string $reason = null): PaymentResult
     {
         try {
@@ -91,10 +106,17 @@ class OrderPaymentService
         }
     }
 
+    /**
+     * Kart ile ödemeyi işler (mock).
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return PaymentResult Sonuç
+     */
     private function processCardPayment(Order $order, array $paymentData): PaymentResult
     {
-        // Mock card payment processing
-        // In real implementation, this would integrate with payment gateways like Iyzico, PayTR
+        // Kart ödeme işleme (sahte/mock)
+        // Gerçek uygulamada Iyzico, PayTR gibi ödeme sağlayıcıları ile entegre edilir
         
         $requiredFields = ['card_number', 'card_expiry', 'card_cvv', 'cardholder_name'];
         foreach ($requiredFields as $field) {
@@ -103,7 +125,7 @@ class OrderPaymentService
             }
         }
 
-        // Mock payment gateway call
+        // Sahte ödeme geçidi çağrısı
         $isSuccess = $this->mockPaymentGatewayCall($order, $paymentData);
         
         if ($isSuccess) {
@@ -117,9 +139,16 @@ class OrderPaymentService
         }
     }
 
+    /**
+     * B2B kredi ile ödemeyi işler.
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return PaymentResult Sonuç
+     */
     private function processCreditPayment(Order $order, array $paymentData): PaymentResult
     {
-        // B2B credit payment validation
+        // B2B kredi ödemesi doğrulaması
         if (!$order->user || $order->customer_type !== 'B2B') {
             throw new InvalidPaymentMethodException('Credit payment only available for B2B customers');
         }
@@ -132,7 +161,7 @@ class OrderPaymentService
             throw new InsufficientCreditException("Insufficient credit limit. Available: {$availableCredit}, Required: {$order->total_amount}");
         }
 
-        // Update credit usage
+        // Kredi kullanımını güncelle
         $this->updateCreditUsage($order->user, $order->total_amount);
         
         $transactionId = "CREDIT_{$order->order_number}";
@@ -143,9 +172,16 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Havale/EFT ödemeyi işler.
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return PaymentResult Sonuç
+     */
     private function processBankTransferPayment(Order $order, array $paymentData): PaymentResult
     {
-        // Bank transfer requires manual verification
+        // Banka transferi manuel doğrulama gerektirir
         $transactionId = "TRANSFER_{$order->order_number}";
         
         return PaymentResult::success($transactionId, [
@@ -155,9 +191,16 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Dijital cüzdan ödemesini işler.
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return PaymentResult Sonuç
+     */
     private function processWalletPayment(Order $order, array $paymentData): PaymentResult
     {
-        // Digital wallet payment (like PayPal, Apple Pay, etc.)
+        // Dijital cüzdan ödemesi (PayPal, Apple Pay vb.)
         $walletType = $paymentData['wallet_type'] ?? 'unknown';
         $transactionId = "WALLET_{$order->order_number}_" . time();
         
@@ -167,9 +210,17 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Kredi ile yapılan ödemede iade işlemini gerçekleştirir.
+     *
+     * @param Order $order Sipariş
+     * @param float $refundAmount Tutar
+     * @param string|null $reason Neden
+     * @return PaymentResult Sonuç
+     */
     private function processCreditRefund(Order $order, float $refundAmount, ?string $reason): PaymentResult
     {
-        // Credit refund - restore credit limit
+        // Kredi iadesi — kredi limitini eski haline getir
         $this->updateCreditUsage($order->user, -$refundAmount);
         
         $transactionId = "REFUND_CREDIT_{$order->order_number}";
@@ -180,9 +231,17 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Kartla yapılan ödeme iadesini işler (mock).
+     *
+     * @param Order $order Sipariş
+     * @param float $refundAmount Tutar
+     * @param string|null $reason Neden
+     * @return PaymentResult Sonuç
+     */
     private function processCardRefund(Order $order, float $refundAmount, ?string $reason): PaymentResult
     {
-        // Mock card refund through payment gateway
+        // Ödeme geçidi üzerinden sahte kart iadesi
         $transactionId = "REFUND_CARD_{$order->order_number}_" . time();
         
         return PaymentResult::success($transactionId, [
@@ -193,6 +252,14 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Havale/EFT iadesini işler.
+     *
+     * @param Order $order Sipariş
+     * @param float $refundAmount Tutar
+     * @param string|null $reason Neden
+     * @return PaymentResult Sonuç
+     */
     private function processBankTransferRefund(Order $order, float $refundAmount, ?string $reason): PaymentResult
     {
         $transactionId = "REFUND_TRANSFER_{$order->order_number}";
@@ -205,6 +272,14 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Dijital cüzdan iadesini işler.
+     *
+     * @param Order $order Sipariş
+     * @param float $refundAmount Tutar
+     * @param string|null $reason Neden
+     * @return PaymentResult Sonuç
+     */
     private function processWalletRefund(Order $order, float $refundAmount, ?string $reason): PaymentResult
     {
         $transactionId = "REFUND_WALLET_{$order->order_number}_" . time();
@@ -216,6 +291,13 @@ class OrderPaymentService
         ]);
     }
 
+    /**
+     * Ödeme sonucuna göre siparişin ödeme durumunu günceller.
+     *
+     * @param Order $order Sipariş
+     * @param PaymentResult $result Sonuç
+     * @return void
+     */
     private function updateOrderPaymentStatus(Order $order, PaymentResult $result): void
     {
         if ($result->isSuccess()) {
@@ -230,15 +312,28 @@ class OrderPaymentService
         }
     }
 
+    /**
+     * Sahte ödeme geçidi çağrısı yapar (başarı oranı %90).
+     *
+     * @param Order $order Sipariş
+     * @param array $paymentData Ödeme verileri
+     * @return bool Başarılı mı
+     */
     private function mockPaymentGatewayCall(Order $order, array $paymentData): bool
     {
-        // Mock success rate: 90%
+        // Başarı oranı: %90
         return mt_rand(1, 100) <= 90;
     }
 
+    /**
+     * Kullanıcının mevcut kredi kullanımını hesaplar.
+     *
+     * @param mixed $user Kullanıcı modeli
+     * @return float Toplam kullanım
+     */
     private function getCurrentCreditUsage($user): float
     {
-        // Calculate current credit usage from unpaid B2B orders
+        // Ödenmemiş B2B siparişlerden mevcut kredi kullanımını hesapla
         return (float) (Order::where('user_id', $user->id)
             ->where('customer_type', 'B2B')
             ->where('payment_method', 'credit')
@@ -247,10 +342,17 @@ class OrderPaymentService
             ->sum('total_amount') ?? 0);
     }
 
+    /**
+     * Kredi kullanımını günceller (gerçek uygulamada ayrı bir tablo güncellenebilir).
+     *
+     * @param mixed $user Kullanıcı modeli
+     * @param float $amount Değişim tutarı
+     * @return void
+     */
     private function updateCreditUsage($user, float $amount): void
     {
-        // In a real implementation, this might update a separate credit usage table
-        // For now, we'll just log the credit usage change
+        // Gerçek uygulamada ayrı bir kredi kullanım tablosu güncellenebilir
+        // Şimdilik yalnızca kredi kullanım değişikliğini loglayalım
         Log::info('Credit usage updated', [
             'user_id' => $user->id,
             'amount_change' => $amount,

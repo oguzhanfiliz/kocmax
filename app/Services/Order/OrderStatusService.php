@@ -29,6 +29,12 @@ class OrderStatusService
         'cancelled' => CancelledOrderState::class,
     ];
 
+    /**
+     * Siparişin mevcut durumuna karşılık gelen durum nesnesini döndürür.
+     *
+     * @param Order $order Sipariş
+     * @return OrderStateInterface Durum nesnesi
+     */
     public function getOrderState(Order $order): OrderStateInterface
     {
         $stateClass = $this->stateMap[$order->status] ?? null;
@@ -40,6 +46,15 @@ class OrderStatusService
         return app($stateClass);
     }
 
+    /**
+     * Sipariş durumunu günceller ve gerekli geçiş giriş/çıkış işlemlerini gerçekleştirir.
+     *
+     * @param Order $order Sipariş
+     * @param OrderStatus $newStatus Yeni durum
+     * @param User|null $updatedBy Güncelleyen kullanıcı
+     * @param string|null $reason Sebep
+     * @return void
+     */
     public function updateStatus(Order $order, OrderStatus $newStatus, ?User $updatedBy = null, ?string $reason = null): void
     {
         $previousStatus = $order->status;
@@ -47,21 +62,21 @@ class OrderStatusService
         DB::transaction(function () use ($order, $newStatus, $updatedBy, $reason, $previousStatus) {
             $currentState = $this->getOrderState($order);
             
-            // Handle state exit
+            // Durumdan çıkışı işle
             $currentState->exit($order);
             
-            // Update order status
+            // Sipariş durumunu güncelle
             $order->update(['status' => $newStatus->value]);
             
-            // Record status history (DB)
+            // Durum geçmişini kaydet (DB)
             $this->recordStatusHistoryDb($order, $previousStatus, $newStatus->value, $updatedBy, $reason);
             
-            // Handle state entry
+            // Yeni duruma giriş işlemlerini yap
             $newState = $this->getOrderState($order);
             $newState->enter($order);
         });
 
-        // Emit domain event and log after commit
+        // Commit sonrası domain etkinliği yayınla ve logla
         DB::afterCommit(function () use ($order, $previousStatus, $newStatus, $updatedBy, $reason) {
             event(new OrderStatusChanged($order, $previousStatus, $newStatus->value, $updatedBy));
             Log::info('Order status updated in service', [
@@ -74,35 +89,60 @@ class OrderStatusService
         });
     }
 
+    /**
+     * Sipariş için başlangıç durumunu ayarlar.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function setInitialStatus(Order $order): void
     {
         $initialStatus = $this->determineInitialStatus($order);
 
         DB::transaction(function () use ($order, $initialStatus) {
-            // Don't use updateStatus for initial status to avoid unnecessary state transitions
+            // Gereksiz durum geçişlerini önlemek için başlangıç durumunda updateStatus kullanılmaz
             $order->update(['status' => $initialStatus->value]);
             
-            // Record the initial status (DB)
+            // Başlangıç durumunu kaydet (DB)
             $this->recordStatusHistoryDb($order, null, $initialStatus->value, null, 'Order created');
             
-            // Handle initial state entry
+            // Başlangıç durumuna giriş işlemlerini yap
             $state = $this->getOrderState($order);
             $state->enter($order);
         });
     }
 
+    /**
+     * Mevcut durumdan yapılabilecek geçişleri döndürür.
+     *
+     * @param Order $order Sipariş
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(Order $order): array
     {
         $currentState = $this->getOrderState($order);
         return $currentState->getAvailableTransitions();
     }
 
+    /**
+     * Mevcut durumda yapılabilecek eylemleri döndürür.
+     *
+     * @param Order $order Sipariş
+     * @return array Eylemler
+     */
     public function getAvailableActions(Order $order): array
     {
         $currentState = $this->getOrderState($order);
         return $currentState->getAvailableActions();
     }
 
+    /**
+     * Belirtilen yeni duruma geçiş yapılıp yapılamayacağını kontrol eder.
+     *
+     * @param Order $order Sipariş
+     * @param OrderStatus $newStatus Yeni durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(Order $order, OrderStatus $newStatus): bool
     {
         try {
@@ -119,6 +159,12 @@ class OrderStatusService
         }
     }
 
+    /**
+     * Mevcut sipariş durumunu işler.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function processCurrentState(Order $order): void
     {
         try {
@@ -133,21 +179,37 @@ class OrderStatusService
         }
     }
 
+    /**
+     * Başlangıç sipariş durumunu belirler.
+     *
+     * @param Order $order Sipariş
+     * @return OrderStatus Başlangıç durumu
+     */
     private function determineInitialStatus(Order $order): OrderStatus
     {
-        // B2B orders with credit payment start as processing
+        // Kredi ödemeli B2B siparişler processing olarak başlar
         if ($order->customer_type === 'B2B' && $order->payment_method === 'credit') {
             return OrderStatus::Processing;
         }
         
-        // Regular orders start as pending until payment confirmation
+        // Normal siparişler ödeme onayına kadar pending durumunda başlar
         return OrderStatus::Pending;
     }
 
+    /**
+     * (Not: Kullanılmıyor) Durum geçmişini sipariş notlarına yazar.
+     *
+     * @param Order $order Sipariş
+     * @param string|null $previousStatus Önceki durum
+     * @param string $newStatus Yeni durum
+     * @param User|null $updatedBy Güncelleyen kullanıcı
+     * @param string|null $reason Sebep
+     * @return void
+     */
     private function recordStatusHistory(Order $order, ?string $previousStatus, string $newStatus, ?User $updatedBy, ?string $reason): void
     {
         try {
-            // For now, we'll add this to the order notes since we don't have a separate status history table yet
+            // Şimdilik ayrı bir durum geçmişi tablosu olmadığından sipariş notlarına eklenir
             $historyEntry = [
                 'timestamp' => now()->toISOString(),
                 'previous_status' => $previousStatus,
@@ -176,6 +238,16 @@ class OrderStatusService
         }
     }
 
+    /**
+     * Durum geçmişini OrderStatusHistory tablosuna yazar.
+     *
+     * @param Order $order Sipariş
+     * @param string|null $previousStatus Önceki durum
+     * @param string $newStatus Yeni durum
+     * @param User|null $updatedBy Güncelleyen kullanıcı
+     * @param string|null $reason Sebep
+     * @return void
+     */
     private function recordStatusHistoryDb(Order $order, ?string $previousStatus, string $newStatus, ?User $updatedBy, ?string $reason): void
     {
         try {
@@ -194,3 +266,4 @@ class OrderStatusService
         }
     }
 }
+

@@ -17,12 +17,12 @@ use Illuminate\Support\Facades\Mail;
 class OrderNotificationService
 {
     /**
-     * Send order created notification
+     * Sipariş oluşturuldu bildirimini gönderir.
      */
     public function sendOrderCreated(Order $order): void
     {
         try {
-            // Log the order creation
+            // Sipariş oluşturma kaydını logla
             Log::info('Order created notification', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
@@ -30,21 +30,21 @@ class OrderNotificationService
                 'total_amount' => $order->total_amount
             ]);
 
-            // Send email notification to customer
+            // Müşteriye e-posta bildirimi gönder
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderCreatedMail($order));
                 Log::info('Order created email sent', ['recipient' => $recipient]);
             }
 
-            // Send email notification to admin
+            // Yöneticiye e-posta bildirimi gönder
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
                 Mail::to($adminEmail)->send(new OrderCreatedMail($order, attachPdf: true));
                 Log::info('Order created admin email sent', ['admin' => $adminEmail]);
             }
 
-            // TODO: Implement SMS notification if phone provided
+            // TODO: Telefon numarası mevcutsa SMS bildirimi uygulanabilir
             // if ($order->shipping_phone) {
             //     SMS::send($order->shipping_phone, "Siparişiniz #{$order->order_number} oluşturuldu.");
             // }
@@ -58,7 +58,7 @@ class OrderNotificationService
     }
 
     /**
-     * Send order status changed notification
+     * Sipariş durum değişikliği bildirimini gönderir.
      */
     public function sendOrderStatusChanged(Order $order, OrderStatus $oldStatus, OrderStatus $newStatus): void
     {
@@ -73,14 +73,14 @@ class OrderNotificationService
                 'message' => $message
             ]);
 
-            // Send email notification to customer
+            // Müşteriye e-posta bildirimi gönder
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderStatusChangedMail($order, $message));
                 Log::info('Order status changed email sent', ['recipient' => $recipient]);
             }
 
-            // If payment completed (Processing), notify admin as well
+            // Ödeme tamamlandıysa (Processing), yöneticiyi de bilgilendir
             if ($newStatus === OrderStatus::Processing) {
                 $adminEmail = $this->getAdminEmail();
                 if ($adminEmail && $adminEmail !== $recipient) {
@@ -103,7 +103,7 @@ class OrderNotificationService
     }
 
     /**
-     * Send order shipped notification
+     * Sipariş kargoya verildi bildirimini gönderir.
      */
     public function sendOrderShipped(Order $order): void
     {
@@ -114,14 +114,14 @@ class OrderNotificationService
                 'tracking_number' => $order->tracking_number
             ]);
 
-            // Send email notification to customer
+            // Müşteriye e-posta bildirimi gönder
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderShippedMail($order));
                 Log::info('Order shipped email sent', ['recipient' => $recipient]);
             }
 
-            // Send email notification to admin
+            // Yöneticiye e-posta bildirimi gönder
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
                 Mail::to($adminEmail)->send(new OrderShippedMail($order, attachPdf: true));
@@ -137,7 +137,7 @@ class OrderNotificationService
     }
 
     /**
-     * Send order delivered notification
+     * Sipariş teslim edildi bildirimini gönderir.
      */
     public function sendOrderDelivered(Order $order): void
     {
@@ -147,14 +147,14 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // Send email notification to customer
+            // Müşteriye e-posta bildirimi gönder
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderDeliveredMail($order));
                 Log::info('Order delivered email sent', ['recipient' => $recipient]);
             }
 
-            // Send email notification to admin
+            // Yöneticiye e-posta bildirimi gönder
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
                 Mail::to($adminEmail)->send(new OrderDeliveredMail($order, attachPdf: true));
@@ -170,7 +170,7 @@ class OrderNotificationService
     }
 
     /**
-     * Send order cancelled notification
+     * Sipariş iptal edildi bildirimini gönderir.
      */
     public function sendOrderCancelled(Order $order): void
     {
@@ -180,14 +180,14 @@ class OrderNotificationService
                 'order_number' => $order->order_number
             ]);
 
-            // Send email notification to customer
+            // Müşteriye e-posta bildirimi gönder
             $recipient = $order->user ? $order->user->email : $order->billing_email;
             if ($recipient) {
                 Mail::to($recipient)->send(new OrderCancelledMail($order));
                 Log::info('Order cancelled email sent', ['recipient' => $recipient]);
             }
 
-            // Send email notification to admin
+            // Yöneticiye e-posta bildirimi gönder
             $adminEmail = $this->getAdminEmail();
             if ($adminEmail && $adminEmail !== $recipient) {
                 Mail::to($adminEmail)->send(new OrderCancelledMail($order, attachPdf: true));
@@ -203,7 +203,7 @@ class OrderNotificationService
     }
 
     /**
-     * Get status change message
+     * Durum değişikliği mesajını döndürür.
      */
     private function getStatusChangeMessage(OrderStatus $status, Order $order): string
     {
@@ -219,7 +219,7 @@ class OrderNotificationService
 
     private function getAdminEmail(): ?string
     {
-        // Öncelik sırası: env(ORDER_ADMIN_EMAIL) -> config('mail.admin_email') -> fallback
+        // Öncelik sırası: env(ORDER_ADMIN_EMAIL) -> config('mail.admin_email') -> yedek değer
         return env('ORDER_ADMIN_EMAIL')
             ?: config('mail.admin_email', 'info@kocmax.tr');
     }

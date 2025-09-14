@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Log;
 
 class DeliveredOrderState implements OrderStateInterface
 {
+    /**
+     * Teslim edilmiş durumdan geçişe izin verilip verilmediğini döndürür.
+     * Not: Teslim durumu genellikle nihai bir durumdur.
+     *
+     * @param OrderStatus $newStatus Hedef durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
         // Teslim durumu genellikle nihai bir durumdur
@@ -18,6 +25,16 @@ class DeliveredOrderState implements OrderStateInterface
         return false;
     }
 
+    /**
+     * Teslim edilmiş sipariş için yapılacak işlemleri yürütür.
+     *
+     * - Tamamlama bildirimlerini gönder
+     * - Müşteri geri bildirimi iste
+     * - Varsa son işlemleri gerçekleştir
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function process(Order $order): void
     {
         // Teslim durumu işleme adımları
@@ -32,6 +49,11 @@ class DeliveredOrderState implements OrderStateInterface
         $this->processFinalTasks($order);
     }
 
+    /**
+     * Bu durumdayken yapılabilecek eylemleri döndürür.
+     *
+     * @return array Eylemler
+     */
     public function getAvailableActions(): array
     {
         return [
@@ -44,12 +66,23 @@ class DeliveredOrderState implements OrderStateInterface
         ];
     }
 
+    /**
+     * Bu durumdan yapılabilecek geçişleri döndürür (genellikle yoktur).
+     *
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(): array
     {
         // Teslim durumundan geçiş yok
         return [];
     }
 
+    /**
+     * Teslim durumuna girişte yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function enter(Order $order): void
     {
         Log::info('Order entered delivered state', [
@@ -65,6 +98,9 @@ class DeliveredOrderState implements OrderStateInterface
         $this->updateCustomerMetrics($order);
     }
 
+    /**
+     * Teslim durumundan çıkış denemesinde loglama yapar (normalde çağrılmaz).
+     */
     public function exit(Order $order): void
     {
         // Teslim durumu genellikle nihai olduğundan bu metod normalde çağrılmamalıdır
@@ -74,6 +110,9 @@ class DeliveredOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * Teslim zamanını ve metriklerini kaydeder.
+     */
     private function recordDeliveryTime(Order $order): void
     {
         if (empty($order->delivered_at)) {
@@ -105,6 +144,9 @@ class DeliveredOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * Teslimat durumunda ilgili paydaşları bilgilendirir.
+     */
     private function notifyStakeholders(Order $order): void
     {
         // Müşteriyi bilgilendir
@@ -117,6 +159,9 @@ class DeliveredOrderState implements OrderStateInterface
         $this->updateAnalytics($order);
     }
 
+    /**
+     * Teslim sonrası tamamlama görevlerini yürütür.
+     */
     private function processCompletionTasks(Order $order): void
     {
         Log::debug('Processing completion tasks for delivered order', [
@@ -135,6 +180,9 @@ class DeliveredOrderState implements OrderStateInterface
         $this->updateSalesMetrics($order);
     }
 
+    /**
+     * Müşteri metriklerini günceller (gerçek uygulamada veri katmanları etkilenir).
+     */
     private function updateCustomerMetrics(Order $order): void
     {
         if (!$order->user) {
@@ -150,6 +198,9 @@ class DeliveredOrderState implements OrderStateInterface
         // ortalama sipariş değeri vb. güncellenir
     }
 
+    /**
+     * Müşteriye teslim onayı gönderir (örnek log).
+     */
     private function sendDeliveryConfirmation(Order $order): void
     {
         Log::info('Sending delivery confirmation', [
@@ -160,6 +211,9 @@ class DeliveredOrderState implements OrderStateInterface
         // Gerçek uygulamada teslimat onay e-posta/SMS gönderilir
     }
 
+    /**
+     * Müşteri geri bildirimi talebini planlar (örnek log).
+     */
     private function requestCustomerFeedback(Order $order): void
     {
         Log::debug('Requesting customer feedback for delivered order', [
@@ -170,6 +224,9 @@ class DeliveredOrderState implements OrderStateInterface
         // Gerçek uygulamada bu işlem için bir iş planlanır
     }
 
+    /**
+     * Son işlem adımlarını yürütür (örnek log).
+     */
     private function processFinalTasks(Order $order): void
     {
         // Son temizlik veya işlem adımları
@@ -178,6 +235,9 @@ class DeliveredOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * Müşteriye teslim bildirimini iletir (örnek log).
+     */
     private function notifyCustomer(Order $order): void
     {
         $customerEmail = $order->shipping_email ?? $order->billing_email;
@@ -192,6 +252,9 @@ class DeliveredOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * İç ekipleri bilgilendirir (örnek log).
+     */
     private function notifyInternalTeams(Order $order): void
     {
         Log::debug('Notifying internal teams of order delivery', [
@@ -201,6 +264,9 @@ class DeliveredOrderState implements OrderStateInterface
         // Müşteri hizmetleri, satış ve analitik ekiplerini bilgilendir
     }
 
+    /**
+     * Analitik veri kaynaklarını günceller (örnek log).
+     */
     private function updateAnalytics(Order $order): void
     {
         Log::debug('Updating analytics for delivered order', [
@@ -212,6 +278,9 @@ class DeliveredOrderState implements OrderStateInterface
         // Gelir analitiği, dönüşüm metrikleri vb. güncellenir
     }
 
+    /**
+     * Sadakat puanlarını hesaplar ve uygular (örnek log).
+     */
     private function processLoyaltyPoints(Order $order): void
     {
         if (!$order->user) {
@@ -233,6 +302,9 @@ class DeliveredOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Nihai makbuz/fatura üretir (örnek log).
+     */
     private function generateFinalReceipt(Order $order): void
     {
         Log::debug('Generating final receipt for delivered order', [
@@ -243,6 +315,9 @@ class DeliveredOrderState implements OrderStateInterface
         // Eğer düzeltmeler olduysa bu, ilk faturadan farklı olabilir
     }
 
+    /**
+     * Satış metriklerini günceller (örnek log).
+     */
     private function updateSalesMetrics(Order $order): void
     {
         Log::debug('Updating sales metrics for delivered order', [

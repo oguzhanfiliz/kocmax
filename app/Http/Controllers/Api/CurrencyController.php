@@ -10,6 +10,7 @@ use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @OA\Tag(
@@ -47,13 +48,21 @@ class CurrencyController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Currency::query()->orderBy('is_default', 'desc')->orderBy('code');
+        // Cache key oluştur - parametrelere göre
+        $cacheKey = 'currencies.index.' . md5(serialize([
+            'active_only' => $request->boolean('active_only', true)
+        ]));
 
-        if ($request->boolean('active_only', true)) {
-            $query->where('is_active', true);
-        }
+        // Cache'den veri al (30 dakika cache - döviz kurları günlük güncellenir)
+        $currencies = Cache::remember($cacheKey, 1800, function() use ($request) {
+            $query = Currency::query()->orderBy('is_default', 'desc')->orderBy('code');
 
-        $currencies = $query->get();
+            if ($request->boolean('active_only', true)) {
+                $query->where('is_active', true);
+            }
+
+            return $query->get();
+        });
 
         return CurrencyResource::collection($currencies);
     }
@@ -87,7 +96,13 @@ class CurrencyController extends Controller
      */
     public function default(): JsonResponse
     {
-        $defaultCurrency = Currency::getDefault();
+        // Cache key - varsayılan para birimi sık değişmez
+        $cacheKey = 'currencies.default';
+
+        // Cache'den veri al (1 saat cache)
+        $defaultCurrency = Cache::remember($cacheKey, 3600, function() {
+            return Currency::getDefault();
+        });
 
         if (!$defaultCurrency) {
             return response()->json([
@@ -136,31 +151,43 @@ class CurrencyController extends Controller
      */
     public function rates(): JsonResponse
     {
-        $currencies = Currency::where('is_active', true)->get();
-        $defaultCurrency = $currencies->where('is_default', true)->first();
+        // Cache key - döviz kurları
+        $cacheKey = 'currencies.rates';
 
-        if (!$defaultCurrency) {
+        // Cache'den veri al (15 dakika cache - döviz kurları sık güncellenir)
+        $ratesData = Cache::remember($cacheKey, 900, function() {
+            $currencies = Currency::where('is_active', true)->get();
+            $defaultCurrency = $currencies->where('is_default', true)->first();
+
+            if (!$defaultCurrency) {
+                return null;
+            }
+
+            $rates = [];
+            foreach ($currencies as $currency) {
+                if (!$currency->is_default) {
+                    $rates[$currency->code] = (float) $currency->exchange_rate;
+                }
+            }
+
+            return [
+                'base_currency' => $defaultCurrency->code,
+                'last_updated' => $currencies->max('updated_at'),
+                'rates' => $rates
+            ];
+        });
+
+        if (!$ratesData) {
             return response()->json([
                 'success' => false,
                 'message' => 'Varsayılan para birimi bulunamadı'
             ], 404);
         }
 
-        $rates = [];
-        foreach ($currencies as $currency) {
-            if (!$currency->is_default) {
-                $rates[$currency->code] = (float) $currency->exchange_rate;
-            }
-        }
-
         return response()->json([
             'success' => true,
             'message' => 'Döviz kurları başarıyla getirildi',
-            'data' => [
-                'base_currency' => $defaultCurrency->code,
-                'last_updated' => $currencies->max('updated_at'),
-                'rates' => $rates
-            ]
+            'data' => $ratesData
         ]);
     }
 

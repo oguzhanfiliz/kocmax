@@ -331,7 +331,7 @@ class ProductController extends Controller
             $products = $query->paginate($perPage);
         }
 
-        return ProductResource::collection($products)->additional([
+                return ProductListResource::collection($products)->additional([
             'message' => 'Ürünler başarıyla getirildi',
             'filters' => [
                 'applied' => array_filter($validated),
@@ -1154,47 +1154,49 @@ class ProductController extends Controller
 
     private function getAvailableFilters(): array
     {
-        // Categories with product count
-        $categories = Category::withCount(['products' => fn($q) => $q->where('is_active', true)])
-            ->where('is_active', true)
-            ->having('products_count', '>', 0)
-            ->orderBy('name')
-            ->get(['id', 'name', 'products_count'])
-            ->toArray();
+        return Cache::remember('available_filters', 3600, function () {
+            // Categories with product count
+            $categories = Category::withCount(['products' => fn($q) => $q->where('is_active', true)])
+                ->where('is_active', true)
+                ->having('products_count', '>', 0)
+                ->orderBy('name')
+                ->get(['id', 'name', 'products_count'])
+                ->toArray();
 
-        // Brands with product count
-        $brands = Product::select('brand')
-            ->selectRaw('COUNT(*) as product_count')
-            ->where('is_active', true)
-            ->whereNotNull('brand')
-            ->groupBy('brand')
-            ->orderBy('brand')
-            ->get()
-            ->map(fn($item) => [
-                'name' => $item->brand,
-                'product_count' => $item->product_count,
-            ])
-            ->toArray();
+            // Brands with product count
+            $brands = Product::select('brand')
+                ->selectRaw('COUNT(*) as product_count')
+                ->where('is_active', true)
+                ->whereNotNull('brand')
+                ->groupBy('brand')
+                ->orderBy('brand')
+                ->get()
+                ->map(fn($item) => [
+                    'name' => $item->brand,
+                    'product_count' => $item->product_count,
+                ])
+                ->toArray();
 
-        // Price ranges
-        $priceRanges = [
-            ['min' => 0, 'max' => 100, 'label' => '0₺ - 100₺'],
-            ['min' => 100, 'max' => 250, 'label' => '100₺ - 250₺'],
-            ['min' => 250, 'max' => 500, 'label' => '250₺ - 500₺'],
-            ['min' => 500, 'max' => 1000, 'label' => '500₺ - 1000₺'],
-            ['min' => 1000, 'max' => null, 'label' => '1000₺+'],
-        ];
+            // Price ranges
+            $priceRanges = [
+                ['min' => 0, 'max' => 100, 'label' => '0₺ - 100₺'],
+                ['min' => 100, 'max' => 250, 'label' => '100₺ - 250₺'],
+                ['min' => 250, 'max' => 500, 'label' => '250₺ - 500₺'],
+                ['min' => 500, 'max' => 1000, 'label' => '500₺ - 1000₺'],
+                ['min' => 1000, 'max' => null, 'label' => '1000₺+'],
+            ];
 
-        return [
-            'categories' => $categories,
-            'brands' => $brands,
-            'price_ranges' => $priceRanges,
-            'genders' => [
-                ['value' => 'male', 'label' => 'Erkek'],
-                ['value' => 'female', 'label' => 'Kadın'],
-                ['value' => 'unisex', 'label' => 'Unisex'],
-            ],
-        ];
+            return [
+                'categories' => $categories,
+                'brands' => $brands,
+                'price_ranges' => $priceRanges,
+                'genders' => [
+                    ['value' => 'male', 'label' => 'Erkek'],
+                    ['value' => 'female', 'label' => 'Kadın'],
+                    ['value' => 'unisex', 'label' => 'Unisex'],
+                ],
+            ];
+        });
     }
 
     /**

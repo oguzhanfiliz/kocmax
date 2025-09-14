@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\PopularSearch;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use OpenApi\Annotations as OA;
 
 /**
@@ -53,7 +54,13 @@ class SearchController extends Controller
             $limit = $request->integer('limit', 10);
             $limit = max(1, min(50, $limit)); // 1-50 arası sınırla
 
-            $searches = PopularSearch::getPopular($limit);
+            // Cache key oluştur
+            $cacheKey = 'search.popular.' . $limit;
+
+            // Cache'den veri al (30 dakika cache)
+            $searches = Cache::remember($cacheKey, 1800, function() use ($limit) {
+                return PopularSearch::getPopular($limit);
+            });
 
             return response()->json([
                 'success' => true,
@@ -154,48 +161,56 @@ class SearchController extends Controller
                 ], 400);
             }
 
-            // Arama terimini kaydet (sync olarak)
-            PopularSearch::recordSearch($query);
+            // Cache key oluştur
+            $cacheKey = 'search.autocomplete.' . md5($query . '_' . $limit);
 
-            // Ürünlerde ara
-            $products = Product::active()
-                ->search($query)
-                ->with(['categories'])
-                ->limit($limit)
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'slug' => $product->slug,
-                        'base_price' => $product->base_price,
-                    ];
-                });
+            // Cache'den veri al (15 dakika cache)
+            $autocompleteData = Cache::remember($cacheKey, 900, function() use ($query, $limit) {
+                // Arama terimini kaydet (sync olarak)
+                PopularSearch::recordSearch($query);
 
-            // Kategorilerde ara
-            $categories = Category::where('name', 'LIKE', "%{$query}%")
-                ->where('is_active', true)
-                ->limit($limit)
-                ->get()
-                ->map(function ($category) {
-                    return [
-                        'id' => $category->id,
-                        'name' => $category->name,
-                        'slug' => $category->slug,
-                    ];
-                });
+                // Ürünlerde ara
+                $products = Product::active()
+                    ->search($query)
+                    ->with(['categories'])
+                    ->limit($limit)
+                    ->get()
+                    ->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'slug' => $product->slug,
+                            'base_price' => $product->base_price,
+                        ];
+                    });
 
-            // Arama önerilerini getir
-            $suggestions = PopularSearch::getSuggestions($query, $limit);
+                // Kategorilerde ara
+                $categories = Category::where('name', 'LIKE', "%{$query}%")
+                    ->where('is_active', true)
+                    ->limit($limit)
+                    ->get()
+                    ->map(function ($category) {
+                        return [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                        ];
+                    });
+
+                // Arama önerilerini getir
+                $suggestions = PopularSearch::getSuggestions($query, $limit);
+
+                return [
+                    'products' => $products,
+                    'categories' => $categories,
+                    'suggestions' => $suggestions
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Arama önerileri getirildi',
-                'data' => [
-                    'products' => $products,
-                    'categories' => $categories,
-                    'suggestions' => $suggestions,
-                ]
+                'data' => $autocompleteData
             ]);
 
         } catch (\Exception $e) {

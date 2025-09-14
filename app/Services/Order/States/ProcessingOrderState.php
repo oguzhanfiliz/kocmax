@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Log;
 
 class ProcessingOrderState implements OrderStateInterface
 {
+    /**
+     * Bu durumdan izin verilen durum geçişlerini kontrol eder.
+     *
+     * @param OrderStatus $newStatus Hedef durum
+     * @return bool Geçiş mümkün mü
+     */
     public function canTransitionTo(OrderStatus $newStatus): bool
     {
         return in_array($newStatus, [
@@ -20,13 +26,19 @@ class ProcessingOrderState implements OrderStateInterface
         ]);
     }
 
+    /**
+     * Processing durumunda yapılacak işlemleri yürütür.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function process(Order $order): void
     {
-        // Processing state actions
-        // - Reserve inventory
-        // - Prepare shipping
-        // - Generate packing list
-        
+        // Processing durumunda yapılacak işler
+        // - Ödeme onayını doğrula
+        // - (Henüz yapılmadıysa) stokları rezerve et
+        // - Gönderimi hazırla
+        // - Paketleme listesini oluştur
         Log::debug('Processing order in processing state', ['order_id' => $order->id]);
         
         $this->reserveInventory($order);
@@ -35,27 +47,43 @@ class ProcessingOrderState implements OrderStateInterface
         $this->notifyWarehouse($order);
     }
 
+    /**
+     * Kullanılabilir eylemleri döndürür.
+     *
+     * @return array Eylemler
+     */
     public function getAvailableActions(): array
     {
         return [
-            'prepare_shipping' => 'Prepare for Shipping',
-            'update_tracking' => 'Add Tracking Number',
-            'mark_shipped' => 'Mark as Shipped',
-            'generate_invoice' => 'Generate Invoice',
-            'update_inventory' => 'Update Inventory',
-            'add_note' => 'Add Note',
-            'cancel_order' => 'Cancel Order'
+            'prepare_shipping' => 'Gönderimi Hazırla',
+            'update_tracking' => 'Takip Numarasını Güncelle',
+            'mark_shipped' => 'Gönderildi Olarak İşaretle',
+            'generate_invoice' => 'Fatura Oluştur',
+            'update_inventory' => 'Stokları Güncelle',
+            'add_note' => 'Not Ekle',
+            'cancel_order' => 'Siparişi İptal Et'
         ];
     }
 
+    /**
+     * Mümkün durum geçişlerini döndürür.
+     *
+     * @return array Geçişler
+     */
     public function getAvailableTransitions(): array
     {
         return [
-            OrderStatus::Shipped => 'Mark as Shipped',
-            OrderStatus::Cancelled => 'Cancel Order'
+            OrderStatus::Shipped => 'Gönderildi Olarak İşaretle',
+            OrderStatus::Cancelled => 'Siparişi İptal Et'
         ];
     }
 
+    /**
+     * Processing durumuna girişte yapılacak işlemler.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     public function enter(Order $order): void
     {
         Log::info('Order entered processing state', [
@@ -63,12 +91,15 @@ class ProcessingOrderState implements OrderStateInterface
             'order_number' => $order->order_number
         ]);
 
-        // Actions to perform when entering processing state
+        // Sipariş processing durumuna girdiğinde tetiklenecek iş akışları
         $this->validatePaymentStatus($order);
         $this->reserveInventory($order);
         $this->createFulfillmentTasks($order);
     }
 
+    /**
+     * Processing durumundan çıkarken yapılacak işlemler.
+     */
     public function exit(Order $order): void
     {
         Log::info('Order exiting processing state', [
@@ -76,10 +107,16 @@ class ProcessingOrderState implements OrderStateInterface
             'order_number' => $order->order_number
         ]);
 
-        // Actions to perform when exiting processing state
+        // Varsa geçici processing bayraklarını temizle
         $this->finalizeFulfillmentTasks($order);
     }
 
+    /**
+     * Ödeme durumunu doğrular.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     private function validatePaymentStatus(Order $order): void
     {
         if (!$order->isPaid() && $order->payment_method !== 'credit') {
@@ -91,6 +128,12 @@ class ProcessingOrderState implements OrderStateInterface
         }
     }
 
+    /**
+     * Stokları rezerve eder.
+     *
+     * @param Order $order Sipariş
+     * @return void
+     */
     private function reserveInventory(Order $order): void
     {
         Log::info('Reserving inventory for processing order', ['order_id' => $order->id]);
