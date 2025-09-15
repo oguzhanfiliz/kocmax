@@ -434,9 +434,19 @@ class AuthController extends Controller
             ]);
         }
 
+        // Daha detaylı hata mesajları
+        $errorMessage = 'Şifre sıfırlama bağlantısı gönderilemedi';
+        
+        if ($status === Password::INVALID_USER) {
+            $errorMessage = 'Bu e-posta adresine sahip kullanıcı bulunamadı';
+        } elseif ($status === Password::RESET_THROTTLED) {
+            $errorMessage = 'Çok fazla şifre sıfırlama isteği gönderildi. Lütfen daha sonra tekrar deneyin';
+        }
+
         return response()->json([
             'success' => false,
-            'message' => 'Şifre sıfırlama bağlantısı gönderilemedi'
+            'message' => $errorMessage,
+            'status' => $status
         ], 400);
     }
 
@@ -515,6 +525,101 @@ class AuthController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'Şifre sıfırlanamadı'
+        ], 400);
+    }
+
+    /**
+     * @OA\Get(
+     *      path="/api/v1/auth/verify-reset-token",
+     *      summary="Şifre sıfırlama token'ını doğrula",
+     *      description="Frontend'de şifre sıfırlama sayfasında token'ın geçerli olup olmadığını kontrol eder",
+     *      tags={"Authentication"},
+     *      @OA\Parameter(
+     *          name="token",
+     *          in="query",
+     *          required=true,
+     *          description="Şifre sıfırlama token'ı",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Parameter(
+     *          name="email",
+     *          in="query",
+     *          required=true,
+     *          description="Kullanıcı e-posta adresi",
+     *          @OA\Schema(type="string", format="email")
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Token geçerli",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=true),
+     *              @OA\Property(property="message", type="string", example="Token geçerli"),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="email", type="string", example="user@example.com"),
+     *                  @OA\Property(property="valid", type="boolean", example=true)
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Token geçersiz veya süresi dolmuş",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=false),
+     *              @OA\Property(property="message", type="string", example="Token geçersiz veya süresi dolmuş"),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="valid", type="boolean", example=false)
+     *              )
+     *          )
+     *      )
+     * )
+     */
+    public function verifyResetToken(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|string',
+            'email' => 'required|email'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doğrulama başarısız',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Token'ın geçerli olup olmadığını kontrol et
+        $user = \App\Models\User::where('email', $request->email)->first();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kullanıcı bulunamadı',
+                'data' => ['valid' => false]
+            ], 400);
+        }
+
+        // Password reset token'ını kontrol et
+        $tokenRecord = \DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('created_at', '>', now()->subMinutes(config('auth.passwords.users.expire', 60)))
+            ->first();
+
+        if ($tokenRecord && \Illuminate\Support\Facades\Hash::check($request->token, $tokenRecord->token)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Token geçerli',
+                'data' => [
+                    'email' => $request->email,
+                    'valid' => true
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Token geçersiz veya süresi dolmuş',
+            'data' => ['valid' => false]
         ], 400);
     }
 

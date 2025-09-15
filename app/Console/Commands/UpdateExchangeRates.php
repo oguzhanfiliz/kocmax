@@ -12,18 +12,20 @@ class UpdateExchangeRates extends Command
 
     public function handle(ExchangeRateService $service)
     {
-        $this->info('Döviz kurları güncelleniyor...');
-        $this->info('Aktif sağlayıcı: ' . $service->getProviderDisplayName());
+        $timestamp = now()->format('Y-m-d H:i:s');
+        
+        $this->info("[$timestamp] Döviz kurları güncelleniyor...");
+        $this->info("[$timestamp] Aktif sağlayıcı: " . $service->getProviderDisplayName());
 
         $result = $service->updateRates();
 
         if ($result['success']) {
-            $this->info($result['message']);
+            $this->info("[$timestamp] " . $result['message']);
             if (isset($result['currencies_updated'])) {
-                $this->info("Güncellenen para birimi sayısı: {$result['currencies_updated']}");
+                $this->info("[$timestamp] Güncellenen para birimi sayısı: {$result['currencies_updated']}");
             }
         } else {
-            $this->error($result['message']);
+            $this->error("[$timestamp] " . $result['message']);
             return 1;
         }
 

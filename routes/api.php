@@ -19,23 +19,25 @@ use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DealerApplicationController;
 
-// Import new PayTR checkout routes
+/**
+ * PayTR ödeme (checkout) rotalarını içe aktar (v1)
+ */
 require __DIR__ . '/api_v1_checkout.php';
 use App\Http\Controllers\Api\PricingSystemController;
 use App\Http\Controllers\Api\ContactController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+/**
+ * API Rotaları
+ *
+ * Uygulamanızın API rotalarını burada tanımlayabilirsiniz. Bu rotalar
+ * RouteServiceProvider tarafından yüklenir ve tamamı "api" middleware
+ * grubuna atanır.
+ */
 
-// Global preflight handler for all API routes (reflect Origin, allow credentials)
+/**
+ * Tüm API rotaları için genel preflight (CORS) işleyicisi
+ * (Origin yansıtma, kimlik bilgileri destekli)
+ */
 Route::middleware(['api', 'domain.cors'])->options('v1/{any}', function () {
     $origin = request()->header('Origin', '*');
     return response('', 204)
@@ -47,172 +49,198 @@ Route::middleware(['api', 'domain.cors'])->options('v1/{any}', function () {
         ->header('Access-Control-Max-Age', '86400');
 })->where('any', '.*');
 
-/*
-|--------------------------------------------------------------------------
-| Authentication API Routes
-|--------------------------------------------------------------------------
-*/
+/**
+ * Kimlik Doğrulama API Rotaları
+ */
 Route::prefix('v1/auth')->middleware(['api', 'domain.cors', 'throttle:auth'])->group(function () {
-    // Public authentication routes with stricter rate limiting
+    /**
+     * Daha sıkı oran sınırlamasıyla herkese açık kimlik doğrulama rotaları
+     */
     Route::post('/login', [AuthController::class, 'login'])->name('api.auth.login');
     Route::post('/register', [AuthController::class, 'register'])->name('api.auth.register');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
+    Route::get('/verify-reset-token', [AuthController::class, 'verifyResetToken'])->name('api.auth.verify-reset-token');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('api.auth.reset-password');
     Route::post('/verify-email', [AuthController::class, 'verifyEmail'])->name('api.auth.verify-email');
-    // Doğrulama linkinden tıklama ile (GET) doğrulama desteği
+    /**
+     * Doğrulama linkinden tıklama ile (GET) doğrulama desteği
+     */
     Route::get('/verify-email', [AuthController::class, 'verifyEmail'])->name('api.auth.verify-email.get');
     Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('api.auth.resend-verification');
     Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.auth.refresh');
     
-    // Protected authentication routes
+    /**
+     * Korunan kimlik doğrulama rotaları
+     */
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
         Route::get('/user', [AuthController::class, 'user'])->name('api.auth.user');
     });
 });
 
-// Deprecated - use /api/v1/auth/user instead
+/**
+ * Kullanımdan kaldırıldı — bunun yerine /api/v1/auth/user kullanın
+ */
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-/*
-|--------------------------------------------------------------------------
-| Currency API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Para Birimi API Rotaları (Korunan)
+ */
 Route::prefix('v1/currencies')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [CurrencyController::class, 'index'])->name('api.currencies.index');
     Route::get('/rates', [CurrencyController::class, 'rates'])->name('api.currencies.rates');
     Route::post('/convert', [CurrencyController::class, 'convert'])->name('api.currencies.convert');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Cart API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Sepet API Rotaları (Korunan)
+ */
 Route::prefix('v1/cart')->middleware('auth:sanctum')->group(function () {
-    // Cart management routes
+    /**
+     * Sepet yönetim rotaları
+     */
     Route::get('/', [CartController::class, 'show'])->name('api.cart.show');
     Route::post('/items', [CartController::class, 'addItem'])->name('api.cart.add-item');
     Route::put('/items/{item}', [CartController::class, 'updateItem'])->name('api.cart.update-item');
     Route::delete('/items/{item}', [CartController::class, 'removeItem'])->name('api.cart.remove-item');
     Route::delete('/', [CartController::class, 'clear'])->name('api.cart.clear');
     
-    // Cart summary and pricing
+    /**
+     * Sepet özeti ve fiyatlandırma
+     */
     Route::get('/summary', [CartController::class, 'summary'])->name('api.cart.summary');
     Route::post('/refresh-pricing', [CartController::class, 'refreshPricing'])->name('api.cart.refresh-pricing');
     
-    // Cart campaigns
+    /**
+     * Sepet kampanyaları
+     */
     Route::post('/apply-campaigns', [CartController::class, 'applyCampaigns'])->name('api.cart.apply-campaigns');
     
-    // Cart migration from guest to authenticated user
+    /**
+     * Misafir sepetinin oturum açmış kullanıcı sepetine taşınması
+     */
     Route::post('/migrate', [CartController::class, 'migrate'])->name('api.cart.migrate');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Order API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Sipariş API Rotaları (Korunan)
+ */
 Route::prefix('v1/orders')->middleware('auth:sanctum')->group(function () {
-    // All order routes now require authentication (guest checkout removed for security)
-    // Order CRUD operations
+    /**
+     * Tüm sipariş rotaları artık kimlik doğrulaması gerektirir
+     * (güvenlik için misafir ödeme kaldırıldı)
+     * Sipariş CRUD işlemleri
+     */
     Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
     Route::post('/', [OrderController::class, 'store'])->name('api.orders.store');
     Route::get('/{order:order_number}', [OrderController::class, 'show'])->name('api.orders.show');
     Route::get('/{order:order_number}/tracking', [OrderController::class, 'tracking'])->name('api.orders.tracking');
     
-    // Checkout operations (now require authentication with strict rate limiting)
+    /**
+     * Ödeme (checkout) işlemleri — artık kimlik doğrulaması ve sıkı oran sınırlaması gerektirir
+     */
     Route::post('/checkout', [OrderController::class, 'guestCheckout'])->name('api.orders.checkout')
-          ->middleware('throttle:checkout'); // Renamed from guest-checkout
+          ->middleware('throttle:checkout');
     Route::post('/estimate-checkout', [OrderController::class, 'estimateCheckout'])->name('api.orders.estimate-checkout')
           ->middleware('throttle:checkout');
     
-    // Order actions
+    /**
+     * Sipariş işlemleri
+     */
     Route::patch('/{order:order_number}/status', [OrderController::class, 'updateStatus'])->name('api.orders.update-status');
     Route::post('/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('api.orders.cancel');
     Route::post('/{order:order_number}/payment', [OrderController::class, 'processPayment'])->name('api.orders.process-payment');
     
-    // Checkout payment processing - Frontend sepet ödeme işlemi
+    /**
+     * Ödeme sırasında ödeme işlemi — Frontend sepet ödeme akışı
+     */
     Route::post('/checkout-payment', [OrderController::class, 'processCheckoutPayment'])
          ->name('api.orders.checkout-payment')
          ->middleware('throttle:checkout');
     
-    // Order summary and analytics
+    /**
+     * Kullanıcı sipariş özeti ve analitik
+     */
     Route::get('/user/summary', [OrderController::class, 'summary'])->name('api.orders.summary');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Customer Type API Routes (Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Müşteri Tipi API Rotaları (Alan adı korumalı — Public)
+ */
 Route::prefix('v1/customer')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Customer type detection - optional auth
+    /**
+     * Müşteri tipinin tespiti — isteğe bağlı kimlik doğrulama
+     */
     Route::get('/type', [CustomerController::class, 'type'])->name('api.customer.type');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Pricing System API Routes (Public)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Fiyatlandırma Sistemi API Rotaları (Public)
+ */
 Route::prefix('v1/pricing')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Pricing system endpoints
+    /**
+     * Fiyatlandırma sistemi uç noktaları
+     */
     Route::get('/customer-types', [PricingSystemController::class, 'getCustomerTypes'])->name('api.pricing.customer-types');
     Route::get('/rules', [PricingSystemController::class, 'getPricingRules'])->name('api.pricing.rules');
     Route::get('/calculate', [PricingSystemController::class, 'calculatePricing'])->name('api.pricing.calculate');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Product API Routes (Public with Optional Auth for Smart Pricing)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Ürün API Rotaları (Akıllı Fiyatlandırma için isteğe bağlı kimlik doğrulama ile Public)
+ */
 Route::prefix('v1/products')->middleware(['api', 'domain.cors', 'throttle:public', 'pricing.headers'])->group(function () {
-    // 🎯 Smart Pricing: Optional authentication - if user is logged in, show personalized prices
-    // Public product catalog routes with optional auth middleware
+    /**
+     * Akıllı Fiyatlandırma: Kullanıcı giriş yapmışsa kişiselleştirilmiş fiyatlar gösterilir
+     * Ürün kataloğu rotaları — isteğe bağlı kimlik doğrulama middleware'i ile
+     */
     Route::get('/', [ProductController::class, 'index'])
          ->middleware('auth.optional')->name('api.products.index');
          
-    // These routes remain fully public (no auth needed) - MUST come before {product} route
+    /**
+     * Bu rotalar tamamen herkese açıktır (kimlik doğrulama yok) — {product} rotasından önce gelmelidir
+     */
     Route::get('/search-suggestions', [ProductController::class, 'searchSuggestions'])->name('api.products.search-suggestions');
     Route::get('/filters', [ProductController::class, 'filters'])->name('api.products.filters');
     Route::get('/variant-types', [ProductController::class, 'getVariantTypes'])->name('api.products.variant-types');
     
-    // Product pricing endpoint - supports both ID and slug
+    /**
+     * Ürün fiyatlandırma uç noktası — hem ID hem slug destekler
+     */
     Route::get('/{product}/pricing', [ProductController::class, 'pricing'])
          ->middleware('auth.optional')
          ->where('product', '[0-9]+|[a-z0-9\-]+')
          ->name('api.products.pricing');
     
-    // Product detail route - supports both ID and slug - MUST come last to avoid conflicts
+    /**
+     * Ürün detay rotası — hem ID hem slug destekler — çakışmaları önlemek için en sonda olmalıdır
+     */
     Route::get('/{product}', [ProductController::class, 'show'])
          ->middleware('auth.optional')
-         ->where('product', '[0-9]+|[a-z0-9\-]+') // Accepts both ID (numbers) and slug (letters, numbers, hyphens)
+         ->where('product', '[0-9]+|[a-z0-9\-]+') // Hem ID (rakamlar) hem slug (harfler, rakamlar, tire) kabul edilir
          ->name('api.products.show');
 });
 
-/*
-|--------------------------------------------------------------------------
-| New Products API Routes (Optimized - Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Yeni Ürünler API Rotaları (Optimizeli — Alan adı korumalı Public)
+ */
 Route::prefix('v1/newproducts')->middleware(['api', 'domain.cors', 'throttle:public', 'pricing.headers'])->group(function () {
-    // 🚀 Optimize edilmiş ürün listesi endpoint'i (dev test için)
+    /**
+     * Optimize edilmiş ürün listesi uç noktası (geliştirme testi için)
+     */
     Route::get('/', [ProductController::class, 'newProducts'])
          ->middleware('auth.optional')->name('api.newproducts.index');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Category API Routes (Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Kategori API Rotaları (Alan adı korumalı — Public)
+ */
 Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Public category navigation routes
+    /**
+     * Herkese açık kategori gezinme rotaları
+     */
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::get('/menu', [CategoryController::class, 'menu'])->name('api.categories.menu');
     Route::get('/featured', [CategoryController::class, 'featured'])->name('api.categories.featured');
@@ -225,13 +253,13 @@ Route::prefix('v1/categories')->middleware(['api', 'domain.cors', 'throttle:publ
           ->where('id', '[0-9]+');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Currency API Routes (Public)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Para Birimi API Rotaları (Public)
+ */
 Route::prefix('v1/currencies')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Public currency routes
+    /**
+     * Herkese açık para birimi rotaları
+     */
     Route::get('/', [CurrencyController::class, 'index'])->name('api.currencies.index');
     Route::get('/default', [CurrencyController::class, 'default'])->name('api.currencies.default');
     Route::get('/rates', [CurrencyController::class, 'rates'])->name('api.currencies.rates');
@@ -240,135 +268,157 @@ Route::prefix('v1/currencies')->middleware(['api', 'domain.cors', 'throttle:publ
           ->where('code', '[A-Z]{3}');
 });
 
-/*
-|--------------------------------------------------------------------------
-| User Profile API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Kullanıcı Profili API Rotaları (Korunan)
+ */
 Route::prefix('v1/users')->middleware('auth:sanctum')->group(function () {
-    // User profile management
+    /**
+     * Kullanıcı profili yönetimi
+     */
     Route::get('/profile', [UserController::class, 'profile'])->name('api.users.profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('api.users.update-profile');
     Route::post('/change-password', [UserController::class, 'changePassword'])->name('api.users.change-password');
     
-    // Avatar management
+    /**
+     * Avatar yönetimi
+     */
     Route::post('/upload-avatar', [UserController::class, 'uploadAvatar'])->name('api.users.upload-avatar');
     Route::put('/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.update-avatar'); // RESTful alias
     Route::post('/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.post-avatar'); // Frontend compatibility
     Route::delete('/avatar', [UserController::class, 'deleteAvatar'])->name('api.users.delete-avatar');
     
-    // Dealer application management - deprecated, use /dealer-applications endpoint
+    /**
+     * Bayi başvurusu yönetimi — kullanımdan kaldırıldı, /dealer-applications uç noktasını kullanın
+     */
     Route::get('/dealer-status', [UserController::class, 'dealerStatus'])->name('api.users.dealer-status');
     Route::post('/dealer-application', [UserController::class, 'submitDealerApplication'])->name('api.users.dealer-application');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Dealer Application API Routes 
-|--------------------------------------------------------------------------
-*/
+/**
+ * Bayi Başvurusu API Rotaları
+ */
 Route::prefix('v1/dealer-applications')->middleware(['api', 'domain.cors'])->group(function () {
-    // Public dealer application endpoint (includes user registration)
+    /**
+     * Herkese açık bayi başvurusu uç noktası (kullanıcı kaydını içerir)
+     */
     Route::post('/', [DealerApplicationController::class, 'store'])
          ->name('api.dealer-applications.store');
     
-    // Check if can apply (public endpoint)
+    /**
+     * Başvuru yapılabilir mi kontrolü (herkese açık uç nokta)
+     */
     Route::get('/can-apply', [DealerApplicationController::class, 'canApply'])
          ->name('api.dealer-applications.can-apply');
     
-    // Get status reference data (public endpoint)
+    /**
+     * Durum referans verilerini getir (herkese açık uç nokta)
+     */
     Route::get('/statuses', [DealerApplicationController::class, 'statuses'])
          ->name('api.dealer-applications.statuses');
     
-    // Protected dealer application endpoints 
+    /**
+      * Korunan bayi başvurusu uç noktaları
+      */
     Route::middleware('auth:sanctum')->group(function () {
-        // Get current user's dealer application status
+        /**
+         * Mevcut kullanıcının bayi başvuru durumunu getir
+         */
         Route::get('/', [DealerApplicationController::class, 'index'])
              ->name('api.dealer-applications.index');
         
-        // Get specific dealer application details
+        /**
+         * Belirli bayi başvuru detaylarını getir
+         */
         Route::get('/{dealerApplication}', [DealerApplicationController::class, 'show'])
              ->name('api.dealer-applications.show');
     });
 });
 
-/*
-|--------------------------------------------------------------------------
-| Address Management API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Adres Yönetimi API Rotaları (Korunan)
+ */
 Route::prefix('v1/addresses')->middleware('auth:sanctum')->group(function () {
-    // Default address management (must come before parametric routes)
+    /**
+     * Varsayılan adres yönetimi (parametrik rotalardan önce gelmelidir)
+     */
     Route::get('/defaults', [AddressController::class, 'getDefaults'])->name('api.addresses.defaults');
     
-    // Address CRUD operations
+    /**
+     * Adres CRUD işlemleri
+     */
     Route::get('/', [AddressController::class, 'index'])->name('api.addresses.index');
     Route::post('/', [AddressController::class, 'store'])->name('api.addresses.store');
     Route::get('/{address}', [AddressController::class, 'show'])->name('api.addresses.show');
     Route::put('/{address}', [AddressController::class, 'update'])->name('api.addresses.update');
     Route::delete('/{address}', [AddressController::class, 'destroy'])->name('api.addresses.destroy');
     
-    // Address default management
+    /**
+     * Adres varsayılan yönetimi
+     */
     Route::post('/{address}/set-default-shipping', [AddressController::class, 'setDefaultShipping'])->name('api.addresses.set-default-shipping');
     Route::post('/{address}/set-default-billing', [AddressController::class, 'setDefaultBilling'])->name('api.addresses.set-default-billing');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Wishlist API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Favori Listesi (Wishlist) API Rotaları (Korunan)
+ */
 Route::prefix('v1/wishlist')->middleware('auth:sanctum')->group(function () {
-    // Wishlist statistics (must be before {wishlist} routes)
+    /**
+     * Favori istatistikleri ({wishlist} rotalarından önce gelmelidir)
+     */
     Route::get('/stats', [WishlistController::class, 'stats'])->name('api.wishlist.stats');
     
-    // Wishlist CRUD operations
+    /**
+     * Favori listesi CRUD işlemleri
+     */
     Route::get('/', [WishlistController::class, 'index'])->name('api.wishlist.index');
     Route::post('/', [WishlistController::class, 'store'])->name('api.wishlist.store');
     Route::get('/{wishlist}', [WishlistController::class, 'show'])->name('api.wishlist.show');
     Route::put('/{wishlist}', [WishlistController::class, 'update'])->name('api.wishlist.update');
     Route::delete('/{wishlist}', [WishlistController::class, 'destroy'])->name('api.wishlist.destroy');
     
-    // Wishlist actions
+    /**
+     * Favori listesi işlemleri
+     */
     Route::post('/{wishlist}/toggle-favorite', [WishlistController::class, 'toggleFavorite'])->name('api.wishlist.toggle-favorite');
     Route::delete('/clear', [WishlistController::class, 'clear'])->name('api.wishlist.clear');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Campaign API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Kampanya API Rotaları (Korunan)
+ */
 Route::prefix('v1/campaigns')->middleware(['auth:sanctum', 'throttle:campaigns'])->group(function () {
-    // All campaign routes now require authentication with specific rate limiting
+    /**
+     * Tüm kampanya rotaları kimlik doğrulaması ve özel oran sınırlaması gerektirir
+     */
     Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
     Route::get('/available', [CampaignController::class, 'available'])->name('api.campaigns.available');
     Route::get('/{campaign}', [CampaignController::class, 'show'])->name('api.campaigns.show')
-          ->where('campaign', '[A-Za-z0-9\-_]+'); // ID or slug
+          ->where('campaign', '[A-Za-z0-9\-_]+'); // ID veya slug
     Route::post('/{campaign}/validate', [CampaignController::class, 'validateCampaign'])->name('api.campaigns.validate')
-          ->where('campaign', '[0-9]+'); // Only numeric IDs for validation
+          ->where('campaign', '[0-9]+'); // Yalnızca doğrulama için sayısal ID'ler
 });
 
-/*
-|--------------------------------------------------------------------------
-| Coupon API Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Kupon API Rotaları (Korunan)
+ */
 Route::prefix('v1/coupons')->middleware('auth:sanctum')->group(function () {
-    // All coupon routes now require authentication
+    /**
+     * Tüm kupon rotaları artık kimlik doğrulaması gerektirir
+     */
     Route::post('/validate', [CouponController::class, 'validateCoupon'])->name('api.coupons.validate');
     Route::get('/public', [CouponController::class, 'publicCoupons'])->name('api.coupons.public');
     Route::post('/apply', [CouponController::class, 'apply'])->name('api.coupons.apply');
     Route::get('/my-coupons', [CouponController::class, 'myCoupons'])->name('api.coupons.my-coupons');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Settings API Routes (Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Ayarlar API Rotaları (Alan adı korumalı — Public)
+ */
 Route::prefix('v1/settings')->middleware(['api', 'throttle:public'])->group(function () {
-    // Public settings routes - accessible by frontend without authentication
+    /**
+     * Herkese açık ayar rotaları — frontend kimlik doğrulaması olmadan erişilebilir
+     */
     Route::get('/', [SettingController::class, 'index'])->name('api.settings.index');
     Route::get('/grouped', [SettingController::class, 'grouped'])->name('api.settings.grouped');
     Route::get('/essential', [SettingController::class, 'essential'])->name('api.settings.essential');
@@ -377,16 +427,12 @@ Route::prefix('v1/settings')->middleware(['api', 'throttle:public'])->group(func
           ->where('key', '[a-zA-Z0-9_\-]+');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Slider API Routes (Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
-/*
-|--------------------------------------------------------------------------
-| File Access Routes (Protected)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Slider API Rotaları (Alan adı korumalı — Public)
+ */
+/**
+ * Dosya Erişim Rotaları (Korunan)
+ */
 Route::prefix('v1/files')->middleware(['api', 'auth:sanctum'])->group(function () {
     Route::get('/{path}', [App\Http\Controllers\Api\FileController::class, 'show'])
          ->where('path', '.*')
@@ -394,30 +440,32 @@ Route::prefix('v1/files')->middleware(['api', 'auth:sanctum'])->group(function (
 });
 
 Route::prefix('v1/sliders')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Public slider routes - accessible by frontend without authentication
+    /**
+     * Herkese açık slider rotaları — frontend kimlik doğrulaması olmadan erişilebilir
+     */
     Route::get('/', [SliderController::class, 'index'])->name('api.sliders.index');
     Route::get('/{slider}', [SliderController::class, 'show'])->name('api.sliders.show')
           ->where('slider', '[0-9]+');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Search API Routes (Public with Domain Protection)
-|--------------------------------------------------------------------------
-*/
+/**
+ * Arama API Rotaları (Alan adı korumalı — Public)
+ */
 Route::prefix('v1/search')->middleware(['api', 'domain.cors', 'throttle:public'])->group(function () {
-    // Public search routes - accessible by frontend without authentication
+    /**
+     * Herkese açık arama rotaları — frontend kimlik doğrulaması olmadan erişilebilir
+     */
     Route::get('/popular', [SearchController::class, 'popular'])->name('api.search.popular');
     Route::get('/autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
     Route::post('/record', [SearchController::class, 'record'])->name('api.search.record');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Contact API Routes (Public with Domain Protection & Rate Limiting)
-|--------------------------------------------------------------------------
-*/
+/**
+ * İletişim API Rotaları (Alan adı korumalı — oran sınırlamalı Public)
+ */
 Route::prefix('v1/contact')->middleware(['api', 'domain.cors', 'throttle:contact'])->group(function () {
-    // Contact form submission - public endpoint with strict rate limiting
+    /**
+     * İletişim formu gönderimi — sıkı oran sınırlamalı herkese açık uç nokta
+     */
     Route::post('/', [ContactController::class, 'store'])->name('api.contact.store');
 });

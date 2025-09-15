@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config('app.name') }} - Şifre Sıfırlama</title>
+    <title>Kocmax - Şifre Sıfırlama</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .header {
-            background-color: #dc2626;
+            background-color: #2563eb;
             color: white;
             padding: 20px;
             text-align: center;
@@ -27,7 +27,7 @@
         }
         .button {
             display: inline-block;
-            background-color: #dc2626;
+            background-color: #2563eb;
             color: white;
             padding: 12px 24px;
             text-decoration: none;
@@ -40,18 +40,11 @@
             color: #666;
             font-size: 14px;
         }
-        .warning {
-            background-color: #fef3c7;
-            border: 1px solid #f59e0b;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 20px 0;
-        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>{{ env('PROJECT_NAME', config('app.name')) }}</h1>
+        <h1>Kocmax</h1>
         <p>Şifre Sıfırlama Talebi</p>
     </div>
     
@@ -63,7 +56,7 @@
         <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
         
         <div style="text-align: center;">
-            <a href="{{ $resetUrl }}" class="button">Şifremi Sıfırla</a>
+            <a href="{{ $resetUrl }}" class="button">Şifre Sıfırla</a>
         </div>
         
         <p>Eğer buton çalışmıyorsa, aşağıdaki linki tarayıcınıza kopyalayabilirsiniz:</p>
@@ -71,30 +64,20 @@
             {{ $resetUrl }}
         </p>
         
-        <div class="warning">
-            <p><strong>Güvenlik Uyarısı:</strong></p>
-            <ul>
-                <li>Bu link sadece 60 dakika geçerlidir</li>
-                <li>Şifrenizi kimseyle paylaşmayın</li>
-                <li>Şüpheli aktivite fark ederseniz hemen destek ekibimizle iletişime geçin</li>
-            </ul>
-        </div>
-        
         <p><strong>Önemli Notlar:</strong></p>
         <ul>
-            <li>Şifrenizi güçlü tutun (en az 8 karakter, büyük/küçük harf, rakam)</li>
-            <li>Farklı hesaplarınız için aynı şifreyi kullanmayın</li>
-            <li>Şifrenizi düzenli olarak değiştirin</li>
+            <li>Bu link 60 dakika geçerlidir</li>
+            <li>E-posta doğrulaması tamamlanmadan giriş yapamazsınız</li>
+            <li>Herhangi bir sorun yaşarsanız destek ekibimizle iletişime geçin</li>
         </ul>
         
         <p>Teşekkürler,<br>
-        <strong>{{ env('PROJECT_NAME', config('app.name')) }} Ekibi</strong></p>
+        <strong>Kocmax Ekibi</strong></p>
     </div>
     
     <div class="footer">
         <p>Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayınız.</p>
-        <p>&copy; {{ date('Y') }} {{ env('PROJECT_COPYRIGHT', config('app.name')) }}. Tüm hakları saklıdır.</p>
-        <p>Destek: {{ env('PROJECT_SUPPORT_EMAIL') }} | {{ env('PROJECT_SUPPORT_PHONE') }}</p>
+        <p>&copy; {{ date('Y') }} Kocmax. Tüm hakları saklıdır.</p>
     </div>
 </body>
 </html>
