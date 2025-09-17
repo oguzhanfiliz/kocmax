@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
-use App\Models\ProductImage;
+use App\Models\Slider;
 use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Log;
 
-class ProductImageObserver
+class SliderObserver
 {
     private ImageOptimizationService $imageOptimizationService;
 
@@ -18,43 +18,43 @@ class ProductImageObserver
     }
 
     /**
-     * Resim yüklendiğinde otomatik optimize et
+     * Slider resmi yüklendiğinde otomatik optimize et
      */
-    public function creating(ProductImage $productImage): void
+    public function creating(Slider $slider): void
     {
-        if ($productImage->image && is_string($productImage->image)) {
-            $this->optimizeImage($productImage);
+        if ($slider->image_url && is_string($slider->image_url)) {
+            $this->optimizeImage($slider);
         }
     }
 
     /**
-     * Resim güncellendiğinde optimize et
+     * Slider resmi güncellendiğinde optimize et
      */
-    public function updating(ProductImage $productImage): void
+    public function updating(Slider $slider): void
     {
-        if ($productImage->isDirty('image') && $productImage->image) {
-            $this->optimizeImage($productImage);
+        if ($slider->isDirty('image_url') && $slider->image_url) {
+            $this->optimizeImage($slider);
         }
     }
 
     /**
-     * Resmi optimize et
+     * Slider resmini optimize et
      */
-    private function optimizeImage(ProductImage $productImage): void
+    private function optimizeImage(Slider $slider): void
     {
         try {
-            $imagePath = storage_path('app/public/' . $productImage->image);
+            $imagePath = storage_path('app/public/' . $slider->image_url);
             
             if (!file_exists($imagePath)) {
-                Log::warning("Resim dosyası bulunamadı: {$imagePath}");
+                Log::warning("Slider resim dosyası bulunamadı: {$imagePath}");
                 return;
             }
 
             // Resim istatistiklerini al
-            $stats = $this->imageOptimizationService->getImageStats($productImage->image);
+            $stats = $this->imageOptimizationService->getImageStats($slider->image_url);
             
             if (isset($stats['error'])) {
-                Log::error("Resim istatistikleri alınamadı: {$stats['error']}");
+                Log::error("Slider resim istatistikleri alınamadı: {$stats['error']}");
                 return;
             }
 
@@ -74,7 +74,7 @@ class ProductImageObserver
             }
             
             if ($shouldConvert) {
-                Log::info("Resim optimize ediliyor: {$productImage->image} ({$stats['size_formatted']}) - {$reason}");
+                Log::info("Slider resmi optimize ediliyor: {$slider->image_url} ({$stats['size_formatted']}) - {$reason}");
                 
                 // WebP formatına dönüştür
                 $optimizedResult = $this->imageOptimizationService->optimizeToWebP(
@@ -85,7 +85,7 @@ class ProductImageObserver
                         null,
                         true
                     ),
-                    'products',
+                    'sliders',
                     85
                 );
 
@@ -96,18 +96,18 @@ class ProductImageObserver
                     }
                     
                     // Yeni dosya yolunu güncelle
-                    $productImage->image = $optimizedResult['path'];
+                    $slider->image_url = $optimizedResult['path'];
                     
-                    Log::info("Resim optimize edildi: {$optimizedResult['filename']} ({$this->imageOptimizationService->formatFileSize($optimizedResult['size'])}) - {$reason}");
+                    Log::info("Slider resmi optimize edildi: {$optimizedResult['filename']} ({$this->imageOptimizationService->formatFileSize($optimizedResult['size'])}) - {$reason}");
                 } else {
-                    Log::error("Resim optimizasyonu başarısız: {$optimizedResult['error']}");
+                    Log::error("Slider resim optimizasyonu başarısız: {$optimizedResult['error']}");
                 }
             } else {
-                Log::info("Resim zaten optimize edilmiş: {$productImage->image} ({$stats['format']}, {$stats['size_formatted']})");
+                Log::info("Slider resmi zaten optimize edilmiş: {$slider->image_url} ({$stats['format']}, {$stats['size_formatted']})");
             }
             
         } catch (\Exception $e) {
-            Log::error("Resim optimizasyonu hatası: {$e->getMessage()}");
+            Log::error("Slider resim optimizasyonu hatası: {$e->getMessage()}");
         }
     }
 }

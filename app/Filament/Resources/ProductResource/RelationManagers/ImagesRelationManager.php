@@ -26,7 +26,30 @@ class ImagesRelationManager extends RelationManager
                     ->required()
                     ->imageEditor()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                    ->helperText('Maksimum dosya boyutu: 5MB. Desteklenen formatlar: JPEG, PNG, WebP. Resimler otomatik olarak WebP formatına dönüştürülür ve optimize edilir.'),
+                    ->afterStateUpdated(function ($state, $component) {
+                        // JPG/PNG dosyalarını otomatik WebP'ye dönüştür
+                        if ($state && is_array($state)) {
+                            $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+                            
+                            foreach ($state as $index => $file) {
+                                if ($file instanceof \Illuminate\Http\UploadedFile) {
+                                    $extension = strtolower($file->getClientOriginalExtension());
+                                    
+                                    // JPG/PNG ise WebP'ye dönüştür
+                                    if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                                        $result = $imageOptimizationService->optimizeToWebP($file, 'products', 85);
+                                        
+                                        if ($result['success']) {
+                                            // Yeni WebP dosyasını state'e ata
+                                            $state[$index] = $result['path'];
+                                            $component->state($state);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    ->helperText('Maksimum dosya boyutu: 5MB. Desteklenen formatlar: JPEG, PNG, WebP. JPG/PNG dosyaları otomatik olarak WebP formatına dönüştürülür ve optimize edilir.'),
                 Forms\Components\Toggle::make('is_primary')
                     ->label('Ana Görsel')
                     ->default(false)

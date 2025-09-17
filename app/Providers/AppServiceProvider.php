@@ -143,5 +143,8 @@ class AppServiceProvider extends ServiceProvider
         
         // ProductImage Observer (Resim optimizasyonu için)
         \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
+        
+        // Slider Observer (Slider resim optimizasyonu için)
+        \App\Models\Slider::observe(\App\Observers\SliderObserver::class);
     }
 }

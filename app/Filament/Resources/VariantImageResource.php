@@ -91,7 +91,30 @@ class VariantImageResource extends Resource
                             ->maxSize(2048)
                             ->imageEditor()
                             ->required()
-                            ->helperText('Maksimum dosya boyutu: 2MB. Desteklenen formatlar: JPEG, PNG, WebP')
+                            ->afterStateUpdated(function ($state, $component) {
+                                // JPG/PNG dosyalarını otomatik WebP'ye dönüştür
+                                if ($state && is_array($state)) {
+                                    $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+                                    
+                                    foreach ($state as $index => $file) {
+                                        if ($file instanceof \Illuminate\Http\UploadedFile) {
+                                            $extension = strtolower($file->getClientOriginalExtension());
+                                            
+                                            // JPG/PNG ise WebP'ye dönüştür
+                                            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                                                $result = $imageOptimizationService->optimizeToWebP($file, 'variant-images', 85);
+                                                
+                                                if ($result['success']) {
+                                                    // Yeni WebP dosyasını state'e ata
+                                                    $state[$index] = $result['path'];
+                                                    $component->state($state);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            ->helperText('Maksimum dosya boyutu: 2MB. Desteklenen formatlar: JPEG, PNG, WebP. JPG/PNG dosyaları otomatik olarak WebP formatına dönüştürülür.')
                             ->hint('Önerilen boyutlar: 800x800px veya 1200x1200px'),
                             
                         Forms\Components\TextInput::make('alt_text')

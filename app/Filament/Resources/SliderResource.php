@@ -41,7 +41,33 @@ class SliderResource extends Resource
                             ->image()
                             ->required()
                             ->directory('sliders')
-                            ->visibility('public'),
+                            ->visibility('public')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->maxSize(5120) // 5MB
+                            ->afterStateUpdated(function ($state, $component) {
+                                // JPG/PNG dosyalarını otomatik WebP'ye dönüştür
+                                if ($state && is_array($state)) {
+                                    $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+                                    
+                                    foreach ($state as $index => $file) {
+                                        if ($file instanceof \Illuminate\Http\UploadedFile) {
+                                            $extension = strtolower($file->getClientOriginalExtension());
+                                            
+                                            // JPG/PNG ise WebP'ye dönüştür
+                                            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                                                $result = $imageOptimizationService->optimizeToWebP($file, 'sliders', 85);
+                                                
+                                                if ($result['success']) {
+                                                    // Yeni WebP dosyasını state'e ata
+                                                    $state[$index] = $result['path'];
+                                                    $component->state($state);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            ->helperText('Maksimum dosya boyutu: 5MB. Desteklenen formatlar: JPEG, PNG, WebP. JPG/PNG dosyaları otomatik olarak WebP formatına dönüştürülür.'),
                         
                         Forms\Components\TextInput::make('button_text')
                             ->label('Buton Metni')
