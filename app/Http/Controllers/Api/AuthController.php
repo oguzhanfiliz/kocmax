@@ -679,15 +679,50 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user->update([
+        // Mass assignment engeline takılmamak için forceFill kullan
+        $user->forceFill([
             'email_verified_at' => now(),
             'email_verification_token' => null
-        ]);
+        ])->save();
 
         return response()->json([
             'success' => true,
             'message' => 'E-posta başarıyla doğrulandı'
         ]);
+    }
+
+    /**
+     * Doğrulama linkine tıklandığında JSON yerine frontend'e yönlendirme yapar
+     * GET /verify-email?token=...
+     */
+    public function verifyEmailRedirect(Request $request)
+    {
+        $token = (string) $request->query('token', '');
+
+        // Frontend URL belirle (ENV veya config üzerinden)
+        $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'https://kocmax.tr')), '/');
+        $successUrl = $frontend . '/email-verified?status=success';
+        $errorUrl = $frontend . '/email-verified?status=error';
+
+        if ($token === '') {
+            return redirect()->away($errorUrl);
+        }
+
+        // Token ile kullanıcıyı bul ve doğrula
+        $user = User::where('email_verification_token', $token)->first();
+        if (!$user) {
+            return redirect()->away($errorUrl);
+        }
+
+        if (!$user->email_verified_at) {
+            // Mass assignment engeline takılmamak için forceFill kullan
+            $user->forceFill([
+                'email_verified_at' => now(),
+                'email_verification_token' => null
+            ])->save();
+        }
+
+        return redirect()->away($successUrl);
     }
 
     /**

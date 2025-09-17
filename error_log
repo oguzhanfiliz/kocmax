@@ -8,3 +8,4 @@ Stack trace:
 #0 {main}
   thrown in Command line code on line 1
 [11-Sep-2025 18:25:00 UTC] PHP Parse error:  syntax error, unexpected token "\", expecting ")" in Command line code on line 1
+[15-Sep-2025 10:03:52 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in Command line code on line 1

@@ -35,6 +35,7 @@ class EmailVerificationMail extends Mailable
      */
     public function content(): Content
     {
+        // Frontend'e yönlendiren GET endpoint'i kullan
         $verificationUrl = url('/api/v1/auth/verify-email?token=' . $this->user->email_verification_token);
         
         return new Content(
