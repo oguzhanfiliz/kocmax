@@ -11,6 +11,10 @@ use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Models\Cart;
 use App\Models\ProductVariant;
+use App\Models\Campaign;
+use App\Models\User;
+use App\Enums\Campaign\CampaignType;
+use App\Helpers\SettingHelper;
 use App\Services\Order\OrderService;
 use App\Services\Checkout\CheckoutCoordinator;
 use App\Services\Payment\PaymentManager;
@@ -21,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use App\Exceptions\Pricing\PricingException;
+use Illuminate\Support\Collection;
 
 /**
  * @OA\Tag(
@@ -801,16 +806,40 @@ class OrderController extends Controller
         // Shipping ve billing address bilgilerini resolve et
         $shippingAddressData = $this->resolveAddress($validated, 'shipping', $user);
         $billingAddressData = $this->resolveAddress($validated, 'billing', $user);
-        
-        // Kargo ücretini hesapla (şimdilik sabit veya config)
-        $shippingAmount = $this->computeShippingAmount($shippingAddressData, $billingAddressData, $user);
+
+        // Sepetteki varyantları tek seferde yükle
+        $cartItemsCollection = collect($validated['cart_items']);
+        $variantIds = $cartItemsCollection
+            ->pluck('product_variant_id')
+            ->filter()
+            ->unique()
+            ->all();
+
+        $variants = ProductVariant::with('product')
+            ->whereIn('id', $variantIds)
+            ->get()
+            ->keyBy('id');
+
+        // Kargo ücretini genel ayarlara ve kampanyalara göre hesapla
+        $shippingAmount = $this->computeShippingAmount(
+            $shippingAddressData,
+            $billingAddressData,
+            $user,
+            $variants,
+            $totalAmount
+        );
 
         // Sepet kalemlerini fiyat kurallarıyla yeniden hesapla (indirim toplamını ölçmek için)
         $pricing = app(\App\Services\PricingService::class);
         $orderDiscountTotal = 0.0;
         foreach ($validated['cart_items'] as $ci) {
-            $variant = ProductVariant::with('product')->find($ci['product_variant_id']);
-            if (!$variant) { continue; }
+            $variant = $variants->get($ci['product_variant_id']);
+            if (!$variant) {
+                Log::warning('ProductVariant not found while aggregating discounts', [
+                    'product_variant_id' => $ci['product_variant_id']
+                ]);
+                continue;
+            }
             $pr = $pricing->calculatePrice($variant, (int) $ci['quantity'], $user);
             $orderDiscountTotal += $pr->getTotalDiscountAmount()->getAmount();
         }
@@ -859,7 +888,7 @@ class OrderController extends Controller
         // Order items oluştur (pricing ile)
         $pricing = app(\App\Services\PricingService::class);
         foreach ($validated['cart_items'] as $item) {
-            $variant = ProductVariant::with('product')->find($item['product_variant_id']);
+            $variant = $variants->get($item['product_variant_id']);
             
             if ($variant && $variant->product) {
                 $qty = (int) $item['quantity'];
@@ -930,9 +959,95 @@ class OrderController extends Controller
     /**
      * Basit kargo ücreti hesaplama (şimdilik sabit)
      */
-    private function computeShippingAmount(array $shippingAddress, array $billingAddress, $user): float
+    private function computeShippingAmount(
+        array $shippingAddress,
+        array $billingAddress,
+        ?User $user,
+        Collection $variants,
+        float $cartSubtotal
+    ): float {
+        $cargoSetting = SettingHelper::get('cargo_price');
+        $baseShipping = $cargoSetting !== null
+            ? (float) $cargoSetting
+            : (float) SettingHelper::standardShippingCost();
+
+        if ($baseShipping <= 0.0) {
+            return 0.0;
+        }
+
+        if ($this->qualifiesForFreeShipping($user, $variants, $cartSubtotal)) {
+            return 0.0;
+        }
+
+        return $baseShipping;
+    }
+
+    private function qualifiesForFreeShipping(?User $user, Collection $variants, float $cartSubtotal): bool
     {
-        return (float) (config('shipping.flat_rate', 30.0));
+        $threshold = (float) SettingHelper::freeShippingThreshold();
+        if ($threshold > 0 && $cartSubtotal >= $threshold) {
+            return true;
+        }
+
+        if ($variants->isEmpty()) {
+            return false;
+        }
+
+        $productIds = $variants
+            ->pluck('product_id')
+            ->filter()
+            ->unique();
+
+        if ($productIds->isEmpty()) {
+            return false;
+        }
+
+        $customerType = $user?->customer_type;
+        $normalizedCustomerType = $customerType ? strtolower($customerType) : null;
+
+        $campaigns = Campaign::active()
+            ->where('type', CampaignType::FREE_SHIPPING->value)
+            ->with('products:id')
+            ->get();
+
+        if ($campaigns->isEmpty()) {
+            return false;
+        }
+
+        foreach ($campaigns as $campaign) {
+            if ($campaign->hasReachedUsageLimit()) {
+                continue;
+            }
+
+            if ($user && !$campaign->canBeUsedBy($user)) {
+                continue;
+            }
+
+            if ($normalizedCustomerType !== null) {
+                $allowedTypes = $campaign->customer_types ?? [];
+                if (!empty($allowedTypes)) {
+                    $normalizedAllowed = array_map('strtolower', $allowedTypes);
+                    if (!in_array($normalizedCustomerType, $normalizedAllowed, true)) {
+                        continue;
+                    }
+                }
+            }
+
+            $minAmount = $campaign->free_shipping_min_amount ?? $campaign->minimum_cart_amount;
+            if ($minAmount && $cartSubtotal < (float) $minAmount) {
+                continue;
+            }
+
+            if ($campaign->products->isNotEmpty()) {
+                if ($campaign->products->pluck('id')->intersect($productIds)->isEmpty()) {
+                    continue;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

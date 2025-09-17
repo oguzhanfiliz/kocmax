@@ -43,6 +43,7 @@ class Product extends Model implements Sortable
         'meta_keywords',
         'sort_order',
         'gender',
+        'tax_rate',
     ];
 
     protected $casts = [
@@ -60,6 +61,7 @@ class Product extends Model implements Sortable
         'is_new' => 'boolean',
         'is_bestseller' => 'boolean',
         'sort_order' => 'integer',
+        'tax_rate' => 'decimal:2',
     ];
 
     /**

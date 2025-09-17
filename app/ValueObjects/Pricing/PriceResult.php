@@ -145,14 +145,7 @@ class PriceResult
      */
     public function getUnitOriginalPrice(): Price
     {
-        if ($this->quantity <= 0) {
-            return $this->originalPrice;
-        }
-        
-        return new Price(
-            $this->originalPrice->getAmount() / $this->quantity,
-            $this->originalPrice->getCurrency()
-        );
+        return $this->originalPrice;
     }
 
     /**
@@ -160,14 +153,7 @@ class PriceResult
      */
     public function getUnitFinalPrice(): Price
     {
-        if ($this->quantity <= 0) {
-            return $this->finalPrice;
-        }
-        
-        return new Price(
-            $this->finalPrice->getAmount() / $this->quantity,
-            $this->finalPrice->getCurrency()
-        );
+        return $this->finalPrice;
     }
 
     /**

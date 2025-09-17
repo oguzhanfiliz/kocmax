@@ -89,6 +89,14 @@ class CategoryResource extends Resource
                             ->options(Category::getTreeForSelect())
                             ->searchable()
                             ->placeholder('Ana Kategori'),
+                        Forms\Components\TextInput::make('tax_rate')
+                            ->label('KDV Oranı (%)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->nullable()
+                            ->suffix('%')
+                            ->helperText('Boş bırakılırsa bu kategoriye bağlı ürünlerde varsayılan KDV uygulanır.'),
                         Forms\Components\RichEditor::make('description')
                             ->label('Açıklama')
                             ->columnSpanFull(),
@@ -166,6 +174,11 @@ class CategoryResource extends Resource
                     ->falseIcon('heroicon-m-star')
                     ->trueColor('warning')
                     ->falseColor('gray'),
+                Tables\Columns\TextColumn::make('tax_rate')
+                    ->label('KDV (%)')
+                    ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 2) . ' %' : '—')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Ürün Sayısı')
                     ->counts('products')

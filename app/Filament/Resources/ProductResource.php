@@ -200,6 +200,14 @@ class ProductResource extends Resource
                                 return \App\Helpers\CurrencyHelper::getCurrencySymbol($currencyCode);
                             })
                             ->helperText('Varyantlar için başlangıç fiyatı'),
+                        Forms\Components\TextInput::make('tax_rate')
+                            ->label('KDV Oranı (%)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->nullable()
+                            ->suffix('%')
+                            ->helperText('Boş bırakılırsa kategorinin KDV oranı; o da yoksa varsayılan KDV uygulanır.'),
                         Forms\Components\TextInput::make('weight')
                             ->label('Ağırlık (kg)')
                             ->numeric()
@@ -365,6 +373,11 @@ class ProductResource extends Resource
                         return '₺ ' . number_format((float) $state, 2, ',', '.');
                     })
                     ->sortable(),
+                Tables\Columns\TextColumn::make('tax_rate')
+                    ->label('KDV (%)')
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 2) . ' %' : '—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('variants_count')
                     ->label('Varyant Sayısı')
                     ->badge()

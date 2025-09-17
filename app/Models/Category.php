@@ -28,6 +28,7 @@ class Category extends Model
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'tax_rate',
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class Category extends Model
         'is_featured' => 'boolean',
         'sort_order' => 'integer',
         'parent_id' => 'integer',
+        'tax_rate' => 'decimal:2',
     ];
 
     protected $appends = ['image_url'];
