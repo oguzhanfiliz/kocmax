@@ -1279,6 +1279,101 @@
                 }
             }
         },
+        "/api/v1/auth/verify-reset-token": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Şifre sıfırlama token'ını doğrula",
+                "description": "Frontend'de şifre sıfırlama sayfasında token'ın geçerli olup olmadığını kontrol eder",
+                "operationId": "33178f7ebd6997ebe1d1e598236b9392",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "description": "Şifre sıfırlama token'ı",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Kullanıcı e-posta adresi",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "email"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token geçerli",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token geçerli"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "user@example.com"
+                                                },
+                                                "valid": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Token geçersiz veya süresi dolmuş",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token geçersiz veya süresi dolmuş"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "valid": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/verify-email": {
             "post": {
                 "tags": [
@@ -5009,6 +5104,283 @@
                         "description": "Sepet boş veya bulunamadı"
                     }
                 }
+            }
+        },
+        "/api/v1/orders/checkout-payment": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Sepet ödeme işlemi",
+                "description": "Frontend'den sepet verileriyle sipariş oluşturur ve PayTR ödeme sürecini başlatır",
+                "operationId": "processCheckoutPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "cart_items",
+                                    "shipping_address",
+                                    "billing_address"
+                                ],
+                                "properties": {
+                                    "cart_items": {
+                                        "description": "Sepet kalemleri",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_variant_id",
+                                                "quantity"
+                                            ],
+                                            "properties": {
+                                                "product_variant_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "shipping_address": {
+                                        "description": "Teslimat adresi",
+                                        "required": [
+                                            "name",
+                                            "phone",
+                                            "address",
+                                            "city"
+                                        ],
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Ahmet Yılmaz"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+90555123456"
+                                            },
+                                            "address": {
+                                                "type": "string",
+                                                "example": "Atatürk Cad. No:123"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "İstanbul"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "billing_address": {
+                                        "description": "Fatura adresi",
+                                        "required": [
+                                            "name",
+                                            "phone",
+                                            "address",
+                                            "city"
+                                        ],
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Ahmet Yılmaz"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+90555123456"
+                                            },
+                                            "address": {
+                                                "type": "string",
+                                                "example": "Atatürk Cad. No:123"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "İstanbul"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Sipariş oluşturuldu ve ödeme süreci başlatıldı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Sipariş oluşturuldu. Ödeme sayfasına yönlendiriliyorsunuz."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order": {
+                                                    "properties": {
+                                                        "order_number": {
+                                                            "type": "string",
+                                                            "example": "ORD-20241201-ABC123"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "pending"
+                                                        },
+                                                        "payment_status": {
+                                                            "type": "string",
+                                                            "example": "pending"
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "TRY"
+                                                        },
+                                                        "subtotal_amount": {
+                                                            "description": "Ara toplam (KDV hariç)",
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 100
+                                                        },
+                                                        "tax_amount": {
+                                                            "description": "Toplam KDV tutarı",
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 18
+                                                        },
+                                                        "shipping_amount": {
+                                                            "description": "Kargo tutarı",
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 12
+                                                        },
+                                                        "total_amount": {
+                                                            "description": "Genel toplam (KDV dahil)",
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 130
+                                                        },
+                                                        "total_amount_excl_tax": {
+                                                            "description": "KDV hariç toplam",
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 112
+                                                        },
+                                                        "formatted": {
+                                                            "properties": {
+                                                                "subtotal_amount": {
+                                                                    "type": "string",
+                                                                    "example": "100,00"
+                                                                },
+                                                                "tax_amount": {
+                                                                    "type": "string",
+                                                                    "example": "18,00"
+                                                                },
+                                                                "shipping_amount": {
+                                                                    "type": "string",
+                                                                    "example": "12,00"
+                                                                },
+                                                                "total_amount": {
+                                                                    "type": "string",
+                                                                    "example": "130,00"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "payment": {
+                                                    "properties": {
+                                                        "provider": {
+                                                            "type": "string",
+                                                            "example": "paytr"
+                                                        },
+                                                        "iframe_url": {
+                                                            "type": "string",
+                                                            "example": "https://www.paytr.com/odeme/guvenli/token"
+                                                        },
+                                                        "expires_at": {
+                                                            "type": "string",
+                                                            "format": "datetime"
+                                                        },
+                                                        "requires_iframe": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Ödeme işlemi başarısız",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ödeme işlemi başarısız oldu. Lütfen tekrar deneyiniz."
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "example": "PAYMENT_FAILED"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Fiyat bilgisi eksik",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ürün fiyat bilgisi bulunamadı"
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "example": "PRICE_MISSING"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/pricing/customer-types": {
@@ -9385,7 +9757,7 @@
             },
             "OrderItem": {
                 "title": "Order Item",
-                "description": "Order item data",
+                "description": "Order item data with tax information",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -9396,24 +9768,59 @@
                         "example": 2
                     },
                     "price": {
+                        "description": "Birim fiyat (KDV hariç)",
                         "type": "number",
                         "format": "float",
                         "example": 50
                     },
                     "discounted_price": {
+                        "description": "İndirimli birim fiyat",
                         "type": "number",
                         "format": "float",
                         "example": 45
                     },
                     "total_price": {
+                        "description": "Toplam fiyat (KDV hariç)",
                         "type": "number",
                         "format": "float",
                         "example": 90
                     },
+                    "unit_price_excl_tax": {
+                        "description": "Birim fiyat KDV hariç",
+                        "type": "number",
+                        "format": "float",
+                        "example": 50
+                    },
+                    "unit_price_incl_tax": {
+                        "description": "Birim fiyat KDV dahil",
+                        "type": "number",
+                        "format": "float",
+                        "example": 59
+                    },
+                    "tax_rate": {
+                        "description": "KDV oranı (%)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 18
+                    },
+                    "tax_amount": {
+                        "description": "Toplam KDV tutarı",
+                        "type": "number",
+                        "format": "float",
+                        "example": 18
+                    },
+                    "total_price_incl_tax": {
+                        "description": "Toplam fiyat KDV dahil",
+                        "type": "number",
+                        "format": "float",
+                        "example": 108
+                    },
                     "product": {
+                        "description": "Ürün bilgileri",
                         "type": "object"
                     },
                     "product_variant": {
+                        "description": "Ürün varyant bilgileri",
                         "type": "object"
                     }
                 },
@@ -9421,7 +9828,7 @@
             },
             "Order": {
                 "title": "Order",
-                "description": "Order data",
+                "description": "Order data with tax information",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -9457,26 +9864,43 @@
                         "example": "B2C"
                     },
                     "subtotal_amount": {
+                        "description": "Ara toplam (KDV hariç)",
                         "type": "number",
                         "format": "float",
                         "example": 120
                     },
                     "discount_amount": {
+                        "description": "İndirim tutarı",
                         "type": "number",
                         "format": "float",
                         "example": 15
                     },
                     "tax_amount": {
+                        "description": "Toplam KDV tutarı",
                         "type": "number",
                         "format": "float",
                         "example": 18
                     },
-                    "shipping_cost": {
+                    "shipping_amount": {
+                        "description": "Kargo tutarı",
                         "type": "number",
                         "format": "float",
                         "example": 12
                     },
+                    "total_amount_excl_tax": {
+                        "description": "KDV hariç toplam",
+                        "type": "number",
+                        "format": "float",
+                        "example": 123
+                    },
+                    "total_amount_incl_tax": {
+                        "description": "KDV dahil toplam",
+                        "type": "number",
+                        "format": "float",
+                        "example": 135
+                    },
                     "total_amount": {
+                        "description": "Genel toplam (KDV dahil)",
                         "type": "number",
                         "format": "float",
                         "example": 135
@@ -9484,6 +9908,63 @@
                     "currency": {
                         "type": "string",
                         "example": "TRY"
+                    },
+                    "tax_breakdown": {
+                        "description": "KDV detayları",
+                        "properties": {
+                            "breakdown": {
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "tax_rate": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 18
+                                        },
+                                        "tax_rate_label": {
+                                            "type": "string",
+                                            "example": "%18"
+                                        },
+                                        "base_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 100
+                                        },
+                                        "tax_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 18
+                                        },
+                                        "total_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 118
+                                        },
+                                        "items_count": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "total_tax_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 18
+                            },
+                            "total_base_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 100
+                            },
+                            "total_amount_incl_tax": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 118
+                            }
+                        },
+                        "type": "object"
                     },
                     "payment_status": {
                         "type": "string",
@@ -9803,6 +10284,41 @@
                                 "format": "float",
                                 "example": 22.5
                             },
+                            "price_excl_tax": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 127.5
+                            },
+                            "price_incl_tax": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 150.44999999999998863131622783839702606201171875
+                            },
+                            "tax_rate": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 20
+                            },
+                            "tax_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.949999999999999289457264239899814128875732421875
+                            },
+                            "total_price_excl_tax": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 255
+                            },
+                            "total_price_incl_tax": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 301.80000000000001136868377216160297393798828125
+                            },
+                            "total_tax_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 46.7999999999999971578290569595992565155029296875
+                            },
                             "smart_pricing_enabled": {
                                 "type": "boolean",
                                 "example": true
@@ -9944,6 +10460,41 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 22.5
+                                    },
+                                    "price_excl_tax": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 127.5
+                                    },
+                                    "price_incl_tax": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150.44999999999998863131622783839702606201171875
+                                    },
+                                    "tax_rate": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20
+                                    },
+                                    "tax_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 22.949999999999999289457264239899814128875732421875
+                                    },
+                                    "total_price_excl_tax": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 255
+                                    },
+                                    "total_price_incl_tax": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 301.80000000000001136868377216160297393798828125
+                                    },
+                                    "total_tax_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 46.7999999999999971578290569595992565155029296875
                                     },
                                     "savings_amount": {
                                         "type": "number",
@@ -10181,6 +10732,48 @@
                                 "format": "float",
                                 "example": 22.5
                             },
+                            "price_excl_tax": {
+                                "description": "KDV hariç birim fiyat",
+                                "type": "number",
+                                "format": "float",
+                                "example": 127.5
+                            },
+                            "price_incl_tax": {
+                                "description": "KDV dahil birim fiyat",
+                                "type": "number",
+                                "format": "float",
+                                "example": 150.44999999999998863131622783839702606201171875
+                            },
+                            "tax_rate": {
+                                "description": "Uygulanan KDV oranı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 20
+                            },
+                            "tax_amount": {
+                                "description": "Birim KDV tutarı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 22.949999999999999289457264239899814128875732421875
+                            },
+                            "total_price_excl_tax": {
+                                "description": "Toplam KDV hariç fiyat",
+                                "type": "number",
+                                "format": "float",
+                                "example": 255
+                            },
+                            "total_price_incl_tax": {
+                                "description": "Toplam KDV dahil fiyat",
+                                "type": "number",
+                                "format": "float",
+                                "example": 301.80000000000001136868377216160297393798828125
+                            },
+                            "total_tax_amount": {
+                                "description": "Toplam KDV tutarı",
+                                "type": "number",
+                                "format": "float",
+                                "example": 46.7999999999999971578290569595992565155029296875
+                            },
                             "smart_pricing_enabled": {
                                 "description": "Akıllı fiyatlandırma aktif mi",
                                 "type": "boolean",
@@ -10289,6 +10882,41 @@
                                             "type": "number",
                                             "format": "float",
                                             "example": 22.5
+                                        },
+                                        "price_excl_tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 127.5
+                                        },
+                                        "price_incl_tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 150.44999999999998863131622783839702606201171875
+                                        },
+                                        "tax_rate": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 20
+                                        },
+                                        "tax_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 22.949999999999999289457264239899814128875732421875
+                                        },
+                                        "total_price_excl_tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 255
+                                        },
+                                        "total_price_incl_tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 301.80000000000001136868377216160297393798828125
+                                        },
+                                        "total_tax_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 46.7999999999999971578290569595992565155029296875
                                         },
                                         "savings_amount": {
                                             "type": "number",

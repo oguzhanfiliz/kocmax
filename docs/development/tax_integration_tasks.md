@@ -35,9 +35,9 @@ Bu dosya, KDV (tax) planının hayata geçirilmesi için takip edilmesi gereken 
 - [x] PayTR entegrasyonunda (`PayTrTokenService::prepareBasketData`) satır fiyatlarını KDV dahil hale getir ve `payment_amount`u brüt tutar üzerinden hesapla.
 
 ## 6. API & Resource Güncellemeleri
-- [ ] `ProductListResource`, `ProductDetailResource` gibi kaynaklara aşağıdaki alanları ekle: `price_excl_tax`, `price_incl_tax`, `tax_rate`, `tax_amount`.
-- [ ] Checkout/Order API response’larında KDV tutarı ve oranını dahil et (örn. `processCheckoutPayment`, `OrderResource`).
-- [ ] Swagger/OpenAPI dokümantasyonunu yeni alanlarla güncelle.
+- [x] `ProductListResource`, `ProductDetailResource` gibi kaynaklara aşağıdaki alanları ekle: `price_excl_tax`, `price_incl_tax`, `tax_rate`, `tax_amount`.
+- [x] Checkout/Order API response'larında KDV tutarı ve oranını dahil et (örn. `processCheckoutPayment`, `OrderResource`).
+- [x] Swagger/OpenAPI dokümantasyonunu yeni alanlarla güncelle.
 
 ## 7. Test ve Doğrulama
 - [ ] Unit test: farklı KDV kaynakları (ürün, kategori, global) için fiyat hesaplamasını doğrula.

@@ -6,6 +6,8 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 use ErrorException;
 
@@ -44,6 +46,46 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e)
     {
+        // Product not found hatalarını özel olarak handle et
+        if ($e instanceof ModelNotFoundException && 
+            str_contains($e->getMessage(), 'App\\Models\\Product')) {
+            
+            // API istekleri için JSON response
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ürün bulunamadı veya artık mevcut değil.',
+                    'error_code' => 'PRODUCT_NOT_FOUND',
+                    'status' => 404
+                ], 404);
+            }
+            
+            // Web istekleri için 404 sayfası
+            return response()->view('errors.404', [
+                'message' => 'Aradığınız ürün bulunamadı veya artık mevcut değil.'
+            ], 404);
+        }
+
+        // NotFoundHttpException'ları handle et (route binding'den gelen)
+        if ($e instanceof NotFoundHttpException && 
+            str_contains($e->getMessage(), 'No query results for model [App\\Models\\Product]')) {
+            
+            // API istekleri için JSON response
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ürün bulunamadı veya artık mevcut değil.',
+                    'error_code' => 'PRODUCT_NOT_FOUND',
+                    'status' => 404
+                ], 404);
+            }
+            
+            // Web istekleri için 404 sayfası
+            return response()->view('errors.404', [
+                'message' => 'Aradığınız ürün bulunamadı veya artık mevcut değil.'
+            ], 404);
+        }
+
         // Laravel Ignition Livewire foreach hatası için özel handling
         if ($e instanceof ErrorException && 
             str_contains($e->getMessage(), 'foreach() argument must be of type array|object, null given') &&

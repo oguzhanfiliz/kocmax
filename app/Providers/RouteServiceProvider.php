@@ -24,11 +24,15 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Product model binding - supports both ID and slug
+        // Product model binding - supports both ID and slug, excludes soft deleted and inactive
         Route::bind('product', function ($value) {
-            return \App\Models\Product::where('id', $value)
-                ->orWhere('slug', $value)
-                ->firstOrFail();
+            return \App\Models\Product::where(function ($query) use ($value) {
+                $query->where('id', $value)
+                      ->orWhere('slug', $value);
+            })
+            ->where('is_active', true) // Sadece aktif ürünleri getir
+            ->whereNull('deleted_at') // Soft delete edilmiş ürünleri hariç tut
+            ->firstOrFail();
         });
 
         // Dynamic rate limiting based on environment - Development'ta çok yüksek limitler

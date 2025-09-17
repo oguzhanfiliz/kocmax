@@ -10,14 +10,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @OA\Schema(
  *     schema="OrderItem",
  *     title="Order Item",
- *     description="Order item data",
+ *     description="Order item data with tax information",
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="quantity", type="integer", example=2),
- *     @OA\Property(property="price", type="number", format="float", example=50.00),
- *     @OA\Property(property="discounted_price", type="number", format="float", example=45.00),
- *     @OA\Property(property="total_price", type="number", format="float", example=90.00),
- *     @OA\Property(property="product", type="object"),
- *     @OA\Property(property="product_variant", type="object")
+ *     @OA\Property(property="price", type="number", format="float", example=50.00, description="Birim fiyat (KDV hariç)"),
+ *     @OA\Property(property="discounted_price", type="number", format="float", example=45.00, description="İndirimli birim fiyat"),
+ *     @OA\Property(property="total_price", type="number", format="float", example=90.00, description="Toplam fiyat (KDV hariç)"),
+ *     @OA\Property(property="unit_price_excl_tax", type="number", format="float", example=50.00, description="Birim fiyat KDV hariç"),
+ *     @OA\Property(property="unit_price_incl_tax", type="number", format="float", example=59.00, description="Birim fiyat KDV dahil"),
+ *     @OA\Property(property="tax_rate", type="number", format="float", example=18.0, description="KDV oranı (%)"),
+ *     @OA\Property(property="tax_amount", type="number", format="float", example=18.00, description="Toplam KDV tutarı"),
+ *     @OA\Property(property="total_price_incl_tax", type="number", format="float", example=108.00, description="Toplam fiyat KDV dahil"),
+ *     @OA\Property(property="product", type="object", description="Ürün bilgileri"),
+ *     @OA\Property(property="product_variant", type="object", description="Ürün varyant bilgileri")
  * )
  */
 class OrderItemResource extends JsonResource
@@ -28,8 +33,13 @@ class OrderItemResource extends JsonResource
             'id' => $this->id,
             'quantity' => $this->quantity,
             'price' => (float) $this->price,
-            'discounted_price' => (float) $this->discounted_price,
-            'total_price' => (float) ($this->discounted_price * $this->quantity),
+            'discounted_price' => (float) $this->price,
+            'total_price' => (float) $this->total,
+            'unit_price_excl_tax' => (float) $this->price,
+            'unit_price_incl_tax' => (float) (($this->quantity > 0) ? ($this->price + ($this->tax_amount / $this->quantity)) : $this->price),
+            'tax_rate' => (float) ($this->tax_rate ?? 0),
+            'tax_amount' => (float) $this->tax_amount,
+            'total_price_incl_tax' => (float) ($this->total + $this->tax_amount),
             
             // Product Information
             'product' => [

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Helpers\SettingHelper;
+use App\Models\ProductVariant;
 use App\Services\MultiCurrencyPricingService;
 use App\Services\Pricing\CustomerTypeDetectorService;
 
@@ -76,6 +78,11 @@ class ProductDetailResource extends JsonResource
     public function toArray($request): array
     {
         $currency = 'TRY';
+        $customerInfo = app()->bound('api_customer_info') ? app('api_customer_info') : [
+            'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
+        ];
+        $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : true;
+        $quantity = max(1, (int) $request->get('quantity', 1));
 
         // Base product data
         $baseData = (new ProductResource($this->resource))->toArray($request);
@@ -124,7 +131,12 @@ class ProductDetailResource extends JsonResource
                             'sort_order' => $image->sort_order,
                         ]) : [],
                     // 🔥 Varyant için de pricing rules uygula
-                    'pricing' => $this->calculateVariantPricing($variant),
+                    'pricing' => $this->applyTaxFields(
+                        $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled, $quantity),
+                        $this->resolveVariantTaxRate($variant),
+                        $quantity,
+                        $currency
+                    ),
                     // 📦 Varyant paket boyutları (inheritance ile)
                     'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
                     // 🎨 Varyant türleri ve seçenekleri (Frontend için optimize edilmiş)
@@ -207,21 +219,12 @@ class ProductDetailResource extends JsonResource
     /**
      * 🎯 Varyant için smart pricing calculation
      */
-    private function calculateVariantPricing($variant): array
+    private function calculateVariantPricing($variant, array $customerInfo, bool $smartPricingEnabled, int $quantity): array
     {
         $basePrice = (float) ($variant->source_price ?? $variant->price);
         
-        // Customer info'yu al
-        $customerInfo = app()->bound('api_customer_info') ? app('api_customer_info') : [
-            'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
-        ];
-        $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : true;
-        
         $user = $customerInfo['user'];
-        
-        // Quantity parametresini al (default: 1)
-        $quantity = (int) request()->get('quantity', 1);
-        
+
         // Base currency conversion
         $sourceCurrency = $variant->source_currency ?? ($variant->currency_code ?? 'TRY');
         $basePriceConverted = app(\App\Services\CurrencyConversionService::class)->convertPrice(
@@ -267,6 +270,85 @@ class ProductDetailResource extends JsonResource
             'pricing_tier' => $user?->pricingTier?->name,
             'quantity' => $quantity,
         ];
+    }
+
+    private function applyTaxFields(array $pricing, float $taxRate, int $quantity, string $currency): array
+    {
+        $taxRate = max(0.0, $taxRate);
+        $unitNet = $pricing['your_price'] ?? $pricing['base_price'] ?? 0.0;
+        $unitTax = round($unitNet * ($taxRate / 100), 2);
+        $unitGross = $unitNet + $unitTax;
+        $totalNet = $unitNet * $quantity;
+        $totalTax = $unitTax * $quantity;
+        $totalGross = $totalNet + $totalTax;
+
+        $pricing['price_excl_tax'] = $unitNet;
+        $pricing['price_excl_tax_formatted'] = $this->formatPrice($unitNet, $currency);
+        $pricing['price_incl_tax'] = $unitGross;
+        $pricing['price_incl_tax_formatted'] = $this->formatPrice($unitGross, $currency);
+        $pricing['tax_rate'] = round($taxRate, 4);
+        $pricing['tax_amount'] = $unitTax;
+        $pricing['tax_amount_formatted'] = $this->formatPrice($unitTax, $currency);
+        $pricing['total_price_excl_tax'] = $totalNet;
+        $pricing['total_price_incl_tax'] = $totalGross;
+        $pricing['total_tax_amount'] = $totalTax;
+
+        return $pricing;
+    }
+
+    private function resolveProductTaxRate(): float
+    {
+        $product = $this->resource;
+
+        if ($product->tax_rate !== null) {
+            return (float) $product->tax_rate;
+        }
+
+        if ($product->relationLoaded('categories')) {
+            $categoryWithTax = $product->categories->first(fn($category) => $category->tax_rate !== null);
+            if ($categoryWithTax) {
+                return (float) $categoryWithTax->tax_rate;
+            }
+        } else {
+            $categoryTax = $product->categories()
+                ->whereNotNull('categories.tax_rate')
+                ->orderBy('categories.id')
+                ->value('categories.tax_rate');
+
+            if ($categoryTax !== null) {
+                return (float) $categoryTax;
+            }
+        }
+
+        return SettingHelper::defaultTaxRate();
+    }
+
+    private function resolveVariantTaxRate(ProductVariant $variant): float
+    {
+        if ($variant->product && $variant->product->tax_rate !== null) {
+            return (float) $variant->product->tax_rate;
+        }
+
+        if ($variant->product) {
+            $product = $variant->product;
+            if ($product->relationLoaded('categories')) {
+                $categoryWithTax = $product->categories->first(fn($category) => $category->tax_rate !== null);
+                if ($categoryWithTax) {
+                    return (float) $categoryWithTax->tax_rate;
+                }
+            } else {
+                $categoryTax = $product->categories()
+                    ->whereNotNull('categories.tax_rate')
+                    ->orderBy('categories.id')
+                    ->value('categories.tax_rate');
+
+                if ($categoryTax !== null) {
+                    return (float) $categoryTax;
+                }
+            }
+        }
+
+        return $this->resolveProductTaxRate();
     }
 
     /**

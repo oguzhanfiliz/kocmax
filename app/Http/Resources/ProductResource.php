@@ -7,6 +7,8 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Services\MultiCurrencyPricingService;
 use App\Services\Pricing\CustomerTypeDetectorService;
+use App\Helpers\SettingHelper;
+use App\Models\ProductVariant;
 
 /**
  * @OA\Schema(
@@ -54,6 +56,13 @@ use App\Services\Pricing\CustomerTypeDetectorService;
  *         @OA\Property(property="discount_percentage", type="number", format="float", example=15.0, description="İndirim yüzdesi"),
  *         @OA\Property(property="discount_amount", type="number", format="float", example=22.50, description="İndirim tutarı"),
  *         @OA\Property(property="savings_amount", type="number", format="float", example=22.50, description="Tasarruf tutarı"),
+ *         @OA\Property(property="price_excl_tax", type="number", format="float", example=127.50, description="KDV hariç birim fiyat"),
+ *         @OA\Property(property="price_incl_tax", type="number", format="float", example=150.45, description="KDV dahil birim fiyat"),
+ *         @OA\Property(property="tax_rate", type="number", format="float", example=20.0, description="Uygulanan KDV oranı"),
+ *         @OA\Property(property="tax_amount", type="number", format="float", example=22.95, description="Birim KDV tutarı"),
+ *         @OA\Property(property="total_price_excl_tax", type="number", format="float", example=255.00, description="Toplam KDV hariç fiyat"),
+ *         @OA\Property(property="total_price_incl_tax", type="number", format="float", example=301.80, description="Toplam KDV dahil fiyat"),
+ *         @OA\Property(property="total_tax_amount", type="number", format="float", example=46.80, description="Toplam KDV tutarı"),
  *         @OA\Property(property="smart_pricing_enabled", type="boolean", example=true, description="Akıllı fiyatlandırma aktif mi"),
  *         @OA\Property(property="is_dealer_price", type="boolean", example=false, description="Bayi fiyatı mı"),
  *         @OA\Property(property="pricing_tier", type="string", nullable=true, example="Premium", description="Fiyatlandırma katmanı"),
@@ -78,6 +87,13 @@ use App\Services\Pricing\CustomerTypeDetectorService;
  *             @OA\Property(property="customer_type", type="string", enum={"B2C", "B2B", "WHOLESALE", "RETAIL"}, example="B2C"),
  *             @OA\Property(property="discount_percentage", type="number", format="float", example=15.0),
  *             @OA\Property(property="discount_amount", type="number", format="float", example=22.50),
+ *             @OA\Property(property="price_excl_tax", type="number", format="float", example=127.50),
+ *             @OA\Property(property="price_incl_tax", type="number", format="float", example=150.45),
+ *             @OA\Property(property="tax_rate", type="number", format="float", example=20.0),
+ *             @OA\Property(property="tax_amount", type="number", format="float", example=22.95),
+ *             @OA\Property(property="total_price_excl_tax", type="number", format="float", example=255.00),
+ *             @OA\Property(property="total_price_incl_tax", type="number", format="float", example=301.80),
+ *             @OA\Property(property="total_tax_amount", type="number", format="float", example=46.80),
  *             @OA\Property(property="savings_amount", type="number", format="float", example=22.50),
  *             @OA\Property(property="smart_pricing_enabled", type="boolean", example=true),
  *             @OA\Property(property="is_dealer_price", type="boolean", example=false),
@@ -111,9 +127,11 @@ class ProductResource extends JsonResource
             'type' => 'guest', 'user' => null, 'is_authenticated' => false, 'is_dealer' => false
         ];
         $smartPricingEnabled = app()->bound('api_smart_pricing_enabled') ? app('api_smart_pricing_enabled') : false;
+        $quantity = max(1, (int) $request->get('quantity', 1));
 
         // 🎯 Smart Pricing Calculation (TRY'ye sabit)
-        $pricingData = $this->calculateSmartPricing($currency, $customerInfo, $smartPricingEnabled);
+        $pricingData = $this->calculateSmartPricing($currency, $customerInfo, $smartPricingEnabled, $quantity);
+        $pricingData = $this->applyTaxFields($pricingData, $this->resolveProductTaxRate(), $quantity, $currency);
 
         // Varyantların TL fiyatları üzerinden vitrin fiyatını belirle (min TL)
         $conversionService = app(\App\Services\CurrencyConversionService::class);
@@ -219,7 +237,12 @@ class ProductResource extends JsonResource
                             'sort_order' => $image->sort_order ?? 0,
                         ]) : [],
                     // 🔥 Varyant için de pricing rules uygula
-                    'pricing' => $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled),
+                    'pricing' => $this->applyTaxFields(
+                        $this->calculateVariantPricing($variant, $customerInfo, $smartPricingEnabled, $quantity),
+                        $this->resolveVariantTaxRate($variant),
+                        $quantity,
+                        'TRY'
+                    ),
                     // 📦 Varyant paket boyutları (inheritance ile)
                     'package_dimensions' => $variant->getPackageDimensionsWithIcons(),
                     // 🎨 Bu varyant için seçili olan option'lar
@@ -260,7 +283,7 @@ class ProductResource extends JsonResource
     /**
      * 🎯 Smart pricing calculation based on customer type
      */
-    private function calculateSmartPricing(string $currency, array $customerInfo, bool $smartPricingEnabled): array
+    private function calculateSmartPricing(string $currency, array $customerInfo, bool $smartPricingEnabled, int $quantity): array
     {
         $basePrice = (float) $this->base_price;
         $user = $customerInfo['user'];
@@ -314,7 +337,7 @@ class ProductResource extends JsonResource
     /**
      * 🎯 Varyant için smart pricing calculation
      */
-    private function calculateVariantPricing($variant, array $customerInfo, bool $smartPricingEnabled): array
+    private function calculateVariantPricing($variant, array $customerInfo, bool $smartPricingEnabled, int $quantity): array
     {
         $basePrice = (float) ($variant->source_price ?? $variant->price);
         $user = $customerInfo['user'];
@@ -367,6 +390,83 @@ class ProductResource extends JsonResource
             'pricing_tier' => $user?->pricingTier?->name,
             'quantity' => $quantity,
         ];
+    }
+
+    private function applyTaxFields(array $pricing, float $taxRate, int $quantity, string $currency): array
+    {
+        $taxRate = max(0.0, $taxRate);
+        $unitNet = $pricing['your_price'] ?? $pricing['base_price'] ?? 0.0;
+        $unitTax = round($unitNet * ($taxRate / 100), 2);
+        $unitGross = $unitNet + $unitTax;
+        $totalNet = $unitNet * $quantity;
+        $totalTax = $unitTax * $quantity;
+        $totalGross = $totalNet + $totalTax;
+
+        $pricing['price_excl_tax'] = $unitNet;
+        $pricing['price_excl_tax_formatted'] = $this->formatPrice($unitNet, $currency);
+        $pricing['price_incl_tax'] = $unitGross;
+        $pricing['price_incl_tax_formatted'] = $this->formatPrice($unitGross, $currency);
+        $pricing['tax_rate'] = round($taxRate, 4);
+        $pricing['tax_amount'] = $unitTax;
+        $pricing['tax_amount_formatted'] = $this->formatPrice($unitTax, $currency);
+        $pricing['total_price_excl_tax'] = $totalNet;
+        $pricing['total_price_incl_tax'] = $totalGross;
+        $pricing['total_tax_amount'] = $totalTax;
+
+        return $pricing;
+    }
+
+    private function resolveProductTaxRate(): float
+    {
+        if ($this->tax_rate !== null) {
+            return (float) $this->tax_rate;
+        }
+
+        if ($this->relationLoaded('categories')) {
+            $categoryWithTax = $this->categories->first(fn($category) => $category->tax_rate !== null);
+            if ($categoryWithTax) {
+                return (float) $categoryWithTax->tax_rate;
+            }
+        } else {
+            $categoryTax = $this->categories()
+                ->whereNotNull('categories.tax_rate')
+                ->orderBy('categories.id')
+                ->value('categories.tax_rate');
+
+            if ($categoryTax !== null) {
+                return (float) $categoryTax;
+            }
+        }
+
+        return SettingHelper::defaultTaxRate();
+    }
+
+    private function resolveVariantTaxRate(ProductVariant $variant): float
+    {
+        if ($variant->product && $variant->product->tax_rate !== null) {
+            return (float) $variant->product->tax_rate;
+        }
+
+        if ($variant->product) {
+            $product = $variant->product;
+            if ($product->relationLoaded('categories')) {
+                $categoryWithTax = $product->categories->first(fn($category) => $category->tax_rate !== null);
+                if ($categoryWithTax) {
+                    return (float) $categoryWithTax->tax_rate;
+                }
+            } else {
+                $categoryTax = $product->categories()
+                    ->whereNotNull('categories.tax_rate')
+                    ->orderBy('categories.id')
+                    ->value('categories.tax_rate');
+
+                if ($categoryTax !== null) {
+                    return (float) $categoryTax;
+                }
+            }
+        }
+
+        return $this->resolveProductTaxRate();
     }
 
     private function formatPrice(float $price, string $currency): string

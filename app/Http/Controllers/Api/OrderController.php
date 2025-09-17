@@ -584,6 +584,103 @@ class OrderController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *      path="/api/v1/orders/checkout-payment",
+     *      operationId="processCheckoutPayment",
+     *      tags={"Orders"},
+     *      summary="Sepet ödeme işlemi",
+     *      description="Frontend'den sepet verileriyle sipariş oluşturur ve PayTR ödeme sürecini başlatır",
+     *      security={{ "sanctum": {} }},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"cart_items", "shipping_address", "billing_address"},
+     *              @OA\Property(
+     *                  property="cart_items",
+     *                  type="array",
+     *                  description="Sepet kalemleri",
+     *                  @OA\Items(
+     *                      type="object",
+     *                      required={"product_variant_id", "quantity"},
+     *                      @OA\Property(property="product_variant_id", type="integer", example=123),
+     *                      @OA\Property(property="quantity", type="integer", example=2)
+     *                  )
+     *              ),
+     *              @OA\Property(
+     *                  property="shipping_address",
+     *                  type="object",
+     *                  description="Teslimat adresi",
+     *                  required={"name", "phone", "address", "city"},
+     *                  @OA\Property(property="name", type="string", example="Ahmet Yılmaz"),
+     *                  @OA\Property(property="phone", type="string", example="+90555123456"),
+     *                  @OA\Property(property="address", type="string", example="Atatürk Cad. No:123"),
+     *                  @OA\Property(property="city", type="string", example="İstanbul")
+     *              ),
+     *              @OA\Property(
+     *                  property="billing_address",
+     *                  type="object",
+     *                  description="Fatura adresi",
+     *                  required={"name", "phone", "address", "city"},
+     *                  @OA\Property(property="name", type="string", example="Ahmet Yılmaz"),
+     *                  @OA\Property(property="phone", type="string", example="+90555123456"),
+     *                  @OA\Property(property="address", type="string", example="Atatürk Cad. No:123"),
+     *                  @OA\Property(property="city", type="string", example="İstanbul")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Sipariş oluşturuldu ve ödeme süreci başlatıldı",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=true),
+     *              @OA\Property(property="message", type="string", example="Sipariş oluşturuldu. Ödeme sayfasına yönlendiriliyorsunuz."),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="order", type="object",
+     *                      @OA\Property(property="order_number", type="string", example="ORD-20241201-ABC123"),
+     *                      @OA\Property(property="status", type="string", example="pending"),
+     *                      @OA\Property(property="payment_status", type="string", example="pending"),
+     *                      @OA\Property(property="currency", type="string", example="TRY"),
+     *                      @OA\Property(property="subtotal_amount", type="number", format="float", example=100.00, description="Ara toplam (KDV hariç)"),
+     *                      @OA\Property(property="tax_amount", type="number", format="float", example=18.00, description="Toplam KDV tutarı"),
+     *                      @OA\Property(property="shipping_amount", type="number", format="float", example=12.00, description="Kargo tutarı"),
+     *                      @OA\Property(property="total_amount", type="number", format="float", example=130.00, description="Genel toplam (KDV dahil)"),
+     *                      @OA\Property(property="total_amount_excl_tax", type="number", format="float", example=112.00, description="KDV hariç toplam"),
+     *                      @OA\Property(property="formatted", type="object",
+     *                          @OA\Property(property="subtotal_amount", type="string", example="100,00"),
+     *                          @OA\Property(property="tax_amount", type="string", example="18,00"),
+     *                          @OA\Property(property="shipping_amount", type="string", example="12,00"),
+     *                          @OA\Property(property="total_amount", type="string", example="130,00")
+     *                      )
+     *                  ),
+     *                  @OA\Property(property="payment", type="object",
+     *                      @OA\Property(property="provider", type="string", example="paytr"),
+     *                      @OA\Property(property="iframe_url", type="string", example="https://www.paytr.com/odeme/guvenli/token"),
+     *                      @OA\Property(property="expires_at", type="string", format="datetime"),
+     *                      @OA\Property(property="requires_iframe", type="boolean", example=true)
+     *                  )
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Ödeme işlemi başarısız",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=false),
+     *              @OA\Property(property="message", type="string", example="Ödeme işlemi başarısız oldu. Lütfen tekrar deneyiniz."),
+     *              @OA\Property(property="error_code", type="string", example="PAYMENT_FAILED")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=422,
+     *          description="Fiyat bilgisi eksik",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="success", type="boolean", example=false),
+     *              @OA\Property(property="message", type="string", example="Ürün fiyat bilgisi bulunamadı"),
+     *              @OA\Property(property="error_code", type="string", example="PRICE_MISSING")
+     *          )
+     *      )
+     * )
+     * 
      * Frontend sepet ödeme işlemi - External API simülasyonu
      * Frontend'den sepet verileriyle sipariş oluşturur
      */
@@ -691,9 +788,20 @@ class OrderController extends Controller
                     'data' => [
                         'order' => [
                             'order_number' => $order->order_number,
-                            'total_amount' => number_format((float) $order->total_amount, 2),
                             'status' => $order->status,
                             'payment_status' => $order->payment_status,
+                            'currency' => $order->currency_code ?? 'TRY',
+                            'subtotal_amount' => (float) $order->subtotal,
+                            'tax_amount' => (float) $order->tax_amount,
+                            'shipping_amount' => (float) $order->shipping_amount,
+                            'total_amount' => (float) $order->total_amount,
+                            'total_amount_excl_tax' => (float) ($order->subtotal + $order->shipping_amount),
+                            'formatted' => [
+                                'subtotal_amount' => number_format((float) $order->subtotal, 2),
+                                'tax_amount' => number_format((float) $order->tax_amount, 2),
+                                'shipping_amount' => number_format((float) $order->shipping_amount, 2),
+                                'total_amount' => number_format((float) $order->total_amount, 2)
+                            ],
                             'created_at' => $order->created_at->format('Y-m-d H:i:s')
                         ],
                         'payment' => [
@@ -718,9 +826,20 @@ class OrderController extends Controller
                     'data' => [
                         'order' => [
                             'order_number' => $order->order_number,
-                            'total_amount' => number_format((float) $order->total_amount, 2),
                             'status' => $order->status,
-                            'payment_status' => 'pending'
+                            'payment_status' => 'pending',
+                            'currency' => $order->currency_code ?? 'TRY',
+                            'subtotal_amount' => (float) $order->subtotal,
+                            'tax_amount' => (float) $order->tax_amount,
+                            'shipping_amount' => (float) $order->shipping_amount,
+                            'total_amount' => (float) $order->total_amount,
+                            'total_amount_excl_tax' => (float) ($order->subtotal + $order->shipping_amount),
+                            'formatted' => [
+                                'subtotal_amount' => number_format((float) $order->subtotal, 2),
+                                'tax_amount' => number_format((float) $order->tax_amount, 2),
+                                'shipping_amount' => number_format((float) $order->shipping_amount, 2),
+                                'total_amount' => number_format((float) $order->total_amount, 2)
+                            ]
                         ]
                     ]
                 ], 500);
@@ -767,7 +886,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Sepet toplam tutarını hesapla
+     * Sepet toplam tutarını hesapla (KDV dahil)
      */
     private function calculateCartTotal(array $cartItems): float
     {
@@ -781,7 +900,8 @@ class OrderController extends Controller
                 $qty = (int) $item['quantity'];
                 try {
                     $priceResult = $pricing->calculatePrice($variant, $qty, $user);
-                    $total += $priceResult->getTotalFinalPrice()->getAmount();
+                    // KDV dahil toplam tutarı hesapla
+                    $total += $priceResult->getTotalFinalPriceWithTax()->getAmount();
                 } catch (PricingException $e) {
                     // Dönüştür ve üst seviyede 422 için yakalat
                     Log::warning('Price missing for cart item', [
@@ -849,14 +969,17 @@ class OrderController extends Controller
         }
 
         // Sipariş verilerini hazırla
+        // $totalAmount artık KDV dahil, KDV hariç tutarı hesapla
+        $subtotalExclTax = $totalAmount - $orderTaxTotal;
+        
         $orderData = [
             'user_id' => $user->id,
             'order_number' => $this->generateOrderNumber(),
-            'subtotal' => $totalAmount,
+            'subtotal' => $subtotalExclTax,
             'shipping_amount' => $shippingAmount,
             'tax_amount' => $orderTaxTotal,
             'discount_amount' => $orderDiscountTotal,
-            'total_amount' => $totalAmount + $shippingAmount + $orderTaxTotal,
+            'total_amount' => $totalAmount + $shippingAmount, // KDV dahil + kargo
             'currency_code' => 'TRY',
             'status' => 'pending',
             'payment_method' => 'online',

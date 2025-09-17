@@ -258,4 +258,61 @@ class Order extends Model
             'status' => 'pending'
         ]);
     }
+
+    /**
+     * KDV detaylarını döndür
+     */
+    public function getTaxBreakdown(): array
+    {
+        if (!$this->relationLoaded('items')) {
+            return [];
+        }
+
+        $taxBreakdown = [];
+        $totalTaxAmount = 0;
+
+        foreach ($this->items as $item) {
+            $taxRate = (float) ($item->tax_rate ?? 0);
+            $taxAmount = (float) ($item->tax_amount ?? 0);
+            
+            if ($taxRate > 0) {
+                $key = "KDV %{$taxRate}";
+                
+                if (!isset($taxBreakdown[$key])) {
+                    $taxBreakdown[$key] = [
+                        'tax_rate' => $taxRate,
+                        'tax_rate_label' => "%{$taxRate}",
+                        'tax_amount' => 0,
+                        'base_amount' => 0,
+                        'items_count' => 0
+                    ];
+                }
+                
+                $taxBreakdown[$key]['tax_amount'] += $taxAmount;
+                $taxBreakdown[$key]['base_amount'] += ($item->total - $taxAmount);
+                $taxBreakdown[$key]['items_count'] += $item->quantity;
+                $totalTaxAmount += $taxAmount;
+            }
+        }
+
+        // KDV detaylarını düzenle
+        $formattedBreakdown = [];
+        foreach ($taxBreakdown as $key => $breakdown) {
+            $formattedBreakdown[] = [
+                'tax_rate' => $breakdown['tax_rate'],
+                'tax_rate_label' => $breakdown['tax_rate_label'],
+                'base_amount' => round($breakdown['base_amount'], 2),
+                'tax_amount' => round($breakdown['tax_amount'], 2),
+                'total_amount' => round($breakdown['base_amount'] + $breakdown['tax_amount'], 2),
+                'items_count' => $breakdown['items_count']
+            ];
+        }
+
+        return [
+            'breakdown' => $formattedBreakdown,
+            'total_tax_amount' => round($totalTaxAmount, 2),
+            'total_base_amount' => round($this->subtotal - $totalTaxAmount, 2),
+            'total_amount_incl_tax' => round($this->total_amount, 2)
+        ];
+    }
 }

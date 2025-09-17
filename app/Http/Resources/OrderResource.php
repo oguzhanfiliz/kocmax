@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @OA\Schema(
  *     schema="Order",
  *     title="Order",
- *     description="Order data",
+ *     description="Order data with tax information",
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
  *     @OA\Property(property="status", type="object",
@@ -20,12 +20,27 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *         @OA\Property(property="icon", type="string", example="clock")
  *     ),
  *     @OA\Property(property="customer_type", type="string", example="B2C"),
- *     @OA\Property(property="subtotal_amount", type="number", format="float", example=120.00),
- *     @OA\Property(property="discount_amount", type="number", format="float", example=15.00),
- *     @OA\Property(property="tax_amount", type="number", format="float", example=18.00),
- *     @OA\Property(property="shipping_cost", type="number", format="float", example=12.00),
- *     @OA\Property(property="total_amount", type="number", format="float", example=135.00),
+ *     @OA\Property(property="subtotal_amount", type="number", format="float", example=120.00, description="Ara toplam (KDV hariç)"),
+ *     @OA\Property(property="discount_amount", type="number", format="float", example=15.00, description="İndirim tutarı"),
+ *     @OA\Property(property="tax_amount", type="number", format="float", example=18.00, description="Toplam KDV tutarı"),
+ *     @OA\Property(property="shipping_amount", type="number", format="float", example=12.00, description="Kargo tutarı"),
+ *     @OA\Property(property="total_amount_excl_tax", type="number", format="float", example=123.00, description="KDV hariç toplam"),
+ *     @OA\Property(property="total_amount_incl_tax", type="number", format="float", example=135.00, description="KDV dahil toplam"),
+ *     @OA\Property(property="total_amount", type="number", format="float", example=135.00, description="Genel toplam (KDV dahil)"),
  *     @OA\Property(property="currency", type="string", example="TRY"),
+ *     @OA\Property(property="tax_breakdown", type="object", description="KDV detayları",
+ *         @OA\Property(property="breakdown", type="array", @OA\Items(
+ *             @OA\Property(property="tax_rate", type="number", format="float", example=18.0),
+ *             @OA\Property(property="tax_rate_label", type="string", example="%18"),
+ *             @OA\Property(property="base_amount", type="number", format="float", example=100.0),
+ *             @OA\Property(property="tax_amount", type="number", format="float", example=18.0),
+ *             @OA\Property(property="total_amount", type="number", format="float", example=118.0),
+ *             @OA\Property(property="items_count", type="integer", example=2)
+ *         )),
+ *         @OA\Property(property="total_tax_amount", type="number", format="float", example=18.0),
+ *         @OA\Property(property="total_base_amount", type="number", format="float", example=100.0),
+ *         @OA\Property(property="total_amount_incl_tax", type="number", format="float", example=118.0)
+ *     ),
  *     @OA\Property(property="payment_status", type="string", example="pending"),
  *     @OA\Property(property="payment_method", type="string", example="card"),
  *     @OA\Property(property="shipping_address", type="object"),
@@ -56,12 +71,20 @@ class OrderResource extends JsonResource
             'customer_type' => $this->customer_type,
             
             // Financial Information
-            'subtotal_amount' => (float) $this->subtotal_amount,
+            'subtotal_amount' => (float) $this->subtotal,
             'discount_amount' => (float) $this->discount_amount,
             'tax_amount' => (float) $this->tax_amount,
-            'shipping_cost' => (float) $this->shipping_cost,
+            'shipping_amount' => (float) $this->shipping_amount,
             'total_amount' => (float) $this->total_amount,
-            'currency' => $this->currency ?? 'TRY',
+            'total_amount_excl_tax' => (float) ($this->subtotal + $this->shipping_amount),
+            'total_amount_incl_tax' => (float) $this->total_amount,
+            'currency' => $this->currency_code ?? 'TRY',
+            
+            // Tax Information
+            'tax_breakdown' => $this->when(
+                $this->relationLoaded('items'),
+                fn() => $this->getTaxBreakdown()
+            ),
             
             // Payment Information
             'payment_status' => $this->payment_status,
