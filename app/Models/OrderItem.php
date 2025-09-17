@@ -20,6 +20,7 @@ class OrderItem extends Model
         'quantity',
         'price',
         'discount_amount',
+        'tax_rate',
         'tax_amount',
         'total',
     ];
@@ -29,6 +30,7 @@ class OrderItem extends Model
         'quantity' => 'integer',
         'price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',
     ];

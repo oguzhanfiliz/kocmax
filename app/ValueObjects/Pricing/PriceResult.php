@@ -22,6 +22,9 @@ class PriceResult
     private readonly CustomerType $customerType;
     private readonly int $quantity;
     private readonly array $metadata;
+    private readonly float $taxRate;
+    private readonly Price $taxAmount;
+    private readonly Price $finalPriceWithTax;
 
     /**
      * Yapıcı metot.
@@ -39,7 +42,9 @@ class PriceResult
         Collection $appliedDiscounts,
         CustomerType $customerType,
         int $quantity = 1,
-        array $metadata = []
+        array $metadata = [],
+        float $taxRate = 0.0,
+        ?Price $taxAmount = null
     ) {
         $this->originalPrice = $originalPrice;
         $this->finalPrice = $finalPrice;
@@ -50,6 +55,10 @@ class PriceResult
 
         // Toplam indirim tutarını hesapla
         $this->totalDiscountAmount = $originalPrice->subtract($finalPrice);
+
+        $this->taxRate = max(0, $taxRate);
+        $this->taxAmount = $taxAmount ?? new Price(0.0, $finalPrice->getCurrency());
+        $this->finalPriceWithTax = $finalPrice->add($this->taxAmount);
     }
 
     /**
@@ -110,6 +119,46 @@ class PriceResult
     public function getMetadata(): array
     {
         return $this->metadata;
+    }
+
+    /**
+     * Uygulanan KDV oranı.
+     */
+    public function getTaxRate(): float
+    {
+        return $this->taxRate;
+    }
+
+    /**
+     * Birim başına KDV tutarı.
+     */
+    public function getTaxAmount(): Price
+    {
+        return $this->taxAmount;
+    }
+
+    /**
+     * Toplam KDV tutarı (adet ile çarpılmış).
+     */
+    public function getTotalTaxAmount(): Price
+    {
+        return $this->taxAmount->multiply($this->quantity);
+    }
+
+    /**
+     * Birim fiyat (KDV dahil).
+     */
+    public function getUnitFinalPriceWithTax(): Price
+    {
+        return $this->finalPriceWithTax;
+    }
+
+    /**
+     * Toplam fiyat (KDV dahil, adet ile çarpılmış).
+     */
+    public function getTotalFinalPriceWithTax(): Price
+    {
+        return $this->finalPriceWithTax->multiply($this->quantity);
     }
 
     /**
@@ -232,7 +281,26 @@ class PriceResult
             $this->appliedDiscounts,
             $this->customerType,
             $this->quantity,
-            $newMetadata
+            $newMetadata,
+            $this->taxRate,
+            $this->taxAmount
+        );
+    }
+
+    /**
+     * KDV bilgisi ile yeni bir sonuç nesnesi döndürür.
+     */
+    public function withTax(float $taxRate, Price $taxAmount): self
+    {
+        return new self(
+            $this->originalPrice,
+            $this->finalPrice,
+            $this->appliedDiscounts,
+            $this->customerType,
+            $this->quantity,
+            $this->metadata,
+            $taxRate,
+            $taxAmount
         );
     }
 
@@ -252,6 +320,11 @@ class PriceResult
             'total_final_price' => $this->getTotalFinalPrice()->toArray(),
             'discounts' => $this->appliedDiscounts->map(fn(Discount $discount) => $discount->toArray())->toArray(),
             'total_discount_amount' => $this->totalDiscountAmount->toArray(),
+            'tax_rate' => $this->taxRate,
+            'tax_amount' => $this->taxAmount->toArray(),
+            'total_tax_amount' => $this->getTotalTaxAmount()->toArray(),
+            'final_price_incl_tax' => $this->finalPriceWithTax->toArray(),
+            'total_final_price_incl_tax' => $this->getTotalFinalPriceWithTax()->toArray(),
             'savings_percentage' => round($this->getSavingsPercentage(), 2),
             'customer_type' => $this->customerType->value,
             'quantity' => $this->quantity,

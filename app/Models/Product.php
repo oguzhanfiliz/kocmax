@@ -145,7 +145,7 @@ class Product extends Model implements Sortable
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
-            ->select(['categories.id', 'categories.name', 'categories.slug'])
+            ->select(['categories.id', 'categories.name', 'categories.slug', 'categories.tax_rate'])
             ->withPivot('id');
     }
 

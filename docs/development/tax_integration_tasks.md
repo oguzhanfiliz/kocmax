@@ -16,22 +16,23 @@ Bu dosya, KDV (tax) planının hayata geçirilmesi için takip edilmesi gereken 
 - [x] Genel ayarlar (pricing) ekranına `Varsayılan KDV (%)` alanını ekle veya mevcut alanı `pricing.default_tax_rate` kaydı ile bağla.
 - [x] KDV alanlarında validation kurallarını ve yetki kontrollerini ekle (örn. sadece yetkili roller düzenleyebilsin).
 
+- [x] Cache mekanizmasında (PriceEngine) KDV değişiklikleri sonrası invalidation stratejisini güncelle.
 ## 3. Pricing Motoru
-- [ ] `PricingService` / `PriceEngine` kapsamına KDV hesaplamasını entegre et: indirim sonrası net tutardan KDV oranını uygula.
-- [ ] `PriceResult` VO'suna `tax_rate`, `tax_amount`, `total_with_tax` (veya benzeri) alanlarını ekle.
-- [ ] KDV fallback mantığını (ürün > kategori > global) kapsayan yardımcı metot yaz ve fiyat hesaplarında kullan.
-- [ ] Cache mekanizmasında (PriceEngine) KDV değişiklikleri sonrası invalidation stratejisini güncelle.
+- [x] `PricingService` / `PriceEngine` kapsamına KDV hesaplamasını entegre et: indirim sonrası net tutardan KDV oranını uygula.
+- [x] `PriceResult` VO'suna `tax_rate`, `tax_amount`, `total_with_tax` (veya benzeri) alanlarını ekle.
+- [x] KDV fallback mantığını (ürün > kategori > global) kapsayan yardımcı metot yaz ve fiyat hesaplarında kullan.
+- [x] Cache mekanizmasında (PriceEngine) KDV değişiklikleri sonrası invalidation stratejisini güncelle.
 
 ## 4. Kampanya ve Sepet Entegrasyonu
-- [ ] `CampaignPricingService` çıktılarını güncelleyerek kampanya sonrası net tutarlar üzerinden KDV hesaplandığından emin ol.
-- [ ] Ücretsiz kargo, paket indirimi vb. kampanyalarda KDV hesaplamasının etkilenmediği senaryoları doğrula.
-- [ ] Sepet / checkout sürecinde KDV dahil toplamın ve KDV tutarının sipariş verisine aktarıldığını kontrol et.
+- [x] `CampaignPricingService` çıktılarını güncelleyerek kampanya sonrası net tutarlar üzerinden KDV hesaplandığından emin ol.
+- [x] Ücretsiz kargo, paket indirimi vb. kampanyalarda KDV hesaplamasının etkilenmediği senaryoları doğrula.
+- [x] Sepet / checkout sürecinde KDV dahil toplamın ve KDV tutarının sipariş verisine aktarıldığını kontrol et.
 
 ## 5. Sipariş Oluşturma & Ödeme
-- [ ] `OrderController::createOrderFromCart` içinde satır bazında ve toplamda KDV hesapla/ata.
-- [ ] `OrderItem` creation sürecinde `tax_rate` ve `tax_amount` değerlerini kaydet.
-- [ ] `orders.total_amount` hesabını KDV ve kargo dahil olacak şekilde güncelle.
-- [ ] PayTR entegrasyonunda (`PayTrTokenService::prepareBasketData`) satır fiyatlarını KDV dahil hale getir ve `payment_amount`u brüt tutar üzerinden hesapla.
+- [x] `OrderController::createOrderFromCart` içinde satır bazında ve toplamda KDV hesapla/ata.
+- [x] `OrderItem` creation sürecinde `tax_rate` ve `tax_amount` değerlerini kaydet.
+- [x] `orders.total_amount` hesabını KDV ve kargo dahil olacak şekilde güncelle.
+- [x] PayTR entegrasyonunda (`PayTrTokenService::prepareBasketData`) satır fiyatlarını KDV dahil hale getir ve `payment_amount`u brüt tutar üzerinden hesapla.
 
 ## 6. API & Resource Güncellemeleri
 - [ ] `ProductListResource`, `ProductDetailResource` gibi kaynaklara aşağıdaki alanları ekle: `price_excl_tax`, `price_incl_tax`, `tax_rate`, `tax_amount`.

@@ -832,6 +832,8 @@ class OrderController extends Controller
         // Sepet kalemlerini fiyat kurallarıyla yeniden hesapla (indirim toplamını ölçmek için)
         $pricing = app(\App\Services\PricingService::class);
         $orderDiscountTotal = 0.0;
+        $orderTaxTotal = 0.0;
+        $priceResults = [];
         foreach ($validated['cart_items'] as $ci) {
             $variant = $variants->get($ci['product_variant_id']);
             if (!$variant) {
@@ -841,7 +843,9 @@ class OrderController extends Controller
                 continue;
             }
             $pr = $pricing->calculatePrice($variant, (int) $ci['quantity'], $user);
+            $priceResults[$variant->id] = $pr;
             $orderDiscountTotal += $pr->getTotalDiscountAmount()->getAmount();
+            $orderTaxTotal += $pr->getTotalTaxAmount()->getAmount();
         }
 
         // Sipariş verilerini hazırla
@@ -850,9 +854,9 @@ class OrderController extends Controller
             'order_number' => $this->generateOrderNumber(),
             'subtotal' => $totalAmount,
             'shipping_amount' => $shippingAmount,
-            'tax_amount' => 0,
+            'tax_amount' => $orderTaxTotal,
             'discount_amount' => $orderDiscountTotal,
-            'total_amount' => $totalAmount + $shippingAmount,
+            'total_amount' => $totalAmount + $shippingAmount + $orderTaxTotal,
             'currency_code' => 'TRY',
             'status' => 'pending',
             'payment_method' => 'online',
@@ -892,10 +896,11 @@ class OrderController extends Controller
             
             if ($variant && $variant->product) {
                 $qty = (int) $item['quantity'];
-                $priceResult = $pricing->calculatePrice($variant, $qty, $user);
+                $priceResult = $priceResults[$variant->id] ?? $pricing->calculatePrice($variant, $qty, $user);
                 $unitFinal = $priceResult->getUnitFinalPrice()->getAmount();
                 $lineFinal = $priceResult->getTotalFinalPrice()->getAmount();
                 $lineDiscount = $priceResult->getTotalDiscountAmount()->getAmount();
+                $lineTax = $priceResult->getTotalTaxAmount()->getAmount();
 
                 $order->items()->create([
                     'product_id' => $variant->product_id,
@@ -903,7 +908,8 @@ class OrderController extends Controller
                     'quantity' => $qty,
                     'price' => $unitFinal,
                     'discount_amount' => $lineDiscount,
-                    'tax_amount' => 0,
+                    'tax_rate' => $priceResult->getTaxRate(),
+                    'tax_amount' => $lineTax,
                     'total' => $lineFinal,
                     'product_name' => $variant->product->name,
                     'product_sku' => $variant->sku ?? '',

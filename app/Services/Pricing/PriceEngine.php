@@ -381,8 +381,51 @@ class PriceEngine
     {
         $customerKey = $customer ? $customer->id : 'guest';
         $contextHash = md5(serialize($context));
-        
-        return "price_calculation:{$variant->id}:{$customerKey}:{$quantity}:{$contextHash}";
+
+        $taxSignature = $this->generateTaxSignature($variant);
+        $defaultTaxSignature = $this->getDefaultTaxSignature();
+
+        return "price_calculation:{$variant->id}:{$customerKey}:{$quantity}:{$contextHash}:{$taxSignature}:{$defaultTaxSignature}";
+    }
+
+    private function generateTaxSignature(ProductVariant $variant): string
+    {
+        $product = $variant->product;
+        $productTax = $product?->tax_rate;
+
+        $categoryIds = [];
+        if ($product) {
+            $categoryIds = $product->categories->pluck('id')->all();
+            $cachedKey = sprintf('product_categories_tax:%s', $product->id);
+            $categoryIds = cache()->remember($cachedKey, 300, fn() => $product->categories()->pluck('categories.id')->all());
+        }
+
+        $parts = [
+            'product:' . ($productTax !== null ? round((float) $productTax, 4) : 'null'),
+        ];
+
+        if (!empty($categoryIds)) {
+            $categoryRates = 
+                \App\Models\Category::whereIn('id', $categoryIds)
+                    ->pluck('tax_rate', 'id')
+                    ->map(fn($rate) => $rate !== null ? round((float) $rate, 4) : null)
+                    ->toArray();
+
+            ksort($categoryRates);
+
+            foreach ($categoryRates as $categoryId => $rate) {
+                $parts[] = "category:{$categoryId}:" . ($rate !== null ? $rate : 'null');
+            }
+        }
+
+        return sha1(implode('|', $parts));
+    }
+
+    private function getDefaultTaxSignature(): string
+    {
+        $defaultTax = \App\Helpers\SettingHelper::defaultTaxRate();
+
+        return 'default:' . round((float) $defaultTax, 4);
     }
 
     /**

@@ -97,7 +97,7 @@ class PayTrTokenService
             // PayTR formatı: [ürün_adı, fiyat_kuruş, adet]
             $basketItems[] = [
                 $this->sanitizeProductName($item->product_name),
-                number_format((float) $item->price, 2, '.', ''), // TL cinsinden 
+                number_format((float) ($item->price + $this->calculateUnitTaxAmount($item)), 2, '.', ''),
                 $item->quantity
             ];
         }
@@ -107,10 +107,24 @@ class PayTrTokenService
         
         Log::debug('PayTR sepet verisi hazırlandı', [
             'items_count' => count($basketItems),
-            'json_length' => strlen($jsonBasket)
+            'json_length' => strlen($jsonBasket),
+            'sum_total_incl_tax' => collect($basketItems)->sum(function ($item) {
+                return (float) $item[1] * (int) $item[2];
+            })
         ]);
 
         return base64_encode($jsonBasket);
+    }
+
+    private function calculateUnitTaxAmount($item): float
+    {
+        $taxRate = (float) ($item->tax_rate ?? 0);
+
+        if ($taxRate <= 0) {
+            return 0.0;
+        }
+
+        return round(((float) $item->price) * ($taxRate / 100), 2);
     }
 
     /**

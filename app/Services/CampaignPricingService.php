@@ -48,6 +48,9 @@ class CampaignPricingService
                 'guest';
 
             // Her cart item için fiyat hesapla
+            $totalTaxAmount = 0;
+            $totalAmountIncTax = 0;
+
             foreach ($cartItems as $item) {
                 $variant = $item['variant'];
                 $quantity = $item['quantity'];
@@ -57,10 +60,14 @@ class CampaignPricingService
                 $pricingResults->push([
                     'item' => $item,
                     'pricing' => $priceResult,
-                    'subtotal' => $priceResult->getFinalPrice()->getAmount() * $quantity
+                    'subtotal' => $priceResult->getFinalPrice()->getAmount() * $quantity,
+                    'tax_amount' => $priceResult->getTotalTaxAmount()->getAmount(),
+                    'total_with_tax' => $priceResult->getTotalFinalPriceWithTax()->getAmount()
                 ]);
                 
                 $totalAmount += $priceResult->getFinalPrice()->getAmount() * $quantity;
+                $totalTaxAmount += $priceResult->getTotalTaxAmount()->getAmount();
+                $totalAmountIncTax += $priceResult->getTotalFinalPriceWithTax()->getAmount();
             }
 
             // CartContext oluştur
@@ -85,14 +92,19 @@ class CampaignPricingService
             // Kampanyaları uygula
             $appliedCampaigns = $this->campaignEngine->applyCampaigns($cartContext, $user);
 
-            return [
+            $cartTotals = [
                 'pricing_results' => $pricingResults,
                 'total_before_campaigns' => $totalAmount,
+                'tax_total_before_campaigns' => $totalTaxAmount,
+                'total_before_campaigns_incl_tax' => $totalAmountIncTax,
                 'applied_campaigns' => $appliedCampaigns,
                 'campaign_benefits' => $this->calculateCampaignBenefits($appliedCampaigns),
-                'final_total' => $this->calculateFinalTotal($totalAmount, $appliedCampaigns),
                 'free_items' => $this->extractFreeItems($appliedCampaigns)
             ];
+
+            $finalTotals = $this->calculateFinalTotals($totalAmount, $totalTaxAmount, $appliedCampaigns);
+
+            return array_merge($cartTotals, $finalTotals);
 
         } catch (\Exception $e) {
             Log::error('Campaign pricing calculation failed', [
@@ -200,15 +212,30 @@ class CampaignPricingService
      * @param Collection $appliedCampaigns Uygulanan kampanyaların koleksiyonu.
      * @return float İndirimler sonrası nihai sepet tutarı.
      */
-    private function calculateFinalTotal(float $originalTotal, Collection $appliedCampaigns): float
+    private function calculateFinalTotals(float $originalTotalExclTax, float $originalTaxTotal, Collection $appliedCampaigns): array
     {
         $discount = 0;
+        $taxDiscount = 0;
 
         foreach ($appliedCampaigns as $campaignData) {
-            $discount += $campaignData['result']->getDiscountAmount();
+            $result = $campaignData['result'];
+            $discount += $result->getDiscountAmount();
+
+            $metadata = $result->getMetadata();
+            if (isset($metadata['tax_discount_amount'])) {
+                $taxDiscount += (float) $metadata['tax_discount_amount'];
+            }
         }
 
-        return max(0, $originalTotal - $discount);
+        $finalExclTax = max(0, $originalTotalExclTax - $discount);
+        $finalTaxTotal = max(0, $originalTaxTotal - $taxDiscount);
+        $finalInclTax = $finalExclTax + $finalTaxTotal;
+
+        return [
+            'final_total_excl_tax' => $finalExclTax,
+            'final_tax_total' => $finalTaxTotal,
+            'final_total_incl_tax' => $finalInclTax,
+        ];
     }
 
     /**
