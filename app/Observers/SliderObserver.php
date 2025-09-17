@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Models\Slider;
 use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class SliderObserver
 {
@@ -97,6 +98,9 @@ class SliderObserver
                     
                     // Yeni dosya yolunu güncelle
                     $slider->image_url = $optimizedResult['path'];
+                    
+                    // API cache'ini temizle
+                    Cache::forget('sliders.index');
                     
                     Log::info("Slider resmi optimize edildi: {$optimizedResult['filename']} ({$this->imageOptimizationService->formatFileSize($optimizedResult['size'])}) - {$reason}");
                 } else {

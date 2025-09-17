@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Models\ProductImage;
 use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class ProductImageObserver
 {
@@ -97,6 +98,10 @@ class ProductImageObserver
                     
                     // Yeni dosya yolunu güncelle
                     $productImage->image = $optimizedResult['path'];
+                    
+                    // İlgili cache'leri temizle
+                    Cache::forget('products.index');
+                    Cache::forget('products.show.' . $productImage->product_id);
                     
                     Log::info("Resim optimize edildi: {$optimizedResult['filename']} ({$this->imageOptimizationService->formatFileSize($optimizedResult['size'])}) - {$reason}");
                 } else {

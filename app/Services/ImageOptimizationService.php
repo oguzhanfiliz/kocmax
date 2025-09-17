@@ -22,10 +22,15 @@ class ImageOptimizationService
     /**
      * Resmi WebP formatına dönüştür ve optimize et
      */
-    public function optimizeToWebP(UploadedFile $file, string $directory = 'products', int $quality = 85): array
+    public function optimizeToWebP(UploadedFile $file, string $directory = 'products', int $quality = 85, bool $preserveBasename = false): array
     {
         $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $webpFileName = Str::slug($originalName) . '_' . time() . '.webp';
+        if ($preserveBasename) {
+            // Batch optimizations may rely on same-basename detection (foo.jpg -> foo.webp)
+            $webpFileName = $originalName . '.webp';
+        } else {
+            $webpFileName = Str::slug($originalName) . '_' . time() . '.webp';
+        }
         $webpPath = $directory . '/' . $webpFileName;
         
         try {

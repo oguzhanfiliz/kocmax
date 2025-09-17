@@ -262,10 +262,11 @@ class SecureCheckoutService
                 'apply_b2b_discounts' => true
             ]);
 
-            $itemFinalPrice = $priceResult->getFinalPrice()->getAmount();
+            // KDV dahil fiyatı kullan (frontend ile uyumlu)
+            $itemFinalPriceWithTax = $priceResult->getTotalFinalPriceWithTax()->getAmount();
             $itemDiscount = $priceResult->getTotalDiscount();
 
-            $totalPrice += $itemFinalPrice;
+            $totalPrice += $itemFinalPriceWithTax;
             $totalDiscount += $itemDiscount;
 
             // Item result detayı
@@ -274,7 +275,7 @@ class SecureCheckoutService
                 'product_name' => $variant->product->name,
                 'quantity' => $quantity,
                 'unit_price' => $priceResult->getBasePrice()->getAmount(),
-                'total_price' => $itemFinalPrice,
+                'total_price' => $itemFinalPriceWithTax,
                 'discount_amount' => $itemDiscount,
                 'applied_discounts' => $priceResult->getAppliedDiscounts(),
                 'price_result' => $priceResult
@@ -420,14 +421,21 @@ class SecureCheckoutService
         // Sipariş kalemlerini oluştur
         foreach ($pricingResult->getItemResults() as $itemResult) {
             $variant = ProductVariant::with('product')->find($itemResult['variant_id']);
+            $priceResult = $itemResult['price_result'];
+            
+            // KDV bilgilerini hesapla
+            $taxRate = $this->resolveTaxRate($variant);
+            $unitTaxAmount = $priceResult->getTotalTaxAmount()->getAmount() / $itemResult['quantity'];
             
             $order->items()->create([
                 'product_id' => $variant->product_id,
                 'product_variant_id' => $variant->id,
                 'quantity' => $itemResult['quantity'],
-                'price' => $itemResult['unit_price'],
+                'price' => $itemResult['unit_price'], // Base price (KDV hariç)
                 'discount_amount' => $itemResult['discount_amount'],
-                'total' => $itemResult['total_price'],
+                'tax_rate' => $taxRate,
+                'tax_amount' => $unitTaxAmount,
+                'total' => $itemResult['total_price'], // KDV dahil toplam
                 'product_name' => $variant->product->name,
                 'product_sku' => $variant->sku ?? '',
                 'product_attributes' => [
@@ -482,5 +490,39 @@ class SecureCheckoutService
     private function generateOrderNumber(): string
     {
         return 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6));
+    }
+
+    /**
+     * ProductVariant için KDV oranını belirler
+     */
+    private function resolveTaxRate(ProductVariant $variant): float
+    {
+        // Önce ürün seviyesinde KDV oranı kontrol et
+        if ($variant->product && $variant->product->tax_rate !== null) {
+            return (float) $variant->product->tax_rate;
+        }
+
+        // Kategori seviyesinde KDV oranı kontrol et
+        if ($variant->product) {
+            $product = $variant->product;
+            if ($product->relationLoaded('categories')) {
+                $categoryWithTax = $product->categories->first(fn($category) => $category->tax_rate !== null);
+                if ($categoryWithTax) {
+                    return (float) $categoryWithTax->tax_rate;
+                }
+            } else {
+                $categoryTax = $product->categories()
+                    ->whereNotNull('categories.tax_rate')
+                    ->orderBy('categories.id')
+                    ->value('categories.tax_rate');
+
+                if ($categoryTax !== null) {
+                    return (float) $categoryTax;
+                }
+            }
+        }
+
+        // Varsayılan KDV oranı
+        return 10.0; // %10 KDV
     }
 }

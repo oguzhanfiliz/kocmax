@@ -289,7 +289,9 @@ class Order extends Model
                 }
                 
                 $taxBreakdown[$key]['tax_amount'] += $taxAmount;
-                $taxBreakdown[$key]['base_amount'] += ($item->total - $taxAmount);
+                // Base amount = price * quantity (KDV hariç)
+                $baseAmount = (float) $item->price * (int) $item->quantity;
+                $taxBreakdown[$key]['base_amount'] += $baseAmount;
                 $taxBreakdown[$key]['items_count'] += $item->quantity;
                 $totalTaxAmount += $taxAmount;
             }

@@ -95,9 +95,12 @@ class PayTrTokenService
 
         foreach ($order->items as $item) {
             // PayTR formatı: [ürün_adı, fiyat_kuruş, adet]
+            // KDV dahil fiyatı hesapla - item->price zaten KDV dahil olabilir
+            $unitPriceWithTax = $this->calculateUnitPriceWithTax($item);
+            
             $basketItems[] = [
                 $this->sanitizeProductName($item->product_name),
-                number_format((float) ($item->price + $this->calculateUnitTaxAmount($item)), 2, '.', ''),
+                number_format($unitPriceWithTax, 2, '.', ''),
                 $item->quantity
             ];
         }
@@ -110,7 +113,9 @@ class PayTrTokenService
             'json_length' => strlen($jsonBasket),
             'sum_total_incl_tax' => collect($basketItems)->sum(function ($item) {
                 return (float) $item[1] * (int) $item[2];
-            })
+            }),
+            'basket_items' => $basketItems,
+            'order_total_amount' => $order->total_amount
         ]);
 
         return base64_encode($jsonBasket);
@@ -125,6 +130,66 @@ class PayTrTokenService
         }
 
         return round(((float) $item->price) * ($taxRate / 100), 2);
+    }
+
+    /**
+     * OrderItem için KDV dahil birim fiyatı hesaplar
+     * OrderItem'da total alanı artık KDV dahil olduğu için direkt kullanılabilir
+     */
+    private function calculateUnitPriceWithTax($item): float
+    {
+        $basePrice = (float) $item->price;
+        $taxAmount = (float) ($item->tax_amount ?? 0);
+        $total = (float) $item->total;
+        $quantity = (int) $item->quantity;
+        
+        // Eğer tax_amount varsa, base price + tax_amount kullan
+        if ($taxAmount > 0) {
+            $unitPriceWithTax = $basePrice + $taxAmount;
+            Log::debug('PayTR unit price calculation (with tax_amount)', [
+                'item_id' => $item->id,
+                'base_price' => $basePrice,
+                'tax_amount' => $taxAmount,
+                'unit_price_with_tax' => $unitPriceWithTax
+            ]);
+            return $unitPriceWithTax;
+        }
+        
+        // Eğer total alanı KDV dahil görünüyorsa (base price + tax_amount ile eşleşiyorsa)
+        $expectedTotalWithTax = ($basePrice + $taxAmount) * $quantity;
+        if (abs($total - $expectedTotalWithTax) < 0.01) {
+            // Total zaten KDV dahil, birim fiyatı hesapla
+            $unitPriceWithTax = $total / $quantity;
+            Log::debug('PayTR unit price calculation (total is with tax)', [
+                'item_id' => $item->id,
+                'total' => $total,
+                'quantity' => $quantity,
+                'unit_price_with_tax' => $unitPriceWithTax
+            ]);
+            return $unitPriceWithTax;
+        }
+        
+        // Fallback: tax_rate ile hesapla
+        $taxRate = (float) ($item->tax_rate ?? 0);
+        if ($taxRate > 0) {
+            $calculatedTaxAmount = round($basePrice * ($taxRate / 100), 2);
+            $unitPriceWithTax = $basePrice + $calculatedTaxAmount;
+            Log::debug('PayTR unit price calculation (with tax_rate)', [
+                'item_id' => $item->id,
+                'base_price' => $basePrice,
+                'tax_rate' => $taxRate,
+                'calculated_tax_amount' => $calculatedTaxAmount,
+                'unit_price_with_tax' => $unitPriceWithTax
+            ]);
+            return $unitPriceWithTax;
+        }
+        
+        // KDV yoksa base price'ı döndür
+        Log::debug('PayTR unit price calculation (no tax)', [
+            'item_id' => $item->id,
+            'base_price' => $basePrice
+        ]);
+        return $basePrice;
     }
 
     /**
@@ -164,6 +229,7 @@ class PayTrTokenService
             'hash_length' => strlen($hash),
             'user_ip' => $userIp,
             'payment_amount_kurus' => $paymentAmount,
+            'payment_amount_tl' => $order->total_amount,
             'merchant_id' => $this->config['merchant_id'],
             'merchant_oid' => $order->order_number,
             'email' => $order->billing_email,

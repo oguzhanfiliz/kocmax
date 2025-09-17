@@ -590,13 +590,37 @@ class OrderResource extends Resource
                                     ->color('info'),
 
                                 Infolists\Components\TextEntry::make('price')
-                                    ->label('Birim Fiyat')
+                                    ->label('Birim Fiyat (KDV Hariç)')
                                     ->money('TRY')
                                     ->color('warning'),
 
+                                Infolists\Components\TextEntry::make('tax_amount')
+                                    ->label('KDV Tutarı')
+                                    ->money('TRY')
+                                    ->color('info'),
+
+                                Infolists\Components\TextEntry::make('unit_price_with_tax')
+                                    ->label('Birim Fiyat (KDV Dahil)')
+                                    ->state(fn ($record) => (float) $record->price + (float) ($record->tax_amount ?? 0))
+                                    ->money('TRY')
+                                    ->color('primary'),
+
                                 Infolists\Components\TextEntry::make('total')
-                                    ->label('Toplam')
-                                    ->state(fn ($record) => (float) $record->quantity * (float) $record->price)
+                                    ->label('Toplam (KDV Dahil)')
+                                    ->state(function ($record) {
+                                        // Eğer tax_amount varsa, doğru hesaplama yap
+                                        $basePrice = (float) $record->price;
+                                        $taxAmount = (float) ($record->tax_amount ?? 0);
+                                        $quantity = (int) $record->quantity;
+                                        
+                                        if ($taxAmount > 0) {
+                                            // KDV dahil toplam = (base_price + tax_amount) * quantity
+                                            return ($basePrice + $taxAmount) * $quantity;
+                                        }
+                                        
+                                        // Fallback: mevcut total değerini kullan
+                                        return (float) $record->total;
+                                    })
                                     ->money('TRY')
                                     ->weight('bold')
                                     ->color('success'),
@@ -620,7 +644,7 @@ class OrderResource extends Resource
                                     })
                                     ->html(),
                             ])
-                            ->columns(9),
+                            ->columns(10),
                     ]),
 
                 Infolists\Components\Section::make('Notlar')
