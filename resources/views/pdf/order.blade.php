@@ -48,12 +48,17 @@
         <tr>
             <th>Ürün</th>
             <th>Miktar</th>
-            <th>Birim Fiyat</th>
-            <th>Ara Toplam</th>
+            <th>Birim Fiyat (KDV Dahil)</th>
+            <th>Toplam (KDV Dahil)</th>
         </tr>
         </thead>
         <tbody>
         @foreach($order->items as $item)
+            @php
+                // KDV dahil birim fiyat hesapla
+                $unitPriceWithTax = (float) $item->price + (float) ($item->tax_amount ?? 0);
+                $totalWithTax = $unitPriceWithTax * (int) $item->quantity;
+            @endphp
             <tr>
                 <td>
                     {{ $item->product_name }}
@@ -66,8 +71,8 @@
                     @endif
                 </td>
                 <td>{{ $item->quantity }}</td>
-                <td>{{ $fmt($item->price) }}</td>
-                <td>{{ $fmt($item->quantity * $item->price) }}</td>
+                <td>{{ $fmt($unitPriceWithTax) }}</td>
+                <td>{{ $fmt($totalWithTax) }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -75,7 +80,7 @@
 
     <table class="totals">
         <tr>
-            <td class="label">Ara Toplam</td>
+            <td class="label">Ara Toplam (KDV Hariç)</td>
             <td class="value">{{ $fmt($order->subtotal) }}</td>
         </tr>
         <tr>
@@ -90,9 +95,9 @@
             <td class="label">Kargo</td>
             <td class="value">{{ $fmt($order->shipping_amount) }}</td>
         </tr>
-        <tr>
-            <td class="label">Toplam</td>
-            <td class="value">{{ $fmt($order->total_amount) }}</td>
+        <tr style="border-top: 2px solid #333;">
+            <td class="label"><strong>Toplam (KDV Dahil)</strong></td>
+            <td class="value"><strong>{{ $fmt($order->total_amount) }}</strong></td>
         </tr>
     </table>
 </body>
