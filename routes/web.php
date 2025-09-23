@@ -78,7 +78,10 @@ Route::get('storage/{path}', function (Request $request, $path) {
         'http://localhost:5173', 
         'http://127.0.0.1:3000',
         'https://b2bb2c.mutfakyapim.net', // Production domain
-        'https://b2bb2c-frontend.vercel.app' // Frontend domain
+        'https://b2bb2c-frontend.vercel.app', // Frontend domain
+        'https://kocmax.tr',
+        'https://www.kocmax.tr',
+        'https://admin.kocmax.tr',
     ];
     
     // Get the file info

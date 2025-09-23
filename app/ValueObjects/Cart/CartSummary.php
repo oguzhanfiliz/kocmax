@@ -6,14 +6,20 @@ namespace App\ValueObjects\Cart;
 
 class CartSummary
 {
+    private readonly array $itemDetails;
+    private readonly array $appliedDiscounts;
+
     public function __construct(
         private readonly float $subtotal,
         private readonly float $discount,
         private readonly float $total,
         private readonly int $itemCount,
-        private readonly array $itemDetails = [],
-        private readonly array $appliedDiscounts = []
-    ) {}
+        array $itemDetails = [],
+        array $appliedDiscounts = []
+    ) {
+        $this->itemDetails = $itemDetails;
+        $this->appliedDiscounts = $this->normalizeAppliedDiscounts($appliedDiscounts);
+    }
 
     public function getSubtotal(): float
     {
@@ -128,5 +134,51 @@ class CartSummary
             $this->discount,
             $this->total
         );
+    }
+
+    /**
+     * Merge duplicate discounts that target the same price type/context.
+     */
+    private function normalizeAppliedDiscounts(array $discounts): array
+    {
+        if ($discounts === []) {
+            return [];
+        }
+
+        $aggregated = [];
+
+        foreach ($discounts as $discount) {
+            if (!is_array($discount)) {
+                continue;
+            }
+
+            $normalizedType = strtolower((string) ($discount['type'] ?? 'unknown'));
+            $identifierParts = [$normalizedType];
+
+            if (isset($discount['id'])) {
+                $identifierParts[] = (string) $discount['id'];
+            }
+
+            if (isset($discount['code'])) {
+                $identifierParts[] = strtolower((string) $discount['code']);
+            } elseif (isset($discount['description'])) {
+                $identifierParts[] = strtolower((string) $discount['description']);
+            }
+
+            $key = implode('|', $identifierParts);
+            $amount = (float) ($discount['amount'] ?? 0.0);
+
+            if (!isset($aggregated[$key])) {
+                $clean = $discount;
+                $clean['type'] = $normalizedType;
+                $clean['amount'] = $amount;
+                $aggregated[$key] = $clean;
+                continue;
+            }
+
+            $aggregated[$key]['amount'] = round($aggregated[$key]['amount'] + $amount, 2);
+        }
+
+        return array_values($aggregated);
     }
 }

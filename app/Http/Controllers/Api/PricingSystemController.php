@@ -120,10 +120,12 @@ class PricingSystemController extends Controller
             ->orderBy('priority', 'desc')
             ->get()
             ->map(function ($rule) {
+                $customerTypes = $this->normalizeCustomerTypes($rule->conditions['customer_types'] ?? []);
+
                 return [
                     'id' => $rule->id,
                     'name' => $rule->name,
-                    'customer_types' => $rule->conditions['customer_types'] ?? [],
+                    'customer_types' => $customerTypes,
                     'min_quantity' => $rule->conditions['min_quantity'] ?? 1,
                     'discount_percentage' => $rule->actions['discount_percentage'] ?? 0,
                     'priority' => $rule->priority,
@@ -237,5 +239,32 @@ class PricingSystemController extends Controller
                 ] : null
             ]
         ]);
+    }
+
+    /**
+     * Normalize customer type list by removing duplicates while preserving order.
+     *
+     * @param array $types
+     * @return array
+     */
+    private function normalizeCustomerTypes(array $types): array
+    {
+        $normalized = [];
+        $seen = [];
+
+        foreach ($types as $type) {
+            if (!is_string($type) || $type === '') {
+                continue;
+            }
+
+            $key = strtolower($type);
+
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $normalized[] = $type;
+            }
+        }
+
+        return $normalized;
     }
 }
