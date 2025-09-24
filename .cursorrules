@@ -152,21 +152,6 @@ app/
 - [ ] Documentation updated
 - [ ] Error handling implemented
 
-## AUTOMATIC CONTEXT LOADING
-
-### ALWAYS READ THESE FILES FIRST
-Before responding to ANY request, you MUST read and understand:
-1. `memory.md` - Current project state and overview
-2. `memorybank/development-rules.md` - Mandatory coding standards
-3. `memorybank/common-patterns.md` - Required implementation patterns
-
-### CONTEXT RULES FOR EVERY REQUEST
-- NEVER start coding without reading the above files
-- ALWAYS follow patterns from `memorybank/common-patterns.md`
-- ALWAYS apply standards from `memorybank/development-rules.md`
-- Reference `memorybank/troubleshooting.md` for known issues
-- Check `memorybank/database-schema.md` for data structure questions
-
 ### MANDATORY PROJECT KNOWLEDGE
 You are working on a B2B-B2C e-commerce platform with:
 - Laravel 11 + PHP 8.2 + Filament 3

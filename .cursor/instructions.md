@@ -2,11 +2,6 @@
 
 ## 🤖 AUTOMATIC BEHAVIOR FOR EVERY PROMPT
 
-### BEFORE ANY RESPONSE, YOU MUST:
-1. **Read project context**: Always start by reading `memory.md`, `memorybank/development-rules.md`, and `memorybank/common-patterns.md`
-2. **Confirm understanding**: Begin responses with: "✅ Read project memory files. Working on [TASK] following [RELEVANT_PATTERN]"
-3. **Apply standards**: Use patterns from memorybank files, never deviate without explanation
-
 ### MANDATORY CODE STANDARDS
 ```php
 <?php
