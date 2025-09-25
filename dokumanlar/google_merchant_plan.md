@@ -158,7 +158,6 @@ Aşağıdaki tablolar Google Merchant feed üretimi için doğrudan veya dolayl�
 > - GTIN eksikse `products.barcode` ya da `product_variants.barcode` doldurulmalı; aksi halde Merchant zorunlulukları için plan yapılmalı.
 > - Kargo alanları hem ürün hem varyant seviyesinde mevcut; hangisinin authoritative olduğuna karar verilmeli.
 
-
 ## Task 1.2 – Merchant Gereksinim Karşılaştırması
 Aşağıdaki tablo Google Merchant zorunlu ve kritik önerilen özellikleri için mevcut veri durumunu özetler.
 
@@ -272,3 +271,50 @@ Aşağıdaki varsayımlar ve karar maddeleri için iş birimi/e-ticaret ekibinde
     - Feed üretimi başarısız olduğunda e-posta/Slack uyarı akışı ve sorumlu ekip belirlenmeli.
     - Merchant Center Diagnostics çıktılarının periyodik kontrolü için sorumluluk atanmalı.
 
+## Task 3.1 – DTO ve Mapper Geliştirme
+- `app/Services/Feed/GoogleMerchant/DTO/FeedItem.php` Merchant item veri yapısını sabitledi; zorunlu/opsiyonel alanlar ayrı tutuluyor.
+- `app/Services/Feed/GoogleMerchant/DTO/FeedGenerationResult.php` komut ve scheduler çıktıları için standartlaştırılmış geri dönüş sağlıyor.
+- `app/Services/Feed/GoogleMerchant/GoogleMerchantFeedMapper.php` varyant verisini sanitizasyon, fiyat hesaplama, görsel normalizasyon ve attribute enrichment adımlarıyla feed item’e dönüştürüyor.
+- Mapper eksik veri senaryolarını (görsel, fiyat) loglayıp atlıyor; GTIN/mpn, custom label ve shipping metrikleri tek yerde hesaplanıyor.
+- Marka alanı `config('feeds.google_merchant.brand')` üzerinden varsayılan "KOCMAX" olarak sabitlendi; kategori slug → Google taxonomy mapping’i için `category_slug_map` config anahtarı hazırlandı.
+
+## Task 3.2 – XML Writer Servisi
+- `app/Services/Feed/GoogleMerchant/GoogleMerchantFeedWriter.php` RSS 2.0 + `g:` namespace şemasını oluşturuyor ve CDATA ile özel karakterleri güvenli hale getiriyor.
+- Kanal başlığı, dil ve açıklama `config/feeds.php` üzerinden yönetiliyor; writer hem XML string döndürüyor hem de Storage üzerinden kalıcı dosya oluşturuyor.
+- Fiyat alanları `123.45 TRY` formatına çevrilirken tüm opsiyonel `g:` nitelikleri dinamik olarak işleniyor.
+
+## Task 3.3 – Konsol Komutu & Scheduler
+- `php artisan merchant:generate-feed` komutu (`app/Console/Commands/GenerateGoogleMerchantFeed.php`) storage hedefini parametreyle değiştirebiliyor ve çıktı özetini CLI’da paylaşıyor.
+- `config/feeds.php` altındaki `schedule` ayarıyla cron ifadesi özelleştirilebiliyor; `app/Console/Kernel.php` günlük 03:00’te komutu tetikliyor ve log’u `storage/logs/google_merchant_feed.log` dosyasına ekliyor.
+- Storage yapılandırması (disk/path), frontend URL’leri ve görsel CDN’i tek config altında toplandı; böylece prod/stage ortamları ayrıştırılabiliyor.
+- Yeni `category_slug_map` dizisi kategori slug’larını Google taxonomy değerleriyle eşlemek için kullanılabiliyor; slug eşleşmesi yoksa default kategoriye düşüyor.
+
+## Task 3.4 – Hata Yönetimi & Loglama
+- `GoogleMerchantFeedService` mapping ve yazma aşamalarında try/catch kullanıyor; hatalar `Log::error` ile kaydedilip DTO üzerinden komuta taşınıyor.
+- Yazım öncesi mevcut feed zaman damgalı (`.YYYYmmddHHMMSS.xml`) kopya ile yedekleniyor; başarısız backup durumunda uyarı log'u düşüyor.
+- Konfigürasyon kapalıysa servis erken dönerken bilgi mesaji hata listesine ekleniyor; böylece cron false-positive failure üretmiyor.
+
+## Task 4.1 – Unit/Feature Testleri
+- `tests/Unit/Services/Feed/GoogleMerchant/GoogleMerchantFeedMapperTest.php` mapper'ın zorunlu alanları, fiyat formatı, custom label ve shipping bilgilerini doğru oluşturduğunu doğruluyor.
+- `tests/Unit/Services/Feed/GoogleMerchant/GoogleMerchantFeedWriterTest.php` RSS çıktısını ve Storage yazımını doğruluyor; namespace kontrolleri `simplexml` ile yapılıyor.
+- Testler `RefreshDatabase` kullanarak veri izolasyonu sağlıyor ve `Mockery` ile fiyat servisindeki bağımlılıkları izole ediyor.
+
+## Task 4.2 – XML Doğrulama Scripti
+- `php artisan merchant:validate-feed` komutu (`app/Console/Commands/ValidateGoogleMerchantFeed.php`) seçilen disk/path'teki feed'in well-formed olduğunu ve `xmlns:g` namespace'ini doğruluyor.
+- Komut hatalı XML'i satır bazında raporluyor, cron sonrası manuel QA için hafif bir doğrulama katmanı sağlıyor.
+
+## Task 4.3 – Merchant Center Pilot Yükleme
+- Test feed'i Merchant Center'a manuel yüklemek ve Diagnostics sonuçlarını belgelemek beklemede. Üretim domain/credential bilgisi paylaşıldığında komut çıktısı ile birlikte raporlanacak.
+
+## Task 5.1 – Prod Konfigürasyon Hazırlığı
+- `config/feeds.php` altında tüm env ayarları toplanarak `.env` değişkenleri belirlendi; `docs/deployment/google-merchant-feed.md` dosyası prod/stage konfigürasyonları için rehber içeriyor.
+- Scheduler devre dışı bırakmak için `GOOGLE_MERCHANT_SCHEDULE_ENABLED=false` bayrağı eklendi; böylece staging/prod ayrımı kolaylaştı.
+
+## Task 5.2 – İzleme & Alerting
+- Cron çıktısı `storage/logs/google_merchant_feed.log` dosyasına append ediliyor; mevcut log kanallarına entegre edilerek uyarı tetiklenebilir.
+- Feed servisinde hata durumunda `FeedGenerationResult` üzerinden ayrıntılı mesajlar CLI’ya aktarılıyor; log seviyeleri (`warning`/`error`) merkezi monitöringe uygun.
+- Backup mekanizması üretim feed’inin önceki sürümünü koruyor; böylece problemler durumunda hızlı rollback yapılabiliyor.
+
+## Task 5.3 – Dokümantasyon & Eğitim
+- `docs/deployment/google-merchant-feed.md` yayınlandı: konfigürasyon, manuel komutlar, doğrulama, bakım ve pilot adımlar tek yerde toplandı.
+- Plan dokümanı ve attribute mapping tablosu güncellenerek ekip içi bilgi paylaşımı sağlandı (`dokumanlar/google_merchant_attribute_mapping.md`).

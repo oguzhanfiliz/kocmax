@@ -21,6 +21,15 @@ class Kernel extends ConsoleKernel
                 ->runInBackground()
                 ->sendOutputTo(storage_path('logs/exchange_rate_cron.log'));
         }
+
+        if (config('feeds.google_merchant.schedule.enabled', true)) {
+            $schedule->command('merchant:generate-feed')
+                ->cron(config('feeds.google_merchant.schedule.expression', '0 3 * * *'))
+                ->withoutOverlapping()
+                ->onOneServer()
+                ->runInBackground()
+                ->appendOutputTo(storage_path('logs/google_merchant_feed.log'));
+        }
     }
 
     /**
