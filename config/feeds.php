@@ -21,7 +21,7 @@ return [
         'dimension_unit' => env('GOOGLE_MERCHANT_DIMENSION_UNIT', 'cm'),
         'channel' => [
             'title' => env('GOOGLE_MERCHANT_CHANNEL_TITLE', env('APP_NAME', 'Application') . ' Catalog'),
-            'link' => env('GOOGLE_MERCHANT_CHANNEL_LINK', env('FRONTEND_URL', env('APP_URL', 'http://127.0.0.1:8000'))),
+            'link' => env('GOOGLE_MERCHANT_CHANNEL_LINK', env('FRONTEND_URL', env('APP_URL', 'https://kocmax.tr'))),
             'description' => env('GOOGLE_MERCHANT_CHANNEL_DESCRIPTION', 'Automated Google Merchant feed'),
             'language' => env('GOOGLE_MERCHANT_CHANNEL_LANGUAGE', env('APP_LOCALE', 'tr')),
         ],

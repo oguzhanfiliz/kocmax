@@ -57,10 +57,20 @@ class GoogleMerchantFeedMapper
         $product = $variant->product;
 
         if (!$product instanceof Product) {
+            Log::warning('Skipping Merchant feed item because product relation is missing', [
+                'variant_id' => $variant->id,
+                'product' => get_debug_type($product),
+            ]);
             return null;
         }
 
         if (!$product->is_active || !$variant->is_active) {
+            Log::warning('Skipping Merchant feed item because product/variant is inactive', [
+                'variant_id' => $variant->id,
+                'product_id' => $product->id,
+                'product_is_active' => (bool) $product->is_active,
+                'variant_is_active' => (bool) $variant->is_active,
+            ]);
             return null;
         }
 
@@ -83,13 +93,33 @@ class GoogleMerchantFeedMapper
 
         $priceResult = $this->resolvePrice($variant);
         if (!$priceResult) {
+            Log::warning('Skipping Merchant feed item because price could not be resolved', [
+                'variant_id' => $variant->id,
+                'product_id' => $product->id,
+                'target_currency' => $this->targetCurrency,
+            ]);
             return null;
         }
 
-        $pricePayload = $this->formatPricePayload($priceResult->getOriginalPrice()->getAmount(), $priceResult->getOriginalPrice()->getCurrency());
+        // KDV dahil fiyat akışı: API ile aynı şekilde.
+        $taxRate = $priceResult->getTaxRate();
+        $originalWithTaxAmount = $priceResult->getOriginalPrice()->getAmount() * (1 + max(0.0, $taxRate));
+        $originalCurrency = $priceResult->getOriginalPrice()->getCurrency();
+
+        $finalWithTax = $priceResult->getUnitFinalPriceWithTax();
+        $finalWithTaxAmount = $finalWithTax->getAmount();
+        $finalWithTaxCurrency = $finalWithTax->getCurrency();
+
+        $pricePayload = null;
         $salePricePayload = null;
+
         if ($priceResult->hasDiscounts() && $priceResult->getFinalPrice()->getAmount() !== $priceResult->getOriginalPrice()->getAmount()) {
-            $salePricePayload = $this->formatPricePayload($priceResult->getFinalPrice()->getAmount(), $priceResult->getFinalPrice()->getCurrency());
+            // İndirim varsa: price = orijinal KDV dahil, sale_price = nihai KDV dahil
+            $pricePayload = $this->formatPricePayload($originalWithTaxAmount, $originalCurrency);
+            $salePricePayload = $this->formatPricePayload($finalWithTaxAmount, $finalWithTaxCurrency);
+        } else {
+            // İndirim yoksa: price = nihai KDV dahil
+            $pricePayload = $this->formatPricePayload($finalWithTaxAmount, $finalWithTaxCurrency);
         }
 
         $item = new FeedItem(
